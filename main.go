@@ -14,8 +14,13 @@ func lbHeartbeatHandler(c *gin.Context) {
 	})
 }
 
+func heartbeatHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{})
+}
+
 func setupRoutes(r *gin.Engine) {
 	r.GET("/__lbheartbeat__", lbHeartbeatHandler)
+	r.GET("/__heartbeat__", heartbeatHandler)
 }
 
 func main() {

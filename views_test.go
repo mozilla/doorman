@@ -47,3 +47,16 @@ func TestLBHeartbeat(t *testing.T) {
     return statusOK && jsonOK
   })
 }
+
+
+func TestHeartbeat(t *testing.T) {
+  r := gin.Default()
+  setupRoutes(r)
+
+  req, _ := http.NewRequest("GET", "/__heartbeat__", nil)
+
+  testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
+    statusOK := w.Code == http.StatusOK
+    return statusOK
+  })
+}
