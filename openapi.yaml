@@ -75,3 +75,17 @@ paths:
             type: "object"
       tags:
       - Utilities
+
+  /contribute.json:
+    get:
+      summary: "Open source contributing information"
+      operationId: "contribute"
+      produces:
+      - "application/json"
+      responses:
+        "200":
+          description: "Return open source contributing information."
+          schema:
+            type: "object"
+      tags:
+      - Utilities

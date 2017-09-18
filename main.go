@@ -28,6 +28,26 @@ func yaml2json(i interface{}) interface{} {
 	return i
 }
 
+func YAMLAsJSONHandler(filename string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		yamlFile, err := ioutil.ReadFile(filename)
+		if err != nil {
+			c.AbortWithError(500, err)
+			return
+		}
+
+		var body interface{}
+		if err := yaml.Unmarshal(yamlFile, &body); err != nil {
+			c.AbortWithError(500, err)
+			return
+		}
+
+		body = yaml2json(body)
+
+		c.JSON(http.StatusOK, body)
+	}
+}
+
 func lbHeartbeatHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"ok": true,
@@ -46,29 +66,12 @@ func versionHandler(c *gin.Context) {
 	c.File(versionFile)
 }
 
-func openApiHandler(c *gin.Context) {
-	yamlFile, err := ioutil.ReadFile("openapi.yaml")
-	if err != nil {
-		c.AbortWithError(500, err)
-		return
-	}
-
-	var body interface{}
-	if err := yaml.Unmarshal(yamlFile, &body); err != nil {
-		c.AbortWithError(500, err)
-		return
-	}
-
-	body = yaml2json(body)
-
-	c.JSON(http.StatusOK, body)
-}
-
 func setupRoutes(r *gin.Engine) {
 	r.GET("/__lbheartbeat__", lbHeartbeatHandler)
 	r.GET("/__heartbeat__", heartbeatHandler)
 	r.GET("/__version__", versionHandler)
-	r.GET("/__api__", openApiHandler)
+	r.GET("/__api__", YAMLAsJSONHandler("openapi.yaml"))
+	r.GET("/contribute.json", YAMLAsJSONHandler("contribute.yaml"))
 }
 
 func main() {
