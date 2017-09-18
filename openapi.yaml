@@ -1,0 +1,77 @@
+swagger: "2.0"
+info:
+  description: >
+    IAM.
+  version: "1.0.0"
+  title: "Mozilla IAM"
+  contact:
+    url: "irc://irc.mozilla.org:6696/#product-delivery"
+  license:
+    name: "Mozilla Public License 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+basePath: "/v1"
+
+tags:
+- name: Utilities
+- name: Status
+
+paths:
+  /__heartbeat__:
+    get:
+      summary: "Is the server working properly? What is failing?"
+      operationId: "heartbeat"
+      produces:
+      - "application/json"
+      responses:
+        "200":
+          description: "Server working properly"
+          schema:
+            type: "object"
+        "503":
+          description: "One or more subsystems failing."
+          schema:
+            type: "object"
+      tags:
+      - Utilities
+
+  /__lbheartbeat__:
+    get:
+      summary: "Is the server reachable?"
+      operationId: "lbheartbeat"
+      produces:
+      - "application/json"
+      responses:
+        "200":
+          description: "Server reachable"
+          schema:
+            type: "object"
+      tags:
+      - Utilities
+
+  /__version__:
+    get:
+      summary: "Running instance version information"
+      operationId: "version"
+      produces:
+      - "application/json"
+      responses:
+        "200":
+          description: "Return the running instance version information"
+          schema:
+            type: "object"
+      tags:
+      - Utilities
+
+  /__api__:
+    get:
+      summary: "Open API Specification documentation."
+      operationId: "doc"
+      produces:
+      - "application/json"
+      responses:
+        "200":
+          description: "Return the Open Api Specification."
+          schema:
+            type: "object"
+      tags:
+      - Utilities

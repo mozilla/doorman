@@ -67,7 +67,7 @@ func TestVersion(t *testing.T) {
 	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
 		statusOK := w.Code == http.StatusOK
 
-		// Test that returned JSON contains "ok"
+		// Test that returned JSON contains "commit"
 		p, err := ioutil.ReadAll(w.Body)
 		jsonOK := err == nil && strings.Index(string(p), "\"commit\"") > 0
 
@@ -86,5 +86,22 @@ func TestVersionMissing(t *testing.T) {
 	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
 		statusOK := w.Code == http.StatusNotFound
 		return statusOK
+	})
+}
+
+func TestOpenAPI(t *testing.T) {
+	r := gin.Default()
+	setupRoutes(r)
+
+	req, _ := http.NewRequest("GET", "/__api__", nil)
+
+	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
+		statusOK := w.Code == http.StatusOK
+
+		// Test that returned JSON contains "swagger"
+		p, err := ioutil.ReadAll(w.Body)
+		jsonOK := err == nil && strings.Index(string(p), "\"swagger\"") > 0
+
+		return statusOK && jsonOK
 	})
 }
