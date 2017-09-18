@@ -66,16 +66,17 @@ func versionHandler(c *gin.Context) {
 	c.File(versionFile)
 }
 
-func setupRoutes(r *gin.Engine) {
+func SetupRouter() *gin.Engine {
+	r := gin.Default()
 	r.GET("/__lbheartbeat__", lbHeartbeatHandler)
 	r.GET("/__heartbeat__", heartbeatHandler)
 	r.GET("/__version__", versionHandler)
 	r.GET("/__api__", YAMLAsJSONHandler("openapi.yaml"))
 	r.GET("/contribute.json", YAMLAsJSONHandler("contribute.yaml"))
+	return r
 }
 
 func main() {
-	r := gin.Default()
-	setupRoutes(r)
+	r := SetupRouter()
 	r.Run() // listen and serve on 0.0.0.0:$PORT (:8080)
 }

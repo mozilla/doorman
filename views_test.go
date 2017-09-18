@@ -1,11 +1,10 @@
 package main
 
 import (
-	"io/ioutil"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -29,96 +28,90 @@ func testHTTPResponse(t *testing.T, r *gin.Engine, req *http.Request, f func(w *
 	}
 }
 
+func testJSONResponse(t *testing.T, url string, response interface{}) *httptest.ResponseRecorder {
+	r := SetupRouter()
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fail()
+	}
+
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	if err != nil {
+		t.Fail()
+	}
+
+	return w
+}
+
 func TestLBHeartbeat(t *testing.T) {
-	r := gin.Default()
-	setupRoutes(r)
+	type Response struct {
+		Ok bool
+	}
+	var response Response
+	testJSONResponse(t, "/__lbheartbeat__", &response)
 
-	req, _ := http.NewRequest("GET", "/__lbheartbeat__", nil)
-
-	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
-		statusOK := w.Code == http.StatusOK
-
-		// Test that returned JSON contains "ok"
-		p, err := ioutil.ReadAll(w.Body)
-		jsonOK := err == nil && strings.Index(string(p), "\"ok\"") > 0
-
-		return statusOK && jsonOK
-	})
+	if !response.Ok {
+		t.Fail()
+	}
 }
 
 func TestHeartbeat(t *testing.T) {
-	r := gin.Default()
-	setupRoutes(r)
-
-	req, _ := http.NewRequest("GET", "/__heartbeat__", nil)
-
-	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
-		statusOK := w.Code == http.StatusOK
-		return statusOK
-	})
+	type Response struct {
+	}
+	var response Response
+	testJSONResponse(t, "/__heartbeat__", &response)
 }
 
 func TestVersion(t *testing.T) {
-	r := gin.Default()
-	setupRoutes(r)
+	type Response struct {
+		Commit string
+	}
+	var response Response
+	testJSONResponse(t, "/__version__", &response)
 
-	req, _ := http.NewRequest("GET", "/__version__", nil)
-
-	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
-		statusOK := w.Code == http.StatusOK
-
-		// Test that returned JSON contains "commit"
-		p, err := ioutil.ReadAll(w.Body)
-		jsonOK := err == nil && strings.Index(string(p), "\"commit\"") > 0
-
-		return statusOK && jsonOK
-	})
+	if response.Commit != "stub" {
+		t.Fail()
+	}
 }
 
 func TestVersionMissing(t *testing.T) {
-	r := gin.Default()
-	setupRoutes(r)
-
 	os.Setenv("VERSION_FILE", "/tmp/missing.json")
 
+	r := SetupRouter()
 	req, _ := http.NewRequest("GET", "/__version__", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
 
-	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
-		statusOK := w.Code == http.StatusNotFound
-		return statusOK
-	})
+	if w.Code != http.StatusNotFound {
+		t.Fail()
+	}
 }
 
 func TestOpenAPI(t *testing.T) {
-	r := gin.Default()
-	setupRoutes(r)
+	type Response struct {
+		Swagger string
+	}
+	var response Response
+	testJSONResponse(t, "/__api__", &response)
 
-	req, _ := http.NewRequest("GET", "/__api__", nil)
-
-	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
-		statusOK := w.Code == http.StatusOK
-
-		// Test that returned JSON contains "swagger"
-		p, err := ioutil.ReadAll(w.Body)
-		jsonOK := err == nil && strings.Index(string(p), "\"swagger\"") > 0
-
-		return statusOK && jsonOK
-	})
+	if response.Swagger != "2.0" {
+		t.Fail()
+	}
 }
 
 func TestContribute(t *testing.T) {
-	r := gin.Default()
-	setupRoutes(r)
+	type Response struct {
+		Name string
+	}
+	var response Response
+	testJSONResponse(t, "/contribute.json", &response)
 
-	req, _ := http.NewRequest("GET", "/contribute.json", nil)
-
-	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
-		statusOK := w.Code == http.StatusOK
-
-		// Test that returned JSON contains "repository"
-		p, err := ioutil.ReadAll(w.Body)
-		jsonOK := err == nil && strings.Index(string(p), "\"repository\"") > 0
-
-		return statusOK && jsonOK
-	})
+	if response.Name != "IAM" {
+		t.Fail()
+	}
 }
