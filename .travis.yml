@@ -1,0 +1,9 @@
+language: go
+
+addons:
+  apt:
+    packages:
+    - golang-glide
+
+install:
+  - glide install
