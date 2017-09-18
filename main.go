@@ -21,7 +21,7 @@ func heartbeatHandler(c *gin.Context) {
 
 func versionHandler(c *gin.Context) {
 	versionFile := os.Getenv("VERSION_FILE")
-	if  versionFile == "" {
+	if versionFile == "" {
 		versionFile = "version.json"
 	}
 	c.File(versionFile)
