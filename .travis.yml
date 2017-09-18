@@ -1,9 +1,7 @@
 language: go
 
-addons:
-  apt:
-    packages:
-    - golang-glide
+before_install:
+  - go get github.com/Masterminds/glide
 
 install:
   - glide install
