@@ -60,3 +60,36 @@ func TestHeartbeat(t *testing.T) {
     return statusOK
   })
 }
+
+
+func TestVersion(t *testing.T) {
+  r := gin.Default()
+  setupRoutes(r)
+
+  req, _ := http.NewRequest("GET", "/__version__", nil)
+
+  testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
+    statusOK := w.Code == http.StatusOK
+
+    // Test that returned JSON contains "ok"
+    p, err := ioutil.ReadAll(w.Body)
+    jsonOK := err == nil && strings.Index(string(p), "\"commit\"") > 0
+
+    return statusOK && jsonOK
+  })
+}
+
+
+func TestVersionMissing(t *testing.T) {
+  r := gin.Default()
+  setupRoutes(r)
+
+  os.Setenv("VERSION_FILE", "/tmp/missing.json")
+
+  req, _ := http.NewRequest("GET", "/__version__", nil)
+
+  testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
+    statusOK := w.Code == http.StatusNotFound
+    return statusOK
+  })
+}
