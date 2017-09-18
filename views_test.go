@@ -105,3 +105,20 @@ func TestOpenAPI(t *testing.T) {
 		return statusOK && jsonOK
 	})
 }
+
+func TestContribute(t *testing.T) {
+	r := gin.Default()
+	setupRoutes(r)
+
+	req, _ := http.NewRequest("GET", "/contribute.json", nil)
+
+	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
+		statusOK := w.Code == http.StatusOK
+
+		// Test that returned JSON contains "repository"
+		p, err := ioutil.ReadAll(w.Body)
+		jsonOK := err == nil && strings.Index(string(p), "\"repository\"") > 0
+
+		return statusOK && jsonOK
+	})
+}
