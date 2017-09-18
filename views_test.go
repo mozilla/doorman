@@ -28,102 +28,90 @@ func testHTTPResponse(t *testing.T, r *gin.Engine, req *http.Request, f func(w *
 	}
 }
 
-func TestLBHeartbeat(t *testing.T) {
+func testJSONResponse(t *testing.T, url string, response interface{}) *httptest.ResponseRecorder {
 	r := SetupRouter()
 
-	req, _ := http.NewRequest("GET", "/__lbheartbeat__", nil)
+	req, _ := http.NewRequest("GET", url, nil)
 
-	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
-		statusOK := w.Code == http.StatusOK
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
 
-		type Response struct {
-			Ok bool
-		}
-		var response Response
-		err := json.Unmarshal(w.Body.Bytes(), &response)
-		jsonOK := err == nil && response.Ok
+	if w.Code != http.StatusOK {
+		t.Fail()
+	}
 
-		return statusOK && jsonOK
-	})
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	if err != nil {
+		t.Fail()
+	}
+
+	return w
+}
+
+func TestLBHeartbeat(t *testing.T) {
+	type Response struct {
+		Ok bool
+	}
+	var response Response
+	testJSONResponse(t, "/__lbheartbeat__", &response)
+
+	if !response.Ok {
+		t.Fail()
+	}
 }
 
 func TestHeartbeat(t *testing.T) {
-	r := SetupRouter()
-
-	req, _ := http.NewRequest("GET", "/__heartbeat__", nil)
-
-	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
-		statusOK := w.Code == http.StatusOK
-		return statusOK
-	})
+	type Response struct {
+	}
+	var response Response
+	testJSONResponse(t, "/__heartbeat__", &response)
 }
 
 func TestVersion(t *testing.T) {
-	r := SetupRouter()
+	type Response struct {
+		Commit string
+	}
+	var response Response
+	testJSONResponse(t, "/__version__", &response)
 
-	req, _ := http.NewRequest("GET", "/__version__", nil)
-
-	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
-		statusOK := w.Code == http.StatusOK
-
-		type Response struct {
-			Commit string
-		}
-		var response Response
-		err := json.Unmarshal(w.Body.Bytes(), &response)
-		jsonOK := err == nil && response.Commit == "stub"
-
-		return statusOK && jsonOK
-	})
+	if response.Commit != "stub" {
+		t.Fail()
+	}
 }
 
 func TestVersionMissing(t *testing.T) {
-	r := SetupRouter()
-
 	os.Setenv("VERSION_FILE", "/tmp/missing.json")
 
+	r := SetupRouter()
 	req, _ := http.NewRequest("GET", "/__version__", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
 
-	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
-		statusOK := w.Code == http.StatusNotFound
-		return statusOK
-	})
+	if w.Code != http.StatusNotFound {
+		t.Fail()
+	}
 }
 
 func TestOpenAPI(t *testing.T) {
-	r := SetupRouter()
+	type Response struct {
+		Swagger string
+	}
+	var response Response
+	testJSONResponse(t, "/__api__", &response)
 
-	req, _ := http.NewRequest("GET", "/__api__", nil)
-
-	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
-		statusOK := w.Code == http.StatusOK
-
-		type Response struct {
-			Swagger string
-		}
-		var response Response
-		err := json.Unmarshal(w.Body.Bytes(), &response)
-		jsonOK := err == nil && response.Swagger == "2.0"
-
-		return statusOK && jsonOK
-	})
+	if response.Swagger != "2.0" {
+		t.Fail()
+	}
 }
 
 func TestContribute(t *testing.T) {
-	r := SetupRouter()
+	type Response struct {
+		Name string
+	}
+	var response Response
+	testJSONResponse(t, "/contribute.json", &response)
 
-	req, _ := http.NewRequest("GET", "/contribute.json", nil)
-
-	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
-		statusOK := w.Code == http.StatusOK
-
-		type Response struct {
-			Name string
-		}
-		var response Response
-		err := json.Unmarshal(w.Body.Bytes(), &response)
-		jsonOK := err == nil && response.Name == "IAM"
-
-		return statusOK && jsonOK
-	})
+	if response.Name != "IAM" {
+		t.Fail()
+	}
 }
