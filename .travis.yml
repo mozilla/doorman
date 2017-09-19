@@ -3,9 +3,12 @@ language: go
 before_install:
   - go get github.com/Masterminds/glide
   - go get github.com/mattn/goveralls
+  - go get github.com/modocache/gover
 
 install:
   - glide install
 
 script:
-  - goveralls -service=travis-ci
+  - make test
+  - gover
+  - goveralls -coverprofile=gover.coverprofile -service=travis-ci

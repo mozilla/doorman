@@ -12,3 +12,6 @@ import:
   version: ^1.0.3
 - package: go.mozilla.org/mozlogrus
 - package: go.mozilla.org/mozlog
+- package: github.com/ory/ladon
+  version: ~0.8.2
+- package: github.com/hashicorp/golang-lru

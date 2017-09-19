@@ -89,3 +89,21 @@ paths:
             type: "object"
       tags:
       - Utilities
+
+  /allowed:
+    post:
+      summary: "Check if the specified token is allowed"
+      operationId: "allowed"
+      produces:
+      - "application/json"
+      responses:
+        "400":
+          description: "Invalid posted data."
+        "401":
+          description: "Authentication failed."
+        "200":
+          description: "Return whether it is allowed or not."
+          schema:
+            type: "object"
+      tags:
+      - Warden

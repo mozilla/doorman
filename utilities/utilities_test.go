@@ -1,4 +1,4 @@
-package main
+package utilities
 
 import (
 	"encoding/json"
@@ -27,7 +27,8 @@ func performRequest(r http.Handler, method, path string) *httptest.ResponseRecor
 }
 
 func testJSONResponse(t *testing.T, url string, response interface{}) *httptest.ResponseRecorder {
-	r := SetupRouter()
+	r := gin.New()
+	SetupRoutes(r)
 	w := performRequest(r, "GET", url)
 
 	assert.Equal(t, w.Code, http.StatusOK)
@@ -55,6 +56,8 @@ func TestHeartbeat(t *testing.T) {
 }
 
 func TestVersion(t *testing.T) {
+	os.Setenv("VERSION_FILE", "../version.json")
+
 	type Response struct {
 		Commit string
 	}
@@ -67,7 +70,8 @@ func TestVersion(t *testing.T) {
 func TestVersionMissing(t *testing.T) {
 	os.Setenv("VERSION_FILE", "/tmp/missing.json")
 
-	r := SetupRouter()
+	r := gin.New()
+	SetupRoutes(r)
 	w := performRequest(r, "GET", "/__version__")
 
 	assert.Equal(t, w.Code, http.StatusNotFound)
