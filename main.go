@@ -4,76 +4,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"gopkg.in/yaml.v2"
-	log "github.com/sirupsen/logrus"
 	"go.mozilla.org/mozlogrus"
+	"gopkg.in/yaml.v2"
 )
 
-
-func MozLogger() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// Start timer
-		start := time.Now()
-
-		// Execute view.
-		c.Next()
-
-		// Stop timer
-		end := time.Now()
-		latency := end.Sub(start)
-
-		// Request summary.
-		r := c.Request
-		path := r.URL.Path
-		raw := r.URL.RawQuery
-		if raw != "" {
-			path = path + "?" + raw
-		}
-		// Error number.
-		statusCode := c.Writer.Status()
-		errno := 0
-		if statusCode != http.StatusOK {
-			errno = 999
-		}
-
-		// See https://github.com/mozilla-services/go-mozlogrus/issues/5
-		log.WithFields(log.Fields{
-			"remoteAddress":      r.RemoteAddr,
-			"remoteAddressChain": [1]string{r.Header.Get("X-Forwarded-For")},
-			"method":             r.Method,
-			"agent":              r.Header.Get("User-Agent"),
-			"code":               statusCode,
-			"path":               path,
-			"errno":              errno,
-			"lang":               r.Header.Get("Accept-Language"),
-			"t":                  latency / time.Millisecond,
-			"uid":                nil,  // user id
-			"rid":                nil,  // request id
-			"service":            "",
-			"context":            "",
-		}).Info("request.summary")
-	}
-}
-
-func yaml2json(i interface{}) interface{} {
-	// https://stackoverflow.com/a/40737676/141895
-	switch x := i.(type) {
-	case map[interface{}]interface{}:
-		m2 := map[string]interface{}{}
-		for k, v := range x {
-			m2[k.(string)] = yaml2json(v)
-		}
-		return m2
-	case []interface{}:
-		for i, v := range x {
-			x[i] = yaml2json(v)
-		}
-	}
-	return i
-}
 
 func YAMLAsJSONHandler(filename string) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -89,7 +25,7 @@ func YAMLAsJSONHandler(filename string) gin.HandlerFunc {
 			return
 		}
 
-		body = yaml2json(body)
+		body = Yaml2JSON(body)
 
 		c.JSON(http.StatusOK, body)
 	}
