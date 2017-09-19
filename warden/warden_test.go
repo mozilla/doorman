@@ -53,15 +53,15 @@ func TestWardenAnonymous(t *testing.T) {
 }
 
 func TestWardenWrongUsername(t *testing.T) {
-    r := gin.New()
-    SetupRoutes(r)
+	r := gin.New()
+	SetupRoutes(r)
 
-    req, _ := http.NewRequest("POST", "/allowed", nil)
-    req.SetBasicAuth("alice", "chains")
-    w := httptest.NewRecorder()
-    r.ServeHTTP(w, req)
+	req, _ := http.NewRequest("POST", "/allowed", nil)
+	req.SetBasicAuth("alice", "chains")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
 
-    assert.Equal(t, w.Code, http.StatusUnauthorized)
+	assert.Equal(t, w.Code, http.StatusUnauthorized)
 }
 
 func performAllowed(t *testing.T, body io.Reader, expected int, response interface{}) {
@@ -75,7 +75,7 @@ func performAllowed(t *testing.T, body io.Reader, expected int, response interfa
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, w.Code, expected)
+	require.Equal(t, expected, w.Code)
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	require.Nil(t, err)
 }
@@ -93,16 +93,21 @@ func TestWardenInvalidJSON(t *testing.T) {
 	assert.Contains(t, response.Message, "invalid character ';'")
 }
 
-func TestWardenMissingField(t *testing.T) {
-	body := bytes.NewBuffer([]byte("{\"action\": \"delete\"}"))
-	var response ErrorResponse
-	performAllowed(t, body, http.StatusBadRequest, &response)
-	assert.Contains(t, response.Message, "Field validation for 'Subject' failed")
+func TestWardenAllowed(t *testing.T) {
+	token, _ := json.Marshal(Token{
+		Subject:  "foo",
+		Action:   "update",
+		Resource: "server.org/blocklist:onecrl",
+	})
+	body := bytes.NewBuffer(token)
+	var response Response
+	performAllowed(t, body, http.StatusOK, &response)
+	assert.Equal(t, response.Allowed, true)
 }
 
-func TestWardenValid(t *testing.T) {
+func TestWardenNotAllowed(t *testing.T) {
 	token, _ := json.Marshal(Token{
-		Subject:  "mat",
+		Subject:  "foo",
 		Action:   "delete",
 		Resource: "server.org/blocklist:onecrl",
 	})
