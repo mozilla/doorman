@@ -8,6 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mozilla.org/mozlogrus"
 	"gopkg.in/yaml.v2"
+
+	"iam/warden"
 )
 
 
@@ -63,14 +65,19 @@ func SetupRouter() *gin.Engine {
 		r.Use(gin.Logger())
 	}
 
+	SetupRoutes(r)
+	warden.SetupRoutes(r)
+
+	return r
+}
+
+func SetupRoutes(r *gin.Engine) {
 	// Anonymous utilities views.
 	r.GET("/__lbheartbeat__", lbHeartbeatHandler)
 	r.GET("/__heartbeat__", heartbeatHandler)
 	r.GET("/__version__", versionHandler)
 	r.GET("/__api__", YAMLAsJSONHandler("openapi.yaml"))
 	r.GET("/contribute.json", YAMLAsJSONHandler("contribute.yaml"))
-
-	return r
 }
 
 func main() {
