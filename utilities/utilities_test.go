@@ -1,4 +1,4 @@
-package main
+package utilities
 
 import (
 	"encoding/json"
@@ -56,6 +56,8 @@ func TestHeartbeat(t *testing.T) {
 }
 
 func TestVersion(t *testing.T) {
+	os.Setenv("VERSION_FILE", "../version.json")
+
 	type Response struct {
 		Commit string
 	}

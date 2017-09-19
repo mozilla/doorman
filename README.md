@@ -5,5 +5,14 @@ IAM
 [![Coverage Status](https://coveralls.io/repos/github/leplatrem/iam/badge.svg?branch=master)](https://coveralls.io/github/leplatrem/iam?branch=master)
 [![Go Report](https://goreportcard.com/badge/github.com/leplatrem/iam)](https://goreportcard.com/report/github.com/leplatrem/iam)
 
+## Run locally
 
-/me learning Go.
+    make serve
+
+## Run tests
+
+    make test
+
+## License
+
+* MPLv2.0
