@@ -10,8 +10,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// Setup anonymous utilities views.
 func SetupRoutes(r *gin.Engine) {
-	// Anonymous utilities views.
 	r.GET("/__lbheartbeat__", lbHeartbeatHandler)
 	r.GET("/__heartbeat__", heartbeatHandler)
 	r.GET("/__version__", versionHandler)
@@ -19,6 +19,7 @@ func SetupRoutes(r *gin.Engine) {
 	r.GET("/contribute.json", YAMLAsJSONHandler("contribute.yaml"))
 }
 
+// Converts an unmarshalled YAML object to a JSON one.
 func Yaml2JSON(i interface{}) interface{} {
 	// https://stackoverflow.com/a/40737676/141895
 	switch x := i.(type) {
@@ -36,6 +37,7 @@ func Yaml2JSON(i interface{}) interface{} {
 	return i
 }
 
+// Handler factory to server specified YAML file as JSON.
 func YAMLAsJSONHandler(filename string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		yamlFile, err := ioutil.ReadFile(filename)

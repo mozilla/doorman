@@ -1,7 +1,9 @@
 package warden
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -11,6 +13,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type Response struct {
+	Allowed bool
+}
+
+type ErrorResponse struct {
+	Message string
+}
 
 func TestMain(m *testing.M) {
 	//Set Gin to Test Mode
@@ -34,7 +44,7 @@ func TestWardenGet(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusNotFound)
 }
 
-func TestWardenPostAnonymous(t *testing.T) {
+func TestWardenAnonymous(t *testing.T) {
 	r := gin.New()
 	SetupRoutes(r)
 
@@ -42,23 +52,62 @@ func TestWardenPostAnonymous(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusUnauthorized)
 }
 
-func TestWardenPostEmpty(t *testing.T) {
+func TestWardenWrongUsername(t *testing.T) {
     r := gin.New()
     SetupRoutes(r)
 
     req, _ := http.NewRequest("POST", "/allowed", nil)
-    req.SetBasicAuth("foo", "bar")
+    req.SetBasicAuth("alice", "chains")
     w := httptest.NewRecorder()
     r.ServeHTTP(w, req)
 
-    assert.Equal(t, w.Code, http.StatusOK)
+    assert.Equal(t, w.Code, http.StatusUnauthorized)
+}
 
-    type Response struct {
-        Allowed bool
-    }
-    var response Response
-    err := json.Unmarshal(w.Body.Bytes(), &response)
-    require.Nil(t, err)
+func performAllowed(t *testing.T, body io.Reader, expected int, response interface{}) {
+	r := gin.New()
+	SetupRoutes(r)
 
-    assert.False(t, response.Allowed)
+	req, _ := http.NewRequest("POST", "/allowed", body)
+	req.Header.Set("Content-Type", "application/json")
+	req.SetBasicAuth("foo", "bar")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, w.Code, expected)
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	require.Nil(t, err)
+}
+
+func TestWardenEmpty(t *testing.T) {
+	var response ErrorResponse
+	performAllowed(t, nil, http.StatusBadRequest, &response)
+	assert.Equal(t, response.Message, "Missing body")
+}
+
+func TestWardenInvalidJSON(t *testing.T) {
+	body := bytes.NewBuffer([]byte("{\"random\\;mess\"}"))
+	var response ErrorResponse
+	performAllowed(t, body, http.StatusBadRequest, &response)
+	assert.Contains(t, response.Message, "invalid character ';'")
+}
+
+func TestWardenMissingField(t *testing.T) {
+	body := bytes.NewBuffer([]byte("{\"action\": \"delete\"}"))
+	var response ErrorResponse
+	performAllowed(t, body, http.StatusBadRequest, &response)
+	assert.Contains(t, response.Message, "Field validation for 'Subject' failed")
+}
+
+func TestWardenValid(t *testing.T) {
+	token, _ := json.Marshal(Token{
+		Subject:  "mat",
+		Action:   "delete",
+		Resource: "server.org/blocklist:onecrl",
+	})
+	body := bytes.NewBuffer(token)
+	var response Response
+	performAllowed(t, body, http.StatusOK, &response)
+	assert.Equal(t, response.Allowed, false)
 }
