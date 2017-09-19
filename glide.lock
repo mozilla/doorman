@@ -1,5 +1,5 @@
-hash: 7637262e8211adeb5c7e0d9f64f863e29c9a18c8ad79ab9afc19ad8ba5c29c73
-updated: 2017-09-18T16:41:48.571257368+02:00
+hash: cea59ce68ce7ae24fddaf85930abd7d7c3b834c46ba02df24e10bbe9ad90cbde
+updated: 2017-09-19T10:44:52.631128509+02:00
 imports:
 - name: github.com/gin-contrib/sse
   version: 22d885f9ecc78bf4ee5d72b937e4bbcdc58e8cae
@@ -14,6 +14,11 @@ imports:
   - proto
 - name: github.com/mattn/go-isatty
   version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
+- name: github.com/stretchr/testify
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  subpackages:
+  - assert
+  - require
 - name: github.com/ugorji/go
   version: 8c0409fcbb70099c748d71f714529204975f6c3f
   subpackages:
