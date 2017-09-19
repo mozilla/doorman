@@ -1,5 +1,5 @@
-hash: cea59ce68ce7ae24fddaf85930abd7d7c3b834c46ba02df24e10bbe9ad90cbde
-updated: 2017-09-19T10:44:52.631128509+02:00
+hash: 8524701dcdd32516ac875cd8e671f6a642215d4e47cc093fa7515b5bb24f9da6
+updated: 2017-09-19T11:43:55.227557725+02:00
 imports:
 - name: github.com/gin-contrib/sse
   version: 22d885f9ecc78bf4ee5d72b937e4bbcdc58e8cae
@@ -14,6 +14,8 @@ imports:
   - proto
 - name: github.com/mattn/go-isatty
   version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
+- name: github.com/sirupsen/logrus
+  version: 89742aefa4b206dcf400792f3bd35b542998eb3b
 - name: github.com/stretchr/testify
   version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
   subpackages:
@@ -23,12 +25,29 @@ imports:
   version: 54210f4e076c57f351166f0ed60e67d3fca57a36
   subpackages:
   - codec
+- name: go.mozilla.org/mozlog
+  version: 4bb13139d40339f59bf140d0f5f28be83b07cc58
+- name: go.mozilla.org/mozlogrus
+  version: c97d20ca01613789b0c87089e39493537f4cad6b
+- name: golang.org/x/crypto
+  version: 7d9177d70076375b9a59c8fde23d52d9c4a7ecd5
+  subpackages:
+  - ssh/terminal
 - name: golang.org/x/sys
   version: b6e1ae21643682ce023deb8d152024597b0e9bb4
   subpackages:
   - unix
+  - windows
 - name: gopkg.in/go-playground/validator.v8
   version: 5f1438d3fca68893a817e4a66806cea46a9e4ebf
 - name: gopkg.in/yaml.v2
   version: eb3733d160e74a9c7e442f435eb3bea458e1d19f
-testImports: []
+testImports:
+- name: github.com/davecgh/go-spew
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  subpackages:
+  - spew
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
