@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMain(m *testing.M) {
@@ -36,14 +38,10 @@ func testJSONResponse(t *testing.T, url string, response interface{}) *httptest.
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Fail()
-	}
+	assert.Equal(t, w.Code, http.StatusOK)
 
 	err := json.Unmarshal(w.Body.Bytes(), &response)
-	if err != nil {
-		t.Fail()
-	}
+	require.Nil(t, err)
 
 	return w
 }
@@ -55,9 +53,7 @@ func TestLBHeartbeat(t *testing.T) {
 	var response Response
 	testJSONResponse(t, "/__lbheartbeat__", &response)
 
-	if !response.Ok {
-		t.Fail()
-	}
+	assert.True(t, response.Ok)
 }
 
 func TestHeartbeat(t *testing.T) {
@@ -74,9 +70,7 @@ func TestVersion(t *testing.T) {
 	var response Response
 	testJSONResponse(t, "/__version__", &response)
 
-	if response.Commit != "stub" {
-		t.Fail()
-	}
+	assert.Equal(t, response.Commit, "stub")
 }
 
 func TestVersionMissing(t *testing.T) {
@@ -87,9 +81,7 @@ func TestVersionMissing(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	if w.Code != http.StatusNotFound {
-		t.Fail()
-	}
+	assert.Equal(t, w.Code, http.StatusNotFound)
 }
 
 func TestOpenAPI(t *testing.T) {
@@ -99,9 +91,7 @@ func TestOpenAPI(t *testing.T) {
 	var response Response
 	testJSONResponse(t, "/__api__", &response)
 
-	if response.Swagger != "2.0" {
-		t.Fail()
-	}
+	assert.Equal(t, response.Swagger, "2.0")
 }
 
 func TestContribute(t *testing.T) {
@@ -111,7 +101,5 @@ func TestContribute(t *testing.T) {
 	var response Response
 	testJSONResponse(t, "/contribute.json", &response)
 
-	if response.Name != "IAM" {
-		t.Fail()
-	}
+	assert.Equal(t, response.Name, "IAM")
 }
