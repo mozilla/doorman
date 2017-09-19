@@ -4,12 +4,59 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-)
+	"time"
 
-import (
 	"github.com/gin-gonic/gin"
 	"gopkg.in/yaml.v2"
+	log "github.com/sirupsen/logrus"
+	"go.mozilla.org/mozlogrus"
 )
+
+
+func MozLogger() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Start timer
+		start := time.Now()
+
+		// Execute view.
+		c.Next()
+
+		// Stop timer
+		end := time.Now()
+		latency := end.Sub(start)
+
+		// Request summary.
+		r := c.Request
+		path := r.URL.Path
+		raw := r.URL.RawQuery
+		if raw != "" {
+			path = path + "?" + raw
+		}
+		// Error number.
+		statusCode := c.Writer.Status()
+		errno := 0
+		if statusCode != http.StatusOK {
+			errno = 999
+		}
+
+		// See https://github.com/mozilla-services/go-mozlogrus/issues/5
+		log.WithFields(log.Fields{
+			"remoteAddress":      r.RemoteAddr,
+			"remoteAddressChain": [1]string{r.Header.Get("X-Forwarded-For")},
+			"method":             r.Method,
+			"agent":              r.Header.Get("User-Agent"),
+			"code":               statusCode,
+			"path":               path,
+			"errno":              errno,
+			"lang":               r.Header.Get("Accept-Language"),
+			"t":                  latency / time.Millisecond,
+			"uid":                nil,  // user id
+			"rid":                nil,  // request id
+			"service":            "",
+			"context":            "",
+		}).Info("request.summary")
+	}
+}
 
 func yaml2json(i interface{}) interface{} {
 	// https://stackoverflow.com/a/40737676/141895
@@ -67,12 +114,26 @@ func versionHandler(c *gin.Context) {
 }
 
 func SetupRouter() *gin.Engine {
-	r := gin.Default()
+	r := gin.New()
+	// Crash free (turns errors into 5XX).
+	r.Use(gin.Recovery())
+
+	// Setup logging.
+	if gin.Mode() == gin.ReleaseMode {
+		// See https://github.com/mozilla-services/go-mozlogrus/issues/2#issuecomment-330495098
+		r.Use(MozLogger())
+		mozlogrus.Enable("iam")
+	} else {
+		r.Use(gin.Logger())
+	}
+
+	// Anonymous utilities views.
 	r.GET("/__lbheartbeat__", lbHeartbeatHandler)
 	r.GET("/__heartbeat__", heartbeatHandler)
 	r.GET("/__version__", versionHandler)
 	r.GET("/__api__", YAMLAsJSONHandler("openapi.yaml"))
 	r.GET("/contribute.json", YAMLAsJSONHandler("contribute.yaml"))
+
 	return r
 }
 

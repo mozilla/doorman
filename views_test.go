@@ -19,27 +19,18 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// Helper function to process a request and test its response
-func testHTTPResponse(t *testing.T, r *gin.Engine, req *http.Request, f func(w *httptest.ResponseRecorder) bool) {
-	// Create a response recorder
+func performRequest(r http.Handler, method, path string) *httptest.ResponseRecorder {
+	req, _ := http.NewRequest(method, path, nil)
 	w := httptest.NewRecorder()
-	// Create the service and process the above request.
 	r.ServeHTTP(w, req)
-	if !f(w) {
-		t.Fail()
-	}
+	return w
 }
 
 func testJSONResponse(t *testing.T, url string, response interface{}) *httptest.ResponseRecorder {
 	r := SetupRouter()
-
-	req, _ := http.NewRequest("GET", url, nil)
-
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
+	w := performRequest(r, "GET", url)
 
 	assert.Equal(t, w.Code, http.StatusOK)
-
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	require.Nil(t, err)
 
@@ -77,9 +68,7 @@ func TestVersionMissing(t *testing.T) {
 	os.Setenv("VERSION_FILE", "/tmp/missing.json")
 
 	r := SetupRouter()
-	req, _ := http.NewRequest("GET", "/__version__", nil)
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
+	w := performRequest(r, "GET", "/__version__")
 
 	assert.Equal(t, w.Code, http.StatusNotFound)
 }
