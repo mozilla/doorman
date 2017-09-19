@@ -8,7 +8,8 @@ docker-build: main
 	docker build -t mozilla/iam .
 
 test:
-	go test -v ./utilities ./warden
+	go vet . ./utilities ./warden
+	go test -covermode set -v ./utilities ./warden
 
 fmt:
 	gofmt -w -s *.go ./utilities/*.go ./warden/*.go
