@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-    "os"
+	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -34,19 +34,31 @@ func TestWardenGet(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusNotFound)
 }
 
-func TestWardenPostEmpty(t *testing.T) {
+func TestWardenPostAnonymous(t *testing.T) {
 	r := gin.New()
 	SetupRoutes(r)
 
 	w := performRequest(r, "POST", "/allowed")
-	assert.Equal(t, w.Code, http.StatusOK)
+	assert.Equal(t, w.Code, http.StatusUnauthorized)
+}
 
-	type Response struct {
-		Allowed bool
-	}
-	var response Response
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	require.Nil(t, err)
+func TestWardenPostEmpty(t *testing.T) {
+    r := gin.New()
+    SetupRoutes(r)
 
-	assert.False(t, response.Allowed)
+    req, _ := http.NewRequest("POST", "/allowed", nil)
+    req.SetBasicAuth("foo", "bar")
+    w := httptest.NewRecorder()
+    r.ServeHTTP(w, req)
+
+    assert.Equal(t, w.Code, http.StatusOK)
+
+    type Response struct {
+        Allowed bool
+    }
+    var response Response
+    err := json.Unmarshal(w.Body.Bytes(), &response)
+    require.Nil(t, err)
+
+    assert.False(t, response.Allowed)
 }

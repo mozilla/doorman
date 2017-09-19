@@ -3,8 +3,8 @@ package utilities
 import (
 	"io/ioutil"
 	"net/http"
-	"path/filepath"
 	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"gopkg.in/yaml.v2"

@@ -13,5 +13,9 @@ func allowedHandler(c *gin.Context) {
 }
 
 func SetupRoutes(r *gin.Engine) {
-	r.POST("/allowed", allowedHandler)
+	authorized := r.Group("", gin.BasicAuth(gin.Accounts{
+		"foo":    "bar",
+	}))
+
+	authorized.POST("/allowed", allowedHandler)
 }
