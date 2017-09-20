@@ -2,7 +2,7 @@ GO_BINDATA := $(GOPATH)/bin/go-bindata
 DATA_FILES := ./utilities/openapi.yaml ./utilities/contribute.yaml
 
 main: utilities/bindata.go *.go utilities/*.go warden/*.go
-	go build -o main *.go
+	CGO_ENABLED=0 go build -o main *.go
 
 $(GO_BINDATA):
 	go get github.com/jteeuwen/go-bindata/...
