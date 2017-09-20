@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ory/ladon"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -94,7 +95,7 @@ func TestWardenInvalidJSON(t *testing.T) {
 }
 
 func TestWardenAllowed(t *testing.T) {
-	token, _ := json.Marshal(Token{
+	token, _ := json.Marshal(ladon.Request{
 		Subject:  "foo",
 		Action:   "update",
 		Resource: "server.org/blocklist:onecrl",
@@ -106,7 +107,7 @@ func TestWardenAllowed(t *testing.T) {
 }
 
 func TestWardenNotAllowed(t *testing.T) {
-	token, _ := json.Marshal(Token{
+	token, _ := json.Marshal(ladon.Request{
 		Subject:  "foo",
 		Action:   "delete",
 		Resource: "server.org/blocklist:onecrl",

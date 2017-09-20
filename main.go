@@ -4,11 +4,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mozilla.org/mozlogrus"
 
-	"iam/utilities"
-	"iam/warden"
+	"github.com/leplatrem/iam/utilities"
+	"github.com/leplatrem/iam/warden"
 )
 
-func main() {
+func setupRouter() *gin.Engine {
 	r := gin.New()
 	// Crash free (turns errors into 5XX).
 	r.Use(gin.Recovery())
@@ -25,5 +25,10 @@ func main() {
 	utilities.SetupRoutes(r)
 	warden.SetupRoutes(r)
 
+	return r
+}
+
+func main() {
+	r := setupRouter()
 	r.Run() // listen and serve on 0.0.0.0:$PORT (:8080)
 }

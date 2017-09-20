@@ -1,12 +1,8 @@
 language: go
 
-before_install:
-  - go get github.com/Masterminds/glide
+install:
   - go get github.com/mattn/goveralls
   - go get github.com/modocache/gover
-
-install:
-  - glide install
 
 script:
   - make test

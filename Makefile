@@ -1,3 +1,4 @@
+GO_LINT := $(GOPATH)/bin/golint
 GO_BINDATA := $(GOPATH)/bin/go-bindata
 DATA_FILES := ./utilities/openapi.yaml ./utilities/contribute.yaml
 
@@ -10,19 +11,28 @@ $(GO_BINDATA):
 utilities/bindata.go: $(GO_BINDATA) $(DATA_FILES)
 	$(GO_BINDATA) -o utilities/bindata.go -pkg utilities $(DATA_FILES)
 
-serve:
-	go run *.go
+serve: main
+	./main
+
+$(GO_LINT):
+	go get github.com/golang/lint/golint
+
+lint: $(GO_LINT)
+	$(GO_LINT) . ./utilities ./warden
+	go vet . ./utilities ./warden
+
+test: utilities/bindata.go lint
+	go test -v -coverprofile=main.coverprofile -coverpkg=. .
+	go test -v -coverprofile=warden.coverprofile -coverpkg=./warden ./warden
+	go test -v -coverprofile=utilities.coverprofile -coverpkg=./utilities ./utilities
+	# Exclude bindata.go from coverage.
+	sed -i '/bindata.go/d' utilities.coverprofile
+
+fmt:
+	gofmt -w -s *.go ./utilities/*.go ./warden/*.go
 
 docker-build: main
 	docker build -t mozilla/iam .
 
 docker-run:
 	docker run --name iam --rm mozilla/iam
-
-test: utilities/bindata.go
-	go vet . ./utilities ./warden
-	go test -v -coverprofile=utilities.coverprofile -coverpkg=./utilities ./utilities
-	go test -v -coverprofile=warden.coverprofile -coverpkg=./warden ./warden
-
-fmt:
-	gofmt -w -s *.go ./utilities/*.go ./warden/*.go

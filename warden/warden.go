@@ -8,14 +8,10 @@ import (
 	manager "github.com/ory/ladon/manager/memory"
 )
 
+// ContextKey is the Gin context key to obtain the *ladon.Ladon instance.
 const ContextKey string = "warden"
 
-type Token struct {
-	Subject  string `form:"subject" json:"subject" binding:"required"`
-	Action   string `form:"action" json:"action" binding:"required"`
-	Resource string `form:"resource" json:"resource" binding:"required"`
-}
-
+// LadonMiddleware adds the ladon.Ladon instance to the Gin context.
 func LadonMiddleware(warden *ladon.Ladon) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set(ContextKey, warden)
@@ -23,7 +19,7 @@ func LadonMiddleware(warden *ladon.Ladon) gin.HandlerFunc {
 	}
 }
 
-// Warden views to query the policies.
+// SetupRoutes adds warden views to query the policies.
 func SetupRoutes(r *gin.Engine) {
 	warden := &ladon.Ladon{
 		Manager: manager.NewMemoryManager(),
