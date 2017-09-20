@@ -1,5 +1,5 @@
-hash: 11fae66eedeb821fdc8bfb2a74b8997a8daa98e257df4f570318896086479feb
-updated: 2017-09-19T18:11:01.657326702+02:00
+hash: 75a8d9e7acb2c7f158bc2d492e48ee703810b970a14c97ea1105f9cfccfd697c
+updated: 2017-09-20T12:59:46.781093961+02:00
 imports:
 - name: github.com/davecgh/go-spew
   version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
@@ -20,6 +20,10 @@ imports:
   version: 0a025b7e63adc15a622f29b0b2c4c3848243bbf6
   subpackages:
   - simplelru
+- name: github.com/jteeuwen/go-bindata
+  version: bbd0c6e271208dce66d8fda4bc536453cd27fc4a
+  subpackages:
+  - '...'
 - name: github.com/mattn/go-isatty
   version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
 - name: github.com/ory/ladon
