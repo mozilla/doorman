@@ -15,3 +15,7 @@ import:
 - package: github.com/ory/ladon
   version: ~0.8.2
 - package: github.com/hashicorp/golang-lru
+- package: github.com/jteeuwen/go-bindata
+  version: ^3.0.7
+  subpackages:
+  - '...'
