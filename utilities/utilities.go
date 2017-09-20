@@ -1,7 +1,6 @@
 package utilities
 
 import (
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -15,8 +14,8 @@ func SetupRoutes(r *gin.Engine) {
 	r.GET("/__lbheartbeat__", lbHeartbeatHandler)
 	r.GET("/__heartbeat__", heartbeatHandler)
 	r.GET("/__version__", versionHandler)
-	r.GET("/__api__", YAMLAsJSONHandler("openapi.yaml"))
-	r.GET("/contribute.json", YAMLAsJSONHandler("contribute.yaml"))
+	r.GET("/__api__", YAMLAsJSONHandler("utilities/openapi.yaml"))
+	r.GET("/contribute.json", YAMLAsJSONHandler("utilities/contribute.yaml"))
 }
 
 // Converts an unmarshalled YAML object to a JSON one.
@@ -40,7 +39,7 @@ func Yaml2JSON(i interface{}) interface{} {
 // Handler factory to server specified YAML file as JSON.
 func YAMLAsJSONHandler(filename string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		yamlFile, err := ioutil.ReadFile(filename)
+		yamlFile, err := Asset(filename)
 		if err != nil {
 			c.AbortWithError(500, err)
 			return
