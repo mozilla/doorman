@@ -11,6 +11,6 @@ COPY main /app/main
 USER app
 
 ENV GIN_MODE release
-ENV PORT 8080
+ENV PORT 8000
 
 ENTRYPOINT ["/app/main"]
