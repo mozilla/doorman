@@ -34,8 +34,7 @@ func init() {
 		log.Printf("Can't resolve hostname: %v", err)
 	}
 
-	// See https://github.com/mozilla-services/go-mozlogrus/issues/2#issuecomment-330495098
-	// log.SetOutput(Logger)
+	log.SetOutput(Logger)
 	log.SetFlags(log.Lshortfile)
 }
 

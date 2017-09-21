@@ -1,6 +1,9 @@
 package main
 
 import (
+	"log"
+	"os"
+
 	"github.com/gin-gonic/gin"
 	"go.mozilla.org/mozlogrus"
 
@@ -9,13 +12,16 @@ import (
 )
 
 func setupRouter() *gin.Engine {
+	// We disable mozlogrus for development.
+	// See https://github.com/mozilla-services/go-mozlogrus/issues/2#issuecomment-330495098
+	log.SetOutput(os.Stdout)
+
 	r := gin.New()
 	// Crash free (turns errors into 5XX).
 	r.Use(gin.Recovery())
 
 	// Setup logging.
 	if gin.Mode() == gin.ReleaseMode {
-		// See https://github.com/mozilla-services/go-mozlogrus/issues/2#issuecomment-330495098
 		r.Use(MozLogger())
 		mozlogrus.Enable("iam")
 	} else {
