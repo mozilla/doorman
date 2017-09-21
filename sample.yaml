@@ -1,0 +1,11 @@
+-
+  id: "1"
+  description: This policy allows 'foo' to update any resource
+  subjects:
+    - foo
+  actions:
+    - update
+  resources:
+    - <.*>
+  effect:
+    allow

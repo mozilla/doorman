@@ -2,6 +2,8 @@ GO_LINT := $(GOPATH)/bin/golint
 GO_BINDATA := $(GOPATH)/bin/go-bindata
 DATA_FILES := ./utilities/openapi.yaml ./utilities/contribute.yaml
 
+export POLICIES_FILE = $(shell pwd)/sample.yaml
+
 main: utilities/bindata.go *.go utilities/*.go warden/*.go
 	CGO_ENABLED=0 go build -o main *.go
 
