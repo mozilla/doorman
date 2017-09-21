@@ -8,6 +8,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var errorNumber = map[int]int{
+	http.StatusOK: 0,
+	http.StatusUnauthorized: 104,
+	http.StatusForbidden: 121,
+	http.StatusBadRequest: 109,
+}
+
 // MozLogger is a Gin middleware to log request summary following Mozilla Log format.
 func MozLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -35,8 +42,8 @@ func RequestLogFields(r *http.Request, statusCode int, latency time.Duration) lo
 		path = path + "?" + raw
 	}
 	// Error number.
-	errno := 0
-	if statusCode != http.StatusOK {
+	errno, defined := errorNumber[statusCode]
+	if !defined {
 		errno = 999
 	}
 
