@@ -58,7 +58,7 @@ func SetupRoutes(r *gin.Engine) {
 	if policiesFile == "" {
 		// Look in current working directory.
 		here, _ := os.Getwd()
-		policiesFile = filepath.Join(here, "policies.yml")
+		policiesFile = filepath.Join(here, "policies.yaml")
 	}
 	policies, err := LoadPolicies(policiesFile)
 	if err != nil {

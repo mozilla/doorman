@@ -10,6 +10,7 @@ IAM
 Policies are defined in YAML file (default ``./policies.yaml``) as follow:
 
 ```yaml
+  -
     description: One policy to rule them all.
     subjects:
       - users:<[peter|ken]>

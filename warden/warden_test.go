@@ -24,6 +24,8 @@ type ErrorResponse struct {
 }
 
 func TestMain(m *testing.M) {
+	// Use sample file.
+	os.Setenv("POLICIES_FILE", "../sample.yaml")
 	//Set Gin to Test Mode
 	gin.SetMode(gin.TestMode)
 	// Run the other tests

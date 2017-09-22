@@ -2,10 +2,11 @@ GO_LINT := $(GOPATH)/bin/golint
 GO_BINDATA := $(GOPATH)/bin/go-bindata
 DATA_FILES := ./utilities/openapi.yaml ./utilities/contribute.yaml
 
-export POLICIES_FILE = $(shell pwd)/sample.yaml
-
 main: utilities/bindata.go *.go utilities/*.go warden/*.go
 	CGO_ENABLED=0 go build -o main *.go
+
+clean:
+	rm -f main *.coverprofile utilities/bindata.go
 
 $(GO_BINDATA):
 	go get github.com/jteeuwen/go-bindata/...
@@ -13,7 +14,10 @@ $(GO_BINDATA):
 utilities/bindata.go: $(GO_BINDATA) $(DATA_FILES)
 	$(GO_BINDATA) -o utilities/bindata.go -pkg utilities $(DATA_FILES)
 
-serve: main
+policies.yaml:
+	cp sample.yaml policies.yaml
+
+serve: main policies.yaml
 	./main
 
 $(GO_LINT):
@@ -23,7 +27,7 @@ lint: $(GO_LINT)
 	$(GO_LINT) . ./utilities ./warden
 	go vet . ./utilities ./warden
 
-test: utilities/bindata.go lint
+test: policies.yaml utilities/bindata.go lint
 	go test -v -coverprofile=main.coverprofile -coverpkg=. .
 	go test -v -coverprofile=warden.coverprofile -coverpkg=./warden ./warden
 	go test -v -coverprofile=utilities.coverprofile -coverpkg=./utilities ./utilities
