@@ -1,10 +1,11 @@
 package main
 
 import (
+	"log"
 	"os"
 
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"go.mozilla.org/mozlogrus"
 
 	"github.com/leplatrem/iam/utilities"
@@ -15,30 +16,33 @@ func init() {
 	logLevel := os.Getenv("LOG_LEVEL")
 	switch logLevel {
 	case "fatal":
-		log.SetLevel(log.FatalLevel)
+		logrus.SetLevel(logrus.FatalLevel)
 	case "error":
-		log.SetLevel(log.ErrorLevel)
+		logrus.SetLevel(logrus.ErrorLevel)
 	case "warn":
-		log.SetLevel(log.WarnLevel)
+		logrus.SetLevel(logrus.WarnLevel)
 	case "debug":
-		log.SetLevel(log.DebugLevel)
+		logrus.SetLevel(logrus.DebugLevel)
 	default:
 		if gin.Mode() == gin.ReleaseMode {
-			log.SetLevel(log.InfoLevel)
+			logrus.SetLevel(logrus.InfoLevel)
 		} else {
-			log.SetLevel(log.DebugLevel)
+			logrus.SetLevel(logrus.DebugLevel)
 		}
 	}
 }
 
 func setupRouter() *gin.Engine {
+	// We disable mozlogrus for development.
+	// See https://github.com/mozilla-services/go-mozlogrus/issues/2#issuecomment-330495098
+	log.SetOutput(os.Stdout)
+
 	r := gin.New()
 	// Crash free (turns errors into 5XX).
 	r.Use(gin.Recovery())
 
 	// Setup logging.
 	if gin.Mode() == gin.ReleaseMode {
-		// See https://github.com/mozilla-services/go-mozlogrus/issues/2#issuecomment-330495098
 		r.Use(MozLogger())
 		mozlogrus.Enable("iam")
 	} else {
