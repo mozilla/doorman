@@ -28,28 +28,116 @@ Policies are defined in YAML file (default ``./policies.yaml``) as follow:
       remoteIP:
         type: CIDRCondition
         options:
-          - cidr: 192.168.0.1/16
+          cidr: 192.168.0.1/16
 ```
+
+### Conditions
+
+The conditions are **optional** and are used to match field values from the requested context.
+There are several ``type``s of conditions:
+
+**Field comparison**
+
+* type: ``StringEqualCondition``
+
+For example, match ``request.context["country"] == "catalunya"``:
+
+```yaml
+conditions:
+  country:
+    type: StringEqualCondition
+    options:
+      equals: catalunya
+```
+
+**Field pattern**
+
+* type: ``StringMatchCondition``
+
+For example, match ``request.context["bucket"] ~= "blocklists-.*"``:
+
+```yaml
+conditions:
+  bucket:
+    type: StringMatchCondition
+    options:
+      matches: blocklists-.*
+```
+
+**Subject comparison**
+
+* type: ``EqualsSubjectCondition``
+
+For example, allow requests where ``request.context["owner"] == request.subject``:
+
+```yaml
+conditions:
+  owner:
+    type: EqualsSubjectCondition
+```
+
+**IP/Range**
+
+* type: ``CIDRCondition``
+
+For example, match ``request.context["clientIP"]`` with [CIDR notation](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation):
+
+```yaml
+conditions:
+  clientIP:
+    type: CIDRCondition
+    options:
+      # mask 255.255.0.0
+      cidr: 192.168.0.1/16
+```
+
 
 ## Run locally
 
     make serve
 
+
 ## API
 
-**POST /allowed**
+### POST /allowed
+
+**Authentication required** (currently hard-coded as Basic Auth ``foo:bar``)
+
+**Request**:
+
+```json
+POST /allowed HTTP/1.1
+Authorization: Basic Zm9vOmJhcg==
+Content-Type: application/json
+
+{
+  "subject": "users:peter",
+  "action" : "delete",
+  "resource": "resource:articles:ladon-introduction",
+  "context": {
+    "remoteIP": "192.168.0.5"
+  }
+}
 
 ```
-    {
-      "subject": "users:peter",
-      "action" : "delete",
-      "resource": "resource:articles:ladon-introduction",
-      "context": {
-        "remoteIP": "192.168.0.5"
-      }
-    }
 
+**Response**:
+
+```json
+HTTP/1.1 200 OK
+Content-Length: 17
+Content-Type: application/json; charset=utf-8
+Date: Fri, 22 Sep 2017 09:29:49 GMT
+
+{
+  "allowed": true
+}
 ```
+
+
+### More
+
+* [See full API spec](./utilities/openapi.yml)
 
 
 ## Configuration
