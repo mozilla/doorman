@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ory/ladon"
+	manager "github.com/ory/ladon/manager/memory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,6 +32,50 @@ func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
 	// Run the other tests
 	os.Exit(m.Run())
+}
+
+func loadTempFile(warden *ladon.Ladon, content []byte) error {
+	tmpfile, _ := ioutil.TempFile("", "")
+	defer os.Remove(tmpfile.Name()) // clean up
+	tmpfile.Write(content)
+	tmpfile.Close()
+	return LoadPolicies(warden, "bad.yaml")
+}
+
+func TestLoadPolicies(t *testing.T) {
+	warden := &ladon.Ladon{
+		Manager: manager.NewMemoryManager(),
+	}
+
+	// Missing file
+	var err error
+	err = LoadPolicies(warden, "/tmp/unknown.yaml")
+	assert.NotNil(t, err)
+
+	// Bad YAML
+	err = loadTempFile(warden, []byte("$\\--xx"))
+	assert.NotNil(t, err)
+
+	// Bad policies
+	err = loadTempFile(warden, []byte(`
+	-
+	  id: "1"
+	  conditions:
+	    - a
+	    - b
+	`))
+	assert.NotNil(t, err)
+
+	// Duplicated ID
+	err = loadTempFile(warden, []byte(`
+	-
+	  id: "1"
+	  effect: allow
+	-
+	  id: "1"
+	  effect: deny
+	`))
+	assert.NotNil(t, err)
 }
 
 func performRequest(r http.Handler, method, path string, body io.Reader) *httptest.ResponseRecorder {

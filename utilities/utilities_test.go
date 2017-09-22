@@ -68,7 +68,7 @@ func TestVersion(t *testing.T) {
 }
 
 func TestVersionMissing(t *testing.T) {
-	os.Setenv("VERSION_FILE", "/tmp/missing.json")
+	os.Setenv("VERSION_FILE", "")
 
 	r := gin.New()
 	SetupRoutes(r)
