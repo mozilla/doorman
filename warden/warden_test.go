@@ -67,10 +67,7 @@ func TestWardenWrongUsername(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusUnauthorized)
 }
 
-func performAllowed(t *testing.T, body io.Reader, expected int, response interface{}) {
-	r := gin.New()
-	SetupRoutes(r)
-
+func performAllowed(t *testing.T, r *gin.Engine, body io.Reader, expected int, response interface{}) {
 	req, _ := http.NewRequest("POST", "/allowed", body)
 	req.Header.Set("Content-Type", "application/json")
 	req.SetBasicAuth("foo", "bar")
@@ -84,38 +81,74 @@ func performAllowed(t *testing.T, body io.Reader, expected int, response interfa
 }
 
 func TestWardenEmpty(t *testing.T) {
+	r := gin.New()
+	SetupRoutes(r)
+
 	var response ErrorResponse
-	performAllowed(t, nil, http.StatusBadRequest, &response)
+	performAllowed(t, r, nil, http.StatusBadRequest, &response)
 	assert.Equal(t, response.Message, "Missing body")
 }
 
 func TestWardenInvalidJSON(t *testing.T) {
+	r := gin.New()
+	SetupRoutes(r)
+
 	body := bytes.NewBuffer([]byte("{\"random\\;mess\"}"))
 	var response ErrorResponse
-	performAllowed(t, body, http.StatusBadRequest, &response)
+	performAllowed(t, r, body, http.StatusBadRequest, &response)
 	assert.Contains(t, response.Message, "invalid character ';'")
 }
 
 func TestWardenAllowed(t *testing.T) {
-	token, _ := json.Marshal(ladon.Request{
-		Subject:  "foo",
-		Action:   "update",
-		Resource: "server.org/blocklist:onecrl",
-	})
-	body := bytes.NewBuffer(token)
-	var response Response
-	performAllowed(t, body, http.StatusOK, &response)
-	assert.Equal(t, response.Allowed, true)
+	r := gin.New()
+	SetupRoutes(r)
+
+	for _, request := range []*ladon.Request{
+		&ladon.Request{
+			Subject:  "foo",
+			Action:   "update",
+			Resource: "server.org/blocklist:onecrl",
+		},
+		&ladon.Request{
+			Subject:  "foo",
+			Action:   "update",
+			Resource: "server.org/blocklist:onecrl",
+			Context: ladon.Context{
+				"planet": "Mars",  // "mars" is case-sensitive
+			},
+		},
+	} {
+		token, _ := json.Marshal(request)
+		body := bytes.NewBuffer(token)
+		var response Response
+		performAllowed(t, r, body, http.StatusOK, &response)
+		assert.Equal(t, true, response.Allowed)
+	}
 }
 
 func TestWardenNotAllowed(t *testing.T) {
-	token, _ := json.Marshal(ladon.Request{
-		Subject:  "foo",
-		Action:   "delete",
-		Resource: "server.org/blocklist:onecrl",
-	})
-	body := bytes.NewBuffer(token)
-	var response Response
-	performAllowed(t, body, http.StatusOK, &response)
-	assert.Equal(t, response.Allowed, false)
+	r := gin.New()
+	SetupRoutes(r)
+
+	for _, request := range []*ladon.Request{
+		&ladon.Request{
+			Subject:  "foo",
+			Action:   "delete",
+			Resource: "server.org/blocklist:onecrl",
+		},
+		&ladon.Request{
+			Subject:  "foo",
+			Action:   "update",
+			Resource: "server.org/blocklist:onecrl",
+			Context: ladon.Context{
+				"planet": "mars",
+			},
+		},
+	} {
+		token, _ := json.Marshal(request)
+		body := bytes.NewBuffer(token)
+		var response Response
+		performAllowed(t, r, body, http.StatusOK, &response)
+		assert.Equal(t, false, response.Allowed)
+	}
 }

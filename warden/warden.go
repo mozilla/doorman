@@ -1,16 +1,19 @@
 package warden
 
 import (
-	"path/filepath"
-	"net/http"
+	"encoding/json"
 	"io/ioutil"
+	"net/http"
 	"os"
+	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/gin-gonic/gin"
 	"github.com/ory/ladon"
 	manager "github.com/ory/ladon/manager/memory"
 	"gopkg.in/yaml.v2"
+
+	"github.com/leplatrem/iam/utilities"
 )
 
 // ContextKey is the Gin context key to obtain the *ladon.Ladon instance.
@@ -31,8 +34,21 @@ func LoadPolicies(filename string) (ladon.Policies, error) {
 		return nil, err
 	}
 
-	var policies []ladon.DefaultPolicy;
-	if err := yaml.Unmarshal(yamlFile, &policies); err != nil {
+	var policies []*ladon.DefaultPolicy
+
+	// Ladon does not support un/marshaling YAML.
+	// XXX: I chose to convert to JSON first :|
+	// https://github.com/ory/ladon/issues/83
+	var generic interface{}
+	if err := yaml.Unmarshal(yamlFile, &generic); err != nil {
+		return nil, err
+	}
+	asJSON := utilities.Yaml2JSON(generic)
+	jsonData, err := json.Marshal(asJSON)
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(jsonData, &policies); err != nil {
 		return nil, err
 	}
 
@@ -40,10 +56,11 @@ func LoadPolicies(filename string) (ladon.Policies, error) {
 		log.Warning("No policies found.")
 	}
 
-	// XXX: []*ladon.DefaultPolicy does not implement ladon.Policy (missing AllowAccess method)
+	// []*ladon.DefaultPolicy does not implement ladon.Policy (missing AllowAccess method)
+	// This casts as type ladon.Policies ([]ladon.Policy)
 	result := make(ladon.Policies, len(policies))
 	for i, pol := range policies {
-		result[i] = &pol;
+		result[i] = pol
 	}
 	return result, nil
 }
@@ -66,16 +83,12 @@ func SetupRoutes(r *gin.Engine) {
 	}
 
 	for _, pol := range policies {
+		log.Info("Load policy ", pol.GetID() + ": ", pol.GetDescription())
 		err := warden.Manager.Create(pol)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
 	}
-
-	log.WithFields(log.Fields{
-		"filename": policiesFile,
-		"size": len(policies),
-	}).Info("Policies file loaded.")
 
 	// XXX: require Auth (currently hard-coded BasicAuth)
 	authorized := r.Group("", gin.BasicAuth(gin.Accounts{
@@ -108,13 +121,11 @@ func allowedHandler(c *gin.Context) {
 	err := warden.IsAllowed(&accessRequest)
 	allowed := (err == nil)
 
+	// Show some debug information about matched policy.
 	if allowed && gin.Mode() != gin.ReleaseMode {
-		// Show some debug information about matched policy.
 		policies, _ := warden.Manager.FindRequestCandidates(&accessRequest)
-		log.WithFields(log.Fields{
-			"first": policies[0].GetDescription(),
-			"total": len(policies),
-		}).Debug("Policies matched.")
+		matched := policies[0]
+		log.Debug("Policy matched ", matched.GetID() + ": ", matched.GetDescription())
 	}
 
 	c.JSON(http.StatusOK, gin.H{

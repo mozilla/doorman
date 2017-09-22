@@ -19,8 +19,6 @@ Policies are defined in YAML file (default ``./policies.yaml``) as follow:
     actions:
       - delete
       - <[create|update]>
-    effect:
-      - allow
     resources:
       - resources:articles:<.*>
       - resources:printer
@@ -29,6 +27,7 @@ Policies are defined in YAML file (default ``./policies.yaml``) as follow:
         type: CIDRCondition
         options:
           cidr: 192.168.0.1/16
+    effect: allow
 ```
 
 ### Conditions
@@ -137,7 +136,7 @@ Date: Fri, 22 Sep 2017 09:29:49 GMT
 
 ### More
 
-* [See full API spec](./utilities/openapi.yml)
+* [See full API spec](./utilities/openapi.yaml)
 
 
 ## Configuration

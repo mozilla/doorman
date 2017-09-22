@@ -7,5 +7,20 @@
     - update
   resources:
     - <.*>
-  effect:
-    allow
+  effect: allow
+-
+  id: "2"
+  description: This policy rejects everything from planet mars
+  subjects:
+    - <.*>
+  actions:
+    - <.*>
+  resources:
+    - <.*>
+  conditions:
+    planet:
+      type: StringEqualCondition
+      options:
+        equals: mars
+  effect: deny
+

@@ -15,7 +15,7 @@ utilities/bindata.go: $(GO_BINDATA) $(DATA_FILES)
 	$(GO_BINDATA) -o utilities/bindata.go -pkg utilities $(DATA_FILES)
 
 policies.yaml:
-	cp sample.yaml policies.yaml
+	touch policies.yaml
 
 serve: main policies.yaml
 	./main
