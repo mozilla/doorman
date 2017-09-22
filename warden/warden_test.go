@@ -104,17 +104,46 @@ func TestWardenAllowed(t *testing.T) {
 	SetupRoutes(r)
 
 	for _, request := range []*ladon.Request{
+		// Policy #1
 		&ladon.Request{
 			Subject:  "foo",
 			Action:   "update",
 			Resource: "server.org/blocklist:onecrl",
 		},
+		// Policy #2
 		&ladon.Request{
 			Subject:  "foo",
 			Action:   "update",
 			Resource: "server.org/blocklist:onecrl",
 			Context: ladon.Context{
 				"planet": "Mars",  // "mars" is case-sensitive
+			},
+		},
+		// Policy #3
+		&ladon.Request{
+			Subject:  "foo",
+			Action:   "read",
+			Resource: "server.org/blocklist:onecrl",
+			Context: ladon.Context{
+				"ip": "127.0.0.1",
+			},
+		},
+		// Policy #4
+		&ladon.Request{
+			Subject:  "bilbo",
+			Action:   "wear",
+			Resource: "ring",
+			Context: ladon.Context{
+				"owner": "bilbo",
+			},
+		},
+		// Policy #5
+		&ladon.Request{
+			Subject:  "group:admins",
+			Action:   "create",
+			Resource: "dns://",
+			Context: ladon.Context{
+				"domain": "kinto.mozilla.org",
 			},
 		},
 	} {
@@ -131,11 +160,13 @@ func TestWardenNotAllowed(t *testing.T) {
 	SetupRoutes(r)
 
 	for _, request := range []*ladon.Request{
+		// Policy #1
 		&ladon.Request{
 			Subject:  "foo",
 			Action:   "delete",
 			Resource: "server.org/blocklist:onecrl",
 		},
+		// Policy #2
 		&ladon.Request{
 			Subject:  "foo",
 			Action:   "update",
@@ -144,6 +175,35 @@ func TestWardenNotAllowed(t *testing.T) {
 				"planet": "mars",
 			},
 		},
+		// Policy #3
+		&ladon.Request{
+			Subject:  "foo",
+			Action:   "read",
+			Resource: "server.org/blocklist:onecrl",
+			Context: ladon.Context{
+				"ip": "10.0.0.1",
+			},
+		},
+		// Policy #4
+		&ladon.Request{
+			Subject:  "gollum",
+			Action:   "wear",
+			Resource: "ring",
+			Context: ladon.Context{
+				"owner": "bilbo",
+			},
+		},
+		// Policy #5
+		&ladon.Request{
+			Subject:  "group:admins",
+			Action:   "create",
+			Resource: "dns://",
+			Context: ladon.Context{
+				"domain": "kinto-storage.org",
+			},
+		},
+		// Default
+		&ladon.Request{},
 	} {
 		token, _ := json.Marshal(request)
 		body := bytes.NewBuffer(token)

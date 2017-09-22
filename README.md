@@ -30,6 +30,10 @@ Policies are defined in YAML file (default ``./policies.yaml``) as follow:
     effect: allow
 ```
 
+Use `effect: deny` to deny explicitly.
+
+Otherwise, requests that don't match any rule are denied.
+
 ### Conditions
 
 The conditions are **optional** and are used to match field values from the requested context.

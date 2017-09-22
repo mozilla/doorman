@@ -23,4 +23,46 @@
       options:
         equals: mars
   effect: deny
-
+-
+  id: "3"
+  description: This policy allow read from localhost
+  subjects:
+    - <.*>
+  actions:
+    - read
+  resources:
+    - <.*>
+  conditions:
+    ip:
+      type: CIDRCondition
+      options:
+          cidr: 127.0.0.0/8
+  effect: allow
+-
+  id: "4"
+  description: Only owner
+  subjects:
+    - <.*>
+  actions:
+    - <.*>
+  resources:
+    - <.*>
+  conditions:
+    owner:
+      type: EqualsSubjectCondition
+  effect: allow
+-
+  id: "5"
+  description: Admins on Mozilla domain
+  subjects:
+    - group:admins
+  actions:
+    - create
+  resources:
+    - <.*>
+  conditions:
+    domain:
+      type: StringMatchCondition
+      options:
+        matches: .*\.mozilla\.org
+  effect: allow
