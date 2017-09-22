@@ -106,8 +106,18 @@ func allowedHandler(c *gin.Context) {
 	}
 
 	err := warden.IsAllowed(&accessRequest)
+	allowed := (err == nil)
+
+	if allowed && gin.Mode() != gin.ReleaseMode {
+		// Show some debug information about matched policy.
+		policies, _ := warden.Manager.FindRequestCandidates(&accessRequest)
+		log.WithFields(log.Fields{
+			"first": policies[0].GetDescription(),
+			"total": len(policies),
+		}).Debug("Policies matched.")
+	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"allowed": (err == nil),
+		"allowed": allowed,
 	})
 }

@@ -1,12 +1,35 @@
 package main
 
 import (
+	"os"
+
 	"github.com/gin-gonic/gin"
 	"go.mozilla.org/mozlogrus"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/leplatrem/iam/utilities"
 	"github.com/leplatrem/iam/warden"
 )
+
+func init() {
+	logLevel := os.Getenv("LOG_LEVEL")
+	switch logLevel {
+	case "fatal":
+		log.SetLevel(log.FatalLevel)
+	case "error":
+		log.SetLevel(log.ErrorLevel)
+	case "warn":
+		log.SetLevel(log.WarnLevel)
+	case "debug":
+		log.SetLevel(log.DebugLevel)
+	default:
+		if gin.Mode() == gin.ReleaseMode {
+			log.SetLevel(log.InfoLevel)
+		} else {
+			log.SetLevel(log.DebugLevel)
+		}
+	}
+}
 
 func setupRouter() *gin.Engine {
 	r := gin.New()

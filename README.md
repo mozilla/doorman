@@ -146,6 +146,7 @@ Via environment variables:
 
 * ``PORT``: listen (default: ``8080``)
 * ``GIN_MODE``: server mode (``release`` or default ``debug``)
+* ``LOG_LEVEL``: logging level (``fatal|error|warn|info|debug``, default: ``info`` with ``GIN_MODE=release`` else ``debug``)
 * ``VERSION_FILE``: location of JSON file with version information (default: ``./version.json``)
 * ``POLICIES_FILE``: location of YAML file with policies (default: ``./policies.yaml``)
 
@@ -155,6 +156,7 @@ Via environment variables:
 ## Run tests
 
     make test
+
 
 ## License
 
