@@ -1,4 +1,4 @@
 main
 utilities/bindata.go
-*.coverprofile
+coverage.txt
 policies.yaml
