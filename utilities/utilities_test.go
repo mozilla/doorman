@@ -79,12 +79,12 @@ func TestVersionMissing(t *testing.T) {
 
 func TestOpenAPI(t *testing.T) {
 	type Response struct {
-		Swagger string
+		Openapi string
 	}
 	var response Response
 	testJSONResponse(t, "/__api__", &response)
 
-	assert.Equal(t, response.Swagger, "2.0")
+	assert.Equal(t, response.Openapi, "3.0.0")
 }
 
 func TestContribute(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"go.mozilla.org/mozlogrus"
 	log "github.com/sirupsen/logrus"
+	"go.mozilla.org/mozlogrus"
 
 	"github.com/leplatrem/iam/utilities"
 	"github.com/leplatrem/iam/warden"

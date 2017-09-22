@@ -104,8 +104,6 @@ conditions:
 
 ### POST /allowed
 
-**Authentication required** (currently hard-coded as Basic Auth ``foo:bar``)
-
 **Request**:
 
 ```json

@@ -9,8 +9,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ory/ladon"
 	"github.com/gin-gonic/gin"
+	"github.com/ory/ladon"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,52 +32,27 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func performRequest(r http.Handler, method, path string) *httptest.ResponseRecorder {
-	req, _ := http.NewRequest(method, path, nil)
+func performRequest(r http.Handler, method, path string, body io.Reader) *httptest.ResponseRecorder {
+	req, _ := http.NewRequest(method, path, body)
+	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 	return w
+}
+
+func performAllowed(t *testing.T, r *gin.Engine, body io.Reader, expected int, response interface{}) {
+	w := performRequest(r, "POST", "/allowed", body)
+	require.Equal(t, expected, w.Code)
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	require.Nil(t, err)
 }
 
 func TestWardenGet(t *testing.T) {
 	r := gin.New()
 	SetupRoutes(r)
 
-	w := performRequest(r, "GET", "/allowed")
+	w := performRequest(r, "GET", "/allowed", nil)
 	assert.Equal(t, w.Code, http.StatusNotFound)
-}
-
-func TestWardenAnonymous(t *testing.T) {
-	r := gin.New()
-	SetupRoutes(r)
-
-	w := performRequest(r, "POST", "/allowed")
-	assert.Equal(t, w.Code, http.StatusUnauthorized)
-}
-
-func TestWardenWrongUsername(t *testing.T) {
-	r := gin.New()
-	SetupRoutes(r)
-
-	req, _ := http.NewRequest("POST", "/allowed", nil)
-	req.SetBasicAuth("alice", "chains")
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, w.Code, http.StatusUnauthorized)
-}
-
-func performAllowed(t *testing.T, r *gin.Engine, body io.Reader, expected int, response interface{}) {
-	req, _ := http.NewRequest("POST", "/allowed", body)
-	req.Header.Set("Content-Type", "application/json")
-	req.SetBasicAuth("foo", "bar")
-
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	require.Equal(t, expected, w.Code)
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	require.Nil(t, err)
 }
 
 func TestWardenEmpty(t *testing.T) {
@@ -105,22 +80,22 @@ func TestWardenAllowed(t *testing.T) {
 
 	for _, request := range []*ladon.Request{
 		// Policy #1
-		&ladon.Request{
+		{
 			Subject:  "foo",
 			Action:   "update",
 			Resource: "server.org/blocklist:onecrl",
 		},
 		// Policy #2
-		&ladon.Request{
+		{
 			Subject:  "foo",
 			Action:   "update",
 			Resource: "server.org/blocklist:onecrl",
 			Context: ladon.Context{
-				"planet": "Mars",  // "mars" is case-sensitive
+				"planet": "Mars", // "mars" is case-sensitive
 			},
 		},
 		// Policy #3
-		&ladon.Request{
+		{
 			Subject:  "foo",
 			Action:   "read",
 			Resource: "server.org/blocklist:onecrl",
@@ -129,7 +104,7 @@ func TestWardenAllowed(t *testing.T) {
 			},
 		},
 		// Policy #4
-		&ladon.Request{
+		{
 			Subject:  "bilbo",
 			Action:   "wear",
 			Resource: "ring",
@@ -138,7 +113,7 @@ func TestWardenAllowed(t *testing.T) {
 			},
 		},
 		// Policy #5
-		&ladon.Request{
+		{
 			Subject:  "group:admins",
 			Action:   "create",
 			Resource: "dns://",
@@ -161,13 +136,13 @@ func TestWardenNotAllowed(t *testing.T) {
 
 	for _, request := range []*ladon.Request{
 		// Policy #1
-		&ladon.Request{
+		{
 			Subject:  "foo",
 			Action:   "delete",
 			Resource: "server.org/blocklist:onecrl",
 		},
 		// Policy #2
-		&ladon.Request{
+		{
 			Subject:  "foo",
 			Action:   "update",
 			Resource: "server.org/blocklist:onecrl",
@@ -176,7 +151,7 @@ func TestWardenNotAllowed(t *testing.T) {
 			},
 		},
 		// Policy #3
-		&ladon.Request{
+		{
 			Subject:  "foo",
 			Action:   "read",
 			Resource: "server.org/blocklist:onecrl",
@@ -185,7 +160,7 @@ func TestWardenNotAllowed(t *testing.T) {
 			},
 		},
 		// Policy #4
-		&ladon.Request{
+		{
 			Subject:  "gollum",
 			Action:   "wear",
 			Resource: "ring",
@@ -194,7 +169,7 @@ func TestWardenNotAllowed(t *testing.T) {
 			},
 		},
 		// Policy #5
-		&ladon.Request{
+		{
 			Subject:  "group:admins",
 			Action:   "create",
 			Resource: "dns://",
@@ -203,7 +178,7 @@ func TestWardenNotAllowed(t *testing.T) {
 			},
 		},
 		// Default
-		&ladon.Request{},
+		{},
 	} {
 		token, _ := json.Marshal(request)
 		body := bytes.NewBuffer(token)

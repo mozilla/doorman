@@ -7,10 +7,10 @@ import (
 	"os"
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/gin-gonic/gin"
 	"github.com/ory/ladon"
 	manager "github.com/ory/ladon/manager/memory"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 
 	"github.com/leplatrem/iam/utilities"
@@ -28,10 +28,10 @@ func LadonMiddleware(warden *ladon.Ladon) gin.HandlerFunc {
 }
 
 // LoadPolicies reads policies from the YAML file.
-func LoadPolicies(filename string) (ladon.Policies, error) {
+func LoadPolicies(warden *ladon.Ladon, filename string) error {
 	yamlFile, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var policies []*ladon.DefaultPolicy
@@ -41,28 +41,30 @@ func LoadPolicies(filename string) (ladon.Policies, error) {
 	// https://github.com/ory/ladon/issues/83
 	var generic interface{}
 	if err := yaml.Unmarshal(yamlFile, &generic); err != nil {
-		return nil, err
+		return err
 	}
 	asJSON := utilities.Yaml2JSON(generic)
 	jsonData, err := json.Marshal(asJSON)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if err := json.Unmarshal(jsonData, &policies); err != nil {
-		return nil, err
+		return err
 	}
 
 	if len(policies) == 0 {
 		log.Warning("No policies found.")
 	}
 
-	// []*ladon.DefaultPolicy does not implement ladon.Policy (missing AllowAccess method)
-	// This casts as type ladon.Policies ([]ladon.Policy)
-	result := make(ladon.Policies, len(policies))
-	for i, pol := range policies {
-		result[i] = pol
+	for _, pol := range policies {
+		log.Info("Load policy ", pol.GetID()+": ", pol.GetDescription())
+		err := warden.Manager.Create(pol)
+		if err != nil {
+			return err
+		}
 	}
-	return result, nil
+
+	return nil
 }
 
 // SetupRoutes adds warden views to query the policies.
@@ -77,27 +79,12 @@ func SetupRoutes(r *gin.Engine) {
 		here, _ := os.Getwd()
 		policiesFile = filepath.Join(here, "policies.yaml")
 	}
-	policies, err := LoadPolicies(policiesFile)
-	if err != nil {
+	if err := LoadPolicies(warden, policiesFile); err != nil {
 		log.Fatal(err.Error())
 	}
 
-	for _, pol := range policies {
-		log.Info("Load policy ", pol.GetID() + ": ", pol.GetDescription())
-		err := warden.Manager.Create(pol)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-	}
-
-	// XXX: require Auth (currently hard-coded BasicAuth)
-	authorized := r.Group("", gin.BasicAuth(gin.Accounts{
-		"foo": "bar",
-	}))
-
-	authorized.Use(LadonMiddleware(warden))
-
-	authorized.POST("/allowed", allowedHandler)
+	r.Use(LadonMiddleware(warden))
+	r.POST("/allowed", allowedHandler)
 }
 
 func allowedHandler(c *gin.Context) {
@@ -125,7 +112,7 @@ func allowedHandler(c *gin.Context) {
 	if allowed && gin.Mode() != gin.ReleaseMode {
 		policies, _ := warden.Manager.FindRequestCandidates(&accessRequest)
 		matched := policies[0]
-		log.Debug("Policy matched ", matched.GetID() + ": ", matched.GetDescription())
+		log.Debug("Policy matched ", matched.GetID()+": ", matched.GetDescription())
 	}
 
 	c.JSON(http.StatusOK, gin.H{
