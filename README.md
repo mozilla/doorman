@@ -5,6 +5,8 @@ IAM
 [![Coverage Status](https://coveralls.io/repos/github/leplatrem/iam/badge.svg?branch=master)](https://coveralls.io/github/leplatrem/iam?branch=master)
 [![Go Report](https://goreportcard.com/badge/github.com/leplatrem/iam)](https://goreportcard.com/report/github.com/leplatrem/iam)
 
+IAM is an **authorization micro-service** that allows to checks if an arbitrary subject is allowed to perform an action on a resource, based on a set of rules (policies). It is inspired by [AWS IAM Policies](http://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html).
+
 ## Policies
 
 Policies are defined in YAML file (default ``./policies.yaml``) as follow:
@@ -13,9 +15,9 @@ Policies are defined in YAML file (default ``./policies.yaml``) as follow:
   -
     description: One policy to rule them all.
     subjects:
-      - users:<[peter|ken]>
-      - users:maria
-      - groups:admins
+      - maria
+      - <[peter|ken]>
+      - group:admin
     actions:
       - delete
       - <[create|update]>
@@ -33,6 +35,8 @@ Policies are defined in YAML file (default ``./policies.yaml``) as follow:
 Use `effect: deny` to deny explicitly.
 
 Otherwise, requests that don't match any rule are denied.
+
+Regular expressions begin with ``<`` and end with ``>``.
 
 ### Conditions
 
@@ -94,19 +98,15 @@ conditions:
       cidr: 192.168.0.1/16
 ```
 
-
-## Run locally
-
-    make serve
-
-
 ## API
 
 ### POST /allowed
 
+Is this ``subject`` allowed to perform this ``action`` on this ``resource`` in this ``context``?
+
 **Request**:
 
-```json
+```HTTP
 POST /allowed HTTP/1.1
 Authorization: Basic Zm9vOmJhcg==
 Content-Type: application/json
@@ -124,11 +124,9 @@ Content-Type: application/json
 
 **Response**:
 
-```json
+```HTTP
 HTTP/1.1 200 OK
-Content-Length: 17
-Content-Type: application/json; charset=utf-8
-Date: Fri, 22 Sep 2017 09:29:49 GMT
+Content-Type: application/json
 
 {
   "allowed": true
@@ -152,6 +150,11 @@ Via environment variables:
 * ``POLICIES_FILE``: location of YAML file with policies (default: ``./policies.yaml``)
 
 > Note: the ``Dockerfile`` contains different default values, suited for production.
+
+
+## Run locally
+
+    make serve
 
 
 ## Run tests
