@@ -19,6 +19,8 @@ import (
 // ContextKey is the Gin context key to obtain the *ladon.Ladon instance.
 const ContextKey string = "warden"
 
+const maxInt int64 = 1<<63 - 1
+
 // LadonMiddleware adds the ladon.Ladon instance to the Gin context.
 func LadonMiddleware(warden *ladon.Ladon) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -56,6 +58,17 @@ func LoadPolicies(warden *ladon.Ladon, filename string) error {
 		log.Warning("No policies found.")
 	}
 
+	// Clear every existing policy, and load new ones.
+	existing, err := warden.Manager.GetAll(0, maxInt)
+	if err != nil {
+		return err
+	}
+	for _, pol := range existing {
+		err := warden.Manager.Delete(pol.GetID())
+		if err != nil {
+			return err
+		}
+	}
 	for _, pol := range policies {
 		log.Info("Load policy ", pol.GetID()+": ", pol.GetDescription())
 		err := warden.Manager.Create(pol)
