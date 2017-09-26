@@ -9,10 +9,10 @@ import (
 )
 
 var errorNumber = map[int]int{
-	http.StatusOK: 0,
+	http.StatusOK:           0,
 	http.StatusUnauthorized: 104,
-	http.StatusForbidden: 121,
-	http.StatusBadRequest: 109,
+	http.StatusForbidden:    121,
+	http.StatusBadRequest:   109,
 }
 
 // MozLogger is a Gin middleware to log request summary following Mozilla Log format.

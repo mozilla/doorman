@@ -2,9 +2,7 @@ language: go
 
 install:
   - go get github.com/mattn/goveralls
-  - go get github.com/modocache/gover
 
 script:
-  - make test
-  - gover
-  - goveralls -coverprofile=gover.coverprofile -service=travis-ci
+  - make test-coverage
+  - goveralls -coverprofile=coverage.txt -service=travis-ci

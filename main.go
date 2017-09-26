@@ -5,11 +5,32 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"go.mozilla.org/mozlogrus"
 
 	"github.com/leplatrem/iam/utilities"
 	"github.com/leplatrem/iam/warden"
 )
+
+func init() {
+	logLevel := os.Getenv("LOG_LEVEL")
+	switch logLevel {
+	case "fatal":
+		logrus.SetLevel(logrus.FatalLevel)
+	case "error":
+		logrus.SetLevel(logrus.ErrorLevel)
+	case "warn":
+		logrus.SetLevel(logrus.WarnLevel)
+	case "debug":
+		logrus.SetLevel(logrus.DebugLevel)
+	default:
+		if gin.Mode() == gin.ReleaseMode {
+			logrus.SetLevel(logrus.InfoLevel)
+		} else {
+			logrus.SetLevel(logrus.DebugLevel)
+		}
+	}
+}
 
 func setupRouter() *gin.Engine {
 	// We disable mozlogrus for development.
