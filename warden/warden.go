@@ -29,8 +29,30 @@ func LadonMiddleware(warden *ladon.Ladon) gin.HandlerFunc {
 	}
 }
 
+// New instantiates a new warden.
+func New() *ladon.Ladon {
+	return &ladon.Ladon{
+		Manager: manager.NewMemoryManager(),
+	}
+}
+
+// PoliciesFile returns the path to the policies file.
+func PoliciesFile() string {
+	policiesFile := os.Getenv("POLICIES_FILE")
+	if policiesFile == "" {
+		// Look in current working directory.
+		here, _ := os.Getwd()
+		policiesFile = filepath.Join(here, "policies.yaml")
+	}
+	return policiesFile
+}
+
 // LoadPolicies reads policies from the YAML file.
 func LoadPolicies(warden *ladon.Ladon, filename string) error {
+	if filename == "" {
+		filename = PoliciesFile()
+	}
+
 	yamlFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
@@ -81,21 +103,7 @@ func LoadPolicies(warden *ladon.Ladon, filename string) error {
 }
 
 // SetupRoutes adds warden views to query the policies.
-func SetupRoutes(r *gin.Engine) {
-	warden := &ladon.Ladon{
-		Manager: manager.NewMemoryManager(),
-	}
-
-	policiesFile := os.Getenv("POLICIES_FILE")
-	if policiesFile == "" {
-		// Look in current working directory.
-		here, _ := os.Getwd()
-		policiesFile = filepath.Join(here, "policies.yaml")
-	}
-	if err := LoadPolicies(warden, policiesFile); err != nil {
-		log.Fatal(err.Error())
-	}
-
+func SetupRoutes(r *gin.Engine, warden *ladon.Ladon) {
 	r.Use(LadonMiddleware(warden))
 	r.POST("/allowed", allowedHandler)
 }

@@ -6,6 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/leplatrem/iam/warden"
 )
 
 func TestMain(m *testing.M) {
@@ -16,6 +18,6 @@ func TestMain(m *testing.M) {
 }
 
 func TestSetupRouter(t *testing.T) {
-	r := setupRouter()
+	r := setupRouter(warden.New())
 	assert.Equal(t, 6, len(r.Routes()))
 }
