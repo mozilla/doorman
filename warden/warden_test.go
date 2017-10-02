@@ -27,6 +27,8 @@ type ErrorResponse struct {
 
 const samplePoliciesFile string = "../sample.yaml"
 
+var defaultConfig = Config{PoliciesFilename: "../policies.yaml"}
+
 func TestMain(m *testing.M) {
 	//Set Gin to Test Mode
 	gin.SetMode(gin.TestMode)
@@ -95,7 +97,7 @@ func performAllowed(t *testing.T, r *gin.Engine, body io.Reader, expected int, r
 
 func TestWardenGet(t *testing.T) {
 	r := gin.New()
-	SetupRoutes(r, New())
+	SetupRoutes(r, New(&defaultConfig))
 
 	w := performRequest(r, "GET", "/allowed", nil)
 	assert.Equal(t, w.Code, http.StatusNotFound)
@@ -103,7 +105,7 @@ func TestWardenGet(t *testing.T) {
 
 func TestWardenEmpty(t *testing.T) {
 	r := gin.New()
-	SetupRoutes(r, New())
+	SetupRoutes(r, New(&defaultConfig))
 
 	var response ErrorResponse
 	performAllowed(t, r, nil, http.StatusBadRequest, &response)
@@ -112,7 +114,7 @@ func TestWardenEmpty(t *testing.T) {
 
 func TestWardenInvalidJSON(t *testing.T) {
 	r := gin.New()
-	SetupRoutes(r, New())
+	SetupRoutes(r, New(&defaultConfig))
 
 	body := bytes.NewBuffer([]byte("{\"random\\;mess\"}"))
 	var response ErrorResponse
@@ -122,7 +124,7 @@ func TestWardenInvalidJSON(t *testing.T) {
 
 func TestWardenAllowed(t *testing.T) {
 	r := gin.New()
-	warden := New()
+	warden := New(&defaultConfig)
 	LoadPolicies(warden, samplePoliciesFile)
 	SetupRoutes(r, warden)
 
@@ -180,7 +182,7 @@ func TestWardenAllowed(t *testing.T) {
 
 func TestWardenNotAllowed(t *testing.T) {
 	r := gin.New()
-	warden := New()
+	warden := New(&defaultConfig)
 	LoadPolicies(warden, samplePoliciesFile)
 	SetupRoutes(r, warden)
 

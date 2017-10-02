@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ory/ladon"
 	"github.com/sirupsen/logrus"
 	"go.mozilla.org/mozlogrus"
 
@@ -33,7 +32,7 @@ func init() {
 	}
 }
 
-func setupRouter(w *ladon.Ladon) *gin.Engine {
+func setupRouter() *gin.Engine {
 	// We disable mozlogrus for development.
 	// See https://github.com/mozilla-services/go-mozlogrus/issues/2#issuecomment-330495098
 	log.SetOutput(os.Stdout)
@@ -50,19 +49,19 @@ func setupRouter(w *ladon.Ladon) *gin.Engine {
 		r.Use(gin.Logger())
 	}
 
-	utilities.SetupRoutes(r)
+	// Setup warden with default config (read policies from disk)
+	config := warden.Config{
+		PoliciesFilename: "",
+	}
+	w := warden.New(&config)
 	warden.SetupRoutes(r, w)
+
+	utilities.SetupRoutes(r)
 
 	return r
 }
 
 func main() {
-	// Load policies file from disk.
-	w := warden.New()
-	if err := warden.LoadPolicies(w, ""); err != nil {
-		logrus.Fatal(err.Error())
-	}
-
-	r := setupRouter(w)
+	r := setupRouter()
 	r.Run() // listen and serve on 0.0.0.0:$PORT (:8080)
 }

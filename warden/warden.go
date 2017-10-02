@@ -16,41 +16,42 @@ import (
 	"github.com/leplatrem/iam/utilities"
 )
 
+// DefaultPoliciesFilename is the default policies filename.
+const DefaultPoliciesFilename string = "policies.yaml"
+
 // ContextKey is the Gin context key to obtain the *ladon.Ladon instance.
 const ContextKey string = "warden"
 
 const maxInt int64 = 1<<63 - 1
 
-// LadonMiddleware adds the ladon.Ladon instance to the Gin context.
-func LadonMiddleware(warden *ladon.Ladon) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Set(ContextKey, warden)
-		c.Next()
-	}
+// Config contains the settings of the warden.
+type Config struct {
+	PoliciesFilename string
 }
 
 // New instantiates a new warden.
-func New() *ladon.Ladon {
-	return &ladon.Ladon{
+func New(config *Config) *ladon.Ladon {
+	w := &ladon.Ladon{
 		Manager: manager.NewMemoryManager(),
 	}
-}
 
-// PoliciesFile returns the path to the policies file.
-func PoliciesFile() string {
-	policiesFile := os.Getenv("POLICIES_FILE")
-	if policiesFile == "" {
-		// Look in current working directory.
-		here, _ := os.Getwd()
-		policiesFile = filepath.Join(here, "policies.yaml")
+	if err := LoadPolicies(w, config.PoliciesFilename); err != nil {
+		log.Fatal(err.Error())
 	}
-	return policiesFile
+
+	return w
 }
 
 // LoadPolicies reads policies from the YAML file.
 func LoadPolicies(warden *ladon.Ladon, filename string) error {
+	// If not specified, read it from ENV or read local `.policies.yaml`
 	if filename == "" {
-		filename = PoliciesFile()
+		filename = os.Getenv("POLICIES_FILE")
+		if filename == "" {
+			// Look in current working directory.
+			here, _ := os.Getwd()
+			filename = filepath.Join(here, DefaultPoliciesFilename)
+		}
 	}
 
 	yamlFile, err := ioutil.ReadFile(filename)
@@ -100,6 +101,14 @@ func LoadPolicies(warden *ladon.Ladon, filename string) error {
 	}
 
 	return nil
+}
+
+// LadonMiddleware adds the ladon.Ladon instance to the Gin context.
+func LadonMiddleware(warden *ladon.Ladon) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set(ContextKey, warden)
+		c.Next()
+	}
 }
 
 // SetupRoutes adds warden views to query the policies.
