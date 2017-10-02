@@ -49,8 +49,14 @@ func setupRouter() *gin.Engine {
 		r.Use(gin.Logger())
 	}
 
+	// Setup warden with default config (read policies from disk)
+	config := &warden.Config{
+		PoliciesFilename: "",
+	}
+	w := warden.New(config)
+	warden.SetupRoutes(r, w)
+
 	utilities.SetupRoutes(r)
-	warden.SetupRoutes(r)
 
 	return r
 }

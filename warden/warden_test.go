@@ -12,7 +12,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ory/ladon"
-	manager "github.com/ory/ladon/manager/memory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -25,31 +24,31 @@ type ErrorResponse struct {
 	Message string
 }
 
+const samplePoliciesFile string = "../sample.yaml"
+
+var defaultConfig = Config{PoliciesFilename: "../policies.yaml"}
+
 func TestMain(m *testing.M) {
-	// Use sample file.
-	os.Setenv("POLICIES_FILE", "../sample.yaml")
 	//Set Gin to Test Mode
 	gin.SetMode(gin.TestMode)
 	// Run the other tests
 	os.Exit(m.Run())
 }
 
-func loadTempFile(warden *ladon.Ladon, content []byte) error {
+func loadTempFile(warden *Warden, content []byte) error {
 	tmpfile, _ := ioutil.TempFile("", "")
 	defer os.Remove(tmpfile.Name()) // clean up
 	tmpfile.Write(content)
 	tmpfile.Close()
-	return LoadPolicies(warden, "bad.yaml")
+	return warden.LoadPolicies(tmpfile.Name())
 }
 
 func TestLoadPolicies(t *testing.T) {
-	warden := &ladon.Ladon{
-		Manager: manager.NewMemoryManager(),
-	}
+	warden := New(&Config{"../policies.yaml"})
 
 	// Missing file
 	var err error
-	err = LoadPolicies(warden, "/tmp/unknown.yaml")
+	err = warden.LoadPolicies("/tmp/unknown.yaml")
 	assert.NotNil(t, err)
 
 	// Bad YAML
@@ -95,7 +94,7 @@ func performAllowed(t *testing.T, r *gin.Engine, body io.Reader, expected int, r
 
 func TestWardenGet(t *testing.T) {
 	r := gin.New()
-	SetupRoutes(r)
+	SetupRoutes(r, New(&defaultConfig))
 
 	w := performRequest(r, "GET", "/allowed", nil)
 	assert.Equal(t, w.Code, http.StatusNotFound)
@@ -103,7 +102,7 @@ func TestWardenGet(t *testing.T) {
 
 func TestWardenEmpty(t *testing.T) {
 	r := gin.New()
-	SetupRoutes(r)
+	SetupRoutes(r, New(&defaultConfig))
 
 	var response ErrorResponse
 	performAllowed(t, r, nil, http.StatusBadRequest, &response)
@@ -112,7 +111,7 @@ func TestWardenEmpty(t *testing.T) {
 
 func TestWardenInvalidJSON(t *testing.T) {
 	r := gin.New()
-	SetupRoutes(r)
+	SetupRoutes(r, New(&defaultConfig))
 
 	body := bytes.NewBuffer([]byte("{\"random\\;mess\"}"))
 	var response ErrorResponse
@@ -122,7 +121,9 @@ func TestWardenInvalidJSON(t *testing.T) {
 
 func TestWardenAllowed(t *testing.T) {
 	r := gin.New()
-	SetupRoutes(r)
+	warden := New(&defaultConfig)
+	warden.LoadPolicies(samplePoliciesFile)
+	SetupRoutes(r, warden)
 
 	for _, request := range []*ladon.Request{
 		// Policy #1
@@ -178,7 +179,9 @@ func TestWardenAllowed(t *testing.T) {
 
 func TestWardenNotAllowed(t *testing.T) {
 	r := gin.New()
-	SetupRoutes(r)
+	warden := New(&defaultConfig)
+	warden.LoadPolicies(samplePoliciesFile)
+	SetupRoutes(r, warden)
 
 	for _, request := range []*ladon.Request{
 		// Policy #1
