@@ -12,7 +12,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ory/ladon"
-	manager "github.com/ory/ladon/manager/memory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,22 +35,20 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func loadTempFile(warden *ladon.Ladon, content []byte) error {
+func loadTempFile(warden *Warden, content []byte) error {
 	tmpfile, _ := ioutil.TempFile("", "")
 	defer os.Remove(tmpfile.Name()) // clean up
 	tmpfile.Write(content)
 	tmpfile.Close()
-	return LoadPolicies(warden, "bad.yaml")
+	return warden.LoadPolicies(tmpfile.Name())
 }
 
 func TestLoadPolicies(t *testing.T) {
-	warden := &ladon.Ladon{
-		Manager: manager.NewMemoryManager(),
-	}
+	warden := New(&Config{"../policies.yaml"})
 
 	// Missing file
 	var err error
-	err = LoadPolicies(warden, "/tmp/unknown.yaml")
+	err = warden.LoadPolicies("/tmp/unknown.yaml")
 	assert.NotNil(t, err)
 
 	// Bad YAML
@@ -125,7 +122,7 @@ func TestWardenInvalidJSON(t *testing.T) {
 func TestWardenAllowed(t *testing.T) {
 	r := gin.New()
 	warden := New(&defaultConfig)
-	LoadPolicies(warden, samplePoliciesFile)
+	warden.LoadPolicies(samplePoliciesFile)
 	SetupRoutes(r, warden)
 
 	for _, request := range []*ladon.Request{
@@ -183,7 +180,7 @@ func TestWardenAllowed(t *testing.T) {
 func TestWardenNotAllowed(t *testing.T) {
 	r := gin.New()
 	warden := New(&defaultConfig)
-	LoadPolicies(warden, samplePoliciesFile)
+	warden.LoadPolicies(samplePoliciesFile)
 	SetupRoutes(r, warden)
 
 	for _, request := range []*ladon.Request{
