@@ -26,7 +26,10 @@ type ErrorResponse struct {
 
 const samplePoliciesFile string = "../sample.yaml"
 
-var defaultConfig = Config{PoliciesFilename: "../policies.yaml"}
+var defaultConfig = Config{
+	PoliciesFilename: "../policies.yaml",
+	VerifyJWT:        false,
+}
 
 func TestMain(m *testing.M) {
 	//Set Gin to Test Mode
@@ -44,7 +47,7 @@ func loadTempFile(warden *Warden, content []byte) error {
 }
 
 func TestLoadPolicies(t *testing.T) {
-	warden := New(&Config{"../policies.yaml"})
+	warden := New(&Config{"../policies.yaml", false})
 
 	// Missing file
 	var err error

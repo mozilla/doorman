@@ -11,6 +11,7 @@ import (
 	"github.com/ory/ladon"
 	manager "github.com/ory/ladon/manager/memory"
 	log "github.com/sirupsen/logrus"
+	jwt "gopkg.in/square/go-jose.v2/jwt"
 	"gopkg.in/yaml.v2"
 
 	"github.com/leplatrem/iam/utilities"
@@ -27,12 +28,14 @@ const maxInt int64 = 1<<63 - 1
 // Config contains the settings of the warden.
 type Config struct {
 	PoliciesFilename string
+	VerifyJWT        bool
 }
 
 // Warden is the backend in charge of checking requests against policies.
 type Warden struct {
 	l       ladon.Ladon
 	Manager ladon.Manager
+	Config  *Config
 }
 
 // New instantiates a new warden.
@@ -40,7 +43,7 @@ func New(config *Config) *Warden {
 	l := ladon.Ladon{
 		Manager: manager.NewMemoryManager(),
 	}
-	w := &Warden{l, l.Manager}
+	w := &Warden{l, l.Manager, config}
 	if err := w.LoadPolicies(config.PoliciesFilename); err != nil {
 		log.Fatal(err.Error())
 	}
@@ -124,6 +127,9 @@ func ContextMiddleware(warden *Warden) gin.HandlerFunc {
 // SetupRoutes adds warden views to query the policies.
 func SetupRoutes(r *gin.Engine, warden *Warden) {
 	r.Use(ContextMiddleware(warden))
+	if warden.Config.VerifyJWT {
+		r.Use(VerifyJWTMiddleware())
+	}
 	r.POST("/allowed", allowedHandler)
 }
 
@@ -135,8 +141,6 @@ func allowedHandler(c *gin.Context) {
 		return
 	}
 
-	warden := c.MustGet(ContextKey).(*Warden)
-
 	var accessRequest ladon.Request
 	if err := c.BindJSON(&accessRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -145,6 +149,14 @@ func allowedHandler(c *gin.Context) {
 		return
 	}
 
+	payloadJWT, ok := c.Get("JWT")
+	if ok {
+		// With VerifyJWTMiddleware, subject is overriden by JWT.
+		// (disabled for tests)
+		accessRequest.Subject = payloadJWT.(*jwt.Claims).Subject
+	}
+
+	warden := c.MustGet(ContextKey).(*Warden)
 	err := warden.IsAllowed(&accessRequest)
 	allowed := (err == nil)
 
