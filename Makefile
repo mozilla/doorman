@@ -5,7 +5,7 @@ SRC := *.go ./utilities/*.go ./warden/*.go
 PACKAGES := ./ ./utilities/ ./warden/
 
 main: utilities/bindata.go $(SRC)
-	CGO_ENABLED=0 go build -o main $(SRC)
+	CGO_ENABLED=0 go build -o main *.go
 
 clean:
 	rm -f main coverage.txt utilities/bindata.go
