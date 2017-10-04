@@ -22,8 +22,8 @@ func verifyJWT(request *http.Request) (*jwt.Claims, error) {
 		return nil, errors.New("Auth0-API-Identifier header missing")
 	}
 
-	jwksURI := fmt.Sprintf("https://%s.auth0.com/.well-known/jwks.json", domain)
-	apiIssuer := fmt.Sprintf("https://%s.auth0.com/", domain)
+	jwksURI := fmt.Sprintf("https://%s/.well-known/jwks.json", domain)
+	apiIssuer := fmt.Sprintf("https://%s/", domain)
 	audience := []string{apiIdentifer}
 
 	client := auth0.NewJWKClient(auth0.JWKClientOptions{URI: jwksURI})

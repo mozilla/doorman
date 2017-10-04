@@ -19,7 +19,7 @@ func TestVerifyJWT(t *testing.T) {
 	require.NotNil(t, err)
 	assert.Equal(t, "Auth0-Domain header missing", err.Error())
 
-	r.Header.Add("Auth0-Domain", "minimal-demo-iam")
+	r.Header.Add("Auth0-Domain", "minimal-demo-iam.auth0.com")
 	_, err = verifyJWT(r)
 	require.NotNil(t, err)
 	assert.Equal(t, "Auth0-API-Identifier header missing", err.Error())
