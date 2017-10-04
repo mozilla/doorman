@@ -2,3 +2,4 @@ main
 utilities/bindata.go
 coverage.txt
 policies.yaml
+vendor/

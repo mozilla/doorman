@@ -1,14 +1,21 @@
 GO_LINT := $(GOPATH)/bin/golint
+GO_GLIDE := $(GOPATH)/bin/glide
 GO_BINDATA := $(GOPATH)/bin/go-bindata
 DATA_FILES := ./utilities/openapi.yaml ./utilities/contribute.yaml
 SRC := *.go ./utilities/*.go ./warden/*.go
 PACKAGES := ./ ./utilities/ ./warden/
 
-main: utilities/bindata.go $(SRC)
+main: vendor utilities/bindata.go $(SRC)
 	CGO_ENABLED=0 go build -o main *.go
 
 clean:
-	rm -f main coverage.txt utilities/bindata.go
+	rm -f main coverage.txt utilities/bindata.go vendor
+
+vendor: $(GO_GLIDE) glide.lock glide.yaml
+	$(GO_GLIDE) install
+
+$(GO_GLIDE):
+	go get github.com/Masterminds/glide
 
 $(GO_BINDATA):
 	go get github.com/jteeuwen/go-bindata/...
@@ -32,10 +39,10 @@ lint: $(GO_LINT)
 fmt:
 	gofmt -w -s $(SRC)
 
-test: policies.yaml utilities/bindata.go lint
+test: vendor policies.yaml utilities/bindata.go lint
 	go test -v $(PACKAGES)
 
-test-coverage: policies.yaml utilities/bindata.go
+test-coverage: vendor policies.yaml utilities/bindata.go
 	# Multiple package coverage script from https://github.com/pierrre/gotestcover
 	echo 'mode: atomic' > coverage.txt && go list ./... | grep -v /vendor/ | xargs -n1 -I{} sh -c 'go test -v -covermode=atomic -coverprofile=coverage.tmp {} && tail -n +2 coverage.tmp >> coverage.txt' && rm coverage.tmp
 	# Exclude bindata.go from coverage.
