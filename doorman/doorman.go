@@ -1,4 +1,4 @@
-package warden
+package doorman
 
 import (
 	"encoding/json"
@@ -20,30 +20,30 @@ import (
 // DefaultPoliciesFilename is the default policies filename.
 const DefaultPoliciesFilename string = "policies.yaml"
 
-// ContextKey is the Gin context key to obtain the *Warden instance.
-const ContextKey string = "warden"
+// ContextKey is the Gin context key to obtain the *Doorman instance.
+const ContextKey string = "doorman"
 
 const maxInt int64 = 1<<63 - 1
 
-// Config contains the settings of the warden.
+// Config contains the settings of the doorman.
 type Config struct {
 	PoliciesFilename string
 	JWTIssuer        string
 }
 
-// Warden is the backend in charge of checking requests against policies.
-type Warden struct {
+// Doorman is the backend in charge of checking requests against policies.
+type Doorman struct {
 	l       ladon.Ladon
 	Manager ladon.Manager
 	Config  *Config
 }
 
-// New instantiates a new warden.
-func New(config *Config) *Warden {
+// New instantiates a new doorman.
+func New(config *Config) *Doorman {
 	l := ladon.Ladon{
 		Manager: manager.NewMemoryManager(),
 	}
-	w := &Warden{l, l.Manager, config}
+	w := &Doorman{l, l.Manager, config}
 	if err := w.LoadPolicies(config.PoliciesFilename); err != nil {
 		log.Fatal(err.Error())
 	}
@@ -51,12 +51,12 @@ func New(config *Config) *Warden {
 }
 
 // IsAllowed is responsible for deciding if subject can perform action on a resource with a context.
-func (warden *Warden) IsAllowed(request *ladon.Request) error {
-	return warden.l.IsAllowed(request)
+func (doorman *Doorman) IsAllowed(request *ladon.Request) error {
+	return doorman.l.IsAllowed(request)
 }
 
 // LoadPolicies reads policies from the YAML file.
-func (warden *Warden) LoadPolicies(filename string) error {
+func (doorman *Doorman) LoadPolicies(filename string) error {
 	// If not specified, read it from ENV or read local `.policies.yaml`
 	if filename == "" {
 		filename = os.Getenv("POLICIES_FILE")
@@ -95,19 +95,19 @@ func (warden *Warden) LoadPolicies(filename string) error {
 	}
 
 	// Clear every existing policy, and load new ones.
-	existing, err := warden.Manager.GetAll(0, maxInt)
+	existing, err := doorman.Manager.GetAll(0, maxInt)
 	if err != nil {
 		return err
 	}
 	for _, pol := range existing {
-		err := warden.Manager.Delete(pol.GetID())
+		err := doorman.Manager.Delete(pol.GetID())
 		if err != nil {
 			return err
 		}
 	}
 	for _, pol := range policies {
 		log.Info("Load policy ", pol.GetID()+": ", pol.GetDescription())
-		err := warden.Manager.Create(pol)
+		err := doorman.Manager.Create(pol)
 		if err != nil {
 			return err
 		}
@@ -116,19 +116,19 @@ func (warden *Warden) LoadPolicies(filename string) error {
 	return nil
 }
 
-// ContextMiddleware adds the Warden instance to the Gin context.
-func ContextMiddleware(warden *Warden) gin.HandlerFunc {
+// ContextMiddleware adds the Doorman instance to the Gin context.
+func ContextMiddleware(doorman *Doorman) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Set(ContextKey, warden)
+		c.Set(ContextKey, doorman)
 		c.Next()
 	}
 }
 
-// SetupRoutes adds warden views to query the policies.
-func SetupRoutes(r *gin.Engine, warden *Warden) {
-	r.Use(ContextMiddleware(warden))
-	if warden.Config.JWTIssuer != "" {
-		r.Use(VerifyJWTMiddleware(warden.Config.JWTIssuer))
+// SetupRoutes adds doorman views to query the policies.
+func SetupRoutes(r *gin.Engine, doorman *Doorman) {
+	r.Use(ContextMiddleware(doorman))
+	if doorman.Config.JWTIssuer != "" {
+		r.Use(VerifyJWTMiddleware(doorman.Config.JWTIssuer))
 	}
 	r.POST("/allowed", allowedHandler)
 }
@@ -156,13 +156,13 @@ func allowedHandler(c *gin.Context) {
 		accessRequest.Subject = payloadJWT.(*jwt.Claims).Subject
 	}
 
-	warden := c.MustGet(ContextKey).(*Warden)
-	err := warden.IsAllowed(&accessRequest)
+	doorman := c.MustGet(ContextKey).(*Doorman)
+	err := doorman.IsAllowed(&accessRequest)
 	allowed := (err == nil)
 
 	// Show some debug information about matched policy.
 	if allowed && gin.Mode() != gin.ReleaseMode {
-		policies, _ := warden.Manager.FindRequestCandidates(&accessRequest)
+		policies, _ := doorman.Manager.FindRequestCandidates(&accessRequest)
 		matched := policies[0]
 		log.Debug("Policy matched ", matched.GetID()+": ", matched.GetDescription())
 	}

@@ -9,7 +9,7 @@ import (
 	"go.mozilla.org/mozlogrus"
 
 	"github.com/leplatrem/iam/utilities"
-	"github.com/leplatrem/iam/warden"
+	"github.com/leplatrem/iam/doorman"
 )
 
 func init() {
@@ -49,13 +49,13 @@ func setupRouter() *gin.Engine {
 		r.Use(gin.Logger())
 	}
 
-	// Setup warden with default config (read policies from disk)
-	config := &warden.Config{
+	// Setup doorman with default config (read policies from disk)
+	config := &doorman.Config{
 		PoliciesFilename: "",
 		JWTIssuer:        os.Getenv("JWT_ISSUER"),
 	}
-	w := warden.New(config)
-	warden.SetupRoutes(r, w)
+	w := doorman.New(config)
+	doorman.SetupRoutes(r, w)
 
 	utilities.SetupRoutes(r)
 

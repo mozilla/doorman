@@ -1,4 +1,4 @@
-package warden
+package doorman
 
 import (
 	"net/http"
@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestMain defined in warden_test.go
+// TestMain defined in doorman_test.go
 // func TestMain(m *testing.M) {}
 
 func TestVerifyJWT(t *testing.T) {

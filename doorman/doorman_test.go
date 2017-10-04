@@ -1,4 +1,4 @@
-package warden
+package doorman
 
 import (
 	"bytes"
@@ -38,28 +38,28 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func loadTempFile(warden *Warden, content []byte) error {
+func loadTempFile(doorman *Doorman, content []byte) error {
 	tmpfile, _ := ioutil.TempFile("", "")
 	defer os.Remove(tmpfile.Name()) // clean up
 	tmpfile.Write(content)
 	tmpfile.Close()
-	return warden.LoadPolicies(tmpfile.Name())
+	return doorman.LoadPolicies(tmpfile.Name())
 }
 
 func TestLoadPolicies(t *testing.T) {
-	warden := New(&Config{"../policies.yaml", ""})
+	doorman := New(&Config{"../policies.yaml", ""})
 
 	// Missing file
 	var err error
-	err = warden.LoadPolicies("/tmp/unknown.yaml")
+	err = doorman.LoadPolicies("/tmp/unknown.yaml")
 	assert.NotNil(t, err)
 
 	// Bad YAML
-	err = loadTempFile(warden, []byte("$\\--xx"))
+	err = loadTempFile(doorman, []byte("$\\--xx"))
 	assert.NotNil(t, err)
 
 	// Bad policies
-	err = loadTempFile(warden, []byte(`
+	err = loadTempFile(doorman, []byte(`
 	-
 	  id: "1"
 	  conditions:
@@ -69,7 +69,7 @@ func TestLoadPolicies(t *testing.T) {
 	assert.NotNil(t, err)
 
 	// Duplicated ID
-	err = loadTempFile(warden, []byte(`
+	err = loadTempFile(doorman, []byte(`
 	-
 	  id: "1"
 	  effect: allow
@@ -95,7 +95,7 @@ func performAllowed(t *testing.T, r *gin.Engine, body io.Reader, expected int, r
 	require.Nil(t, err)
 }
 
-func TestWardenGet(t *testing.T) {
+func TestDoormanGet(t *testing.T) {
 	r := gin.New()
 	SetupRoutes(r, New(&defaultConfig))
 
@@ -103,7 +103,7 @@ func TestWardenGet(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusNotFound)
 }
 
-func TestWardenEmpty(t *testing.T) {
+func TestDoormanEmpty(t *testing.T) {
 	r := gin.New()
 	SetupRoutes(r, New(&defaultConfig))
 
@@ -112,7 +112,7 @@ func TestWardenEmpty(t *testing.T) {
 	assert.Equal(t, response.Message, "Missing body")
 }
 
-func TestWardenInvalidJSON(t *testing.T) {
+func TestDoormanInvalidJSON(t *testing.T) {
 	r := gin.New()
 	SetupRoutes(r, New(&defaultConfig))
 
@@ -122,11 +122,11 @@ func TestWardenInvalidJSON(t *testing.T) {
 	assert.Contains(t, response.Message, "invalid character ';'")
 }
 
-func TestWardenAllowed(t *testing.T) {
+func TestDoormanAllowed(t *testing.T) {
 	r := gin.New()
-	warden := New(&defaultConfig)
-	warden.LoadPolicies(samplePoliciesFile)
-	SetupRoutes(r, warden)
+	doorman := New(&defaultConfig)
+	doorman.LoadPolicies(samplePoliciesFile)
+	SetupRoutes(r, doorman)
 
 	for _, request := range []*ladon.Request{
 		// Policy #1
@@ -180,11 +180,11 @@ func TestWardenAllowed(t *testing.T) {
 	}
 }
 
-func TestWardenNotAllowed(t *testing.T) {
+func TestDoormanNotAllowed(t *testing.T) {
 	r := gin.New()
-	warden := New(&defaultConfig)
-	warden.LoadPolicies(samplePoliciesFile)
-	SetupRoutes(r, warden)
+	doorman := New(&defaultConfig)
+	doorman.LoadPolicies(samplePoliciesFile)
+	SetupRoutes(r, doorman)
 
 	for _, request := range []*ladon.Request{
 		// Policy #1

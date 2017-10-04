@@ -11,7 +11,7 @@ info:
 
 tags:
 - name: Utilities
-- name: Warden
+- name: Doorman
 
 paths:
   /__heartbeat__:
@@ -123,4 +123,4 @@ paths:
               allowed:
                 type: boolean
       tags:
-      - Warden
+      - Doorman
