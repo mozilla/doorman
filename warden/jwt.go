@@ -1,35 +1,31 @@
 package warden
 
 import (
-	"errors"
-	"fmt"
 	"net/http"
+	"fmt"
 
 	auth0 "github.com/auth0-community/go-auth0"
 	"github.com/gin-gonic/gin"
 	jose "gopkg.in/square/go-jose.v2"
 	jwt "gopkg.in/square/go-jose.v2/jwt"
+	log "github.com/sirupsen/logrus"
 )
 
-func verifyJWT(request *http.Request) (*jwt.Claims, error) {
-	domain := request.Header.Get("Auth0-Domain")
-	if domain == "" {
-		return nil, errors.New("Auth0-Domain header missing")
-	}
+func newJWTValidator(jwtIssuer string) *auth0.JWTValidator {
+	jwksURI := fmt.Sprintf("%s.well-known/jwks.json", jwtIssuer)
+	log.Infof("JWT keys: %s", jwksURI)
 
-	apiIdentifer := request.Header.Get("Auth0-Audience")
-	if apiIdentifer == "" {
-		return nil, errors.New("Auth0-API-Identifier header missing")
-	}
-
-	jwksURI := fmt.Sprintf("https://%s/.well-known/jwks.json", domain)
-	apiIssuer := fmt.Sprintf("https://%s/", domain)
-	audience := []string{apiIdentifer}
+	// XXX: do not expected any specific audience?
+	audience := []string{}
 
 	client := auth0.NewJWKClient(auth0.JWKClientOptions{URI: jwksURI})
-	config := auth0.NewConfiguration(client, audience, apiIssuer, jose.RS256)
+	config := auth0.NewConfiguration(client, audience, jwtIssuer, jose.RS256)
 	validator := auth0.NewValidator(config)
 
+	return validator
+}
+
+func verifyJWT(validator *auth0.JWTValidator, request *http.Request) (*jwt.Claims, error) {
 	token, err := validator.ValidateRequest(request)
 	if err != nil {
 		return nil, err
@@ -45,9 +41,11 @@ func verifyJWT(request *http.Request) (*jwt.Claims, error) {
 }
 
 // VerifyJWTMiddleware makes sure a valid JWT is provided.
-func VerifyJWTMiddleware() gin.HandlerFunc {
+func VerifyJWTMiddleware(jwtIssuer string) gin.HandlerFunc {
+	validator := newJWTValidator(jwtIssuer)
+
 	return func(c *gin.Context) {
-		claims, err := verifyJWT(c.Request)
+		claims, err := verifyJWT(validator, c.Request)
 
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{

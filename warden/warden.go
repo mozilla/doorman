@@ -28,7 +28,7 @@ const maxInt int64 = 1<<63 - 1
 // Config contains the settings of the warden.
 type Config struct {
 	PoliciesFilename string
-	VerifyJWT        bool
+	JWTIssuer        string
 }
 
 // Warden is the backend in charge of checking requests against policies.
@@ -127,8 +127,8 @@ func ContextMiddleware(warden *Warden) gin.HandlerFunc {
 // SetupRoutes adds warden views to query the policies.
 func SetupRoutes(r *gin.Engine, warden *Warden) {
 	r.Use(ContextMiddleware(warden))
-	if warden.Config.VerifyJWT {
-		r.Use(VerifyJWTMiddleware())
+	if warden.Config.JWTIssuer != "" {
+		r.Use(VerifyJWTMiddleware(warden.Config.JWTIssuer))
 	}
 	r.POST("/allowed", allowedHandler)
 }

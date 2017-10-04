@@ -28,7 +28,7 @@ const samplePoliciesFile string = "../sample.yaml"
 
 var defaultConfig = Config{
 	PoliciesFilename: "../policies.yaml",
-	VerifyJWT:        false,
+	JWTIssuer:        "",
 }
 
 func TestMain(m *testing.M) {
@@ -47,7 +47,7 @@ func loadTempFile(warden *Warden, content []byte) error {
 }
 
 func TestLoadPolicies(t *testing.T) {
-	warden := New(&Config{"../policies.yaml", false})
+	warden := New(&Config{"../policies.yaml", ""})
 
 	// Missing file
 	var err error

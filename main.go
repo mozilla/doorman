@@ -52,7 +52,7 @@ func setupRouter() *gin.Engine {
 	// Setup warden with default config (read policies from disk)
 	config := &warden.Config{
 		PoliciesFilename: "",
-		VerifyJWT:        true,
+		JWTIssuer:        os.Getenv("JWT_ISSUER"),
 	}
 	w := warden.New(config)
 	warden.SetupRoutes(r, w)

@@ -148,6 +148,7 @@ Via environment variables:
 * ``LOG_LEVEL``: logging level (``fatal|error|warn|info|debug``, default: ``info`` with ``GIN_MODE=release`` else ``debug``)
 * ``VERSION_FILE``: location of JSON file with version information (default: ``./version.json``)
 * ``POLICIES_FILE``: location of YAML file with policies (default: ``./policies.yaml``)
+* ``JWT_ISSUER``
 
 > Note: the ``Dockerfile`` contains different default values, suited for production.
 
@@ -155,6 +156,10 @@ Via environment variables:
 ## Run locally
 
     make serve
+
+Or with JWT verification enabled:
+
+    make serve -e JWT_ISSUER=https://minimal-demo-iam.auth0.com/
 
 
 ## Run tests
