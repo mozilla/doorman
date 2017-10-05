@@ -102,8 +102,6 @@ paths:
             schema:
               type: object
               properties:
-                subject:
-                  type: string
                 action:
                   type: string
                 resource:
@@ -115,6 +113,8 @@ paths:
           description: "Invalid posted data."
         "401":
           description: "Authentication failed."
+        "403":
+          description: "JWT token is invalid (authorization failed)."
         "200":
           description: "Return whether it is allowed or not."
           schema:
@@ -122,5 +122,17 @@ paths:
             properties:
               allowed:
                 type: boolean
+              user:
+                type: object
+                properties:
+                  id:
+                    type: string
+              policy:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  description:
+                    type: string
       tags:
       - Doorman

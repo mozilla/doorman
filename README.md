@@ -104,15 +104,20 @@ conditions:
 
 Is this ``subject`` allowed to perform this ``action`` on this ``resource`` in this ``context``?
 
+**Requires authentication**
+
+A valid JSON Web Token (JWT) must be provided in the ``Authorization`` header.
+The JWT subject is used to match the policies.
+
 **Request**:
 
 ```HTTP
 POST /allowed HTTP/1.1
 Authorization: Basic Zm9vOmJhcg==
 Content-Type: application/json
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbG...9USXpOalEzUXpV
 
 {
-  "subject": "users:peter",
   "action" : "delete",
   "resource": "resource:articles:ladon-introduction",
   "context": {
@@ -129,7 +134,14 @@ HTTP/1.1 200 OK
 Content-Type: application/json
 
 {
-  "allowed": true
+  "allowed": true,
+  "policy": {
+    "id": "1",
+    "description": "One policy to rule them all."
+  },
+  "user": {
+    "id": "google-auth|2664978978"
+  }
 }
 ```
 
