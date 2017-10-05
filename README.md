@@ -160,7 +160,7 @@ Via environment variables:
 * ``LOG_LEVEL``: logging level (``fatal|error|warn|info|debug``, default: ``info`` with ``GIN_MODE=release`` else ``debug``)
 * ``VERSION_FILE``: location of JSON file with version information (default: ``./version.json``)
 * ``POLICIES_FILE``: location of YAML file with policies (default: ``./policies.yaml``)
-* ``JWT_ISSUER``
+* ``JWT_ISSUER``:  issuer of the JWT tokens to match. For JWTs issued by Auth0, use the domain with a `https://` prefix and a trailing `/` (eg. `https://auth.mozilla.auth0.com/`)
 
 > Note: the ``Dockerfile`` contains different default values, suited for production.
 
