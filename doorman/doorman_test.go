@@ -47,10 +47,21 @@ func loadTempFile(doorman *Doorman, content []byte) error {
 }
 
 func TestLoadPolicies(t *testing.T) {
+	var err error
+
 	doorman := New(&Config{"../policies.yaml", ""})
 
+	// Loads policies.yaml in current folder by default.
+	err = doorman.LoadPolicies("")
+	assert.NotNil(t, err) // doorman/policies.yaml does not exists.
+
+	// Loads policies from env.
+	os.Setenv("POLICIES_FILE", "/tmp/unknown.yaml")
+	defer os.Unsetenv("POLICIES_FILE")
+	err = doorman.LoadPolicies("")
+	assert.NotNil(t, err)
+
 	// Missing file
-	var err error
 	err = doorman.LoadPolicies("/tmp/unknown.yaml")
 	assert.NotNil(t, err)
 
@@ -238,4 +249,28 @@ func TestDoormanNotAllowed(t *testing.T) {
 		performAllowed(t, r, body, http.StatusOK, &response)
 		assert.Equal(t, false, response.Allowed)
 	}
+}
+
+func TestDoormanVerifiesJWT(t *testing.T) {
+	r := gin.New()
+	doorman := New(&Config{
+		PoliciesFilename: "../policies.yaml",
+		JWTIssuer:        "https://auth.mozilla.auth0.com/",
+	})
+	doorman.LoadPolicies("")
+	SetupRoutes(r, doorman)
+
+	// Policy #1 will match.
+	request := ladon.Request{
+		Subject:  "foo",
+		Action:   "delete",
+		Resource: "server.org/blocklist:onecrl",
+	}
+	token, _ := json.Marshal(request)
+	body := bytes.NewBuffer(token)
+	var response ErrorResponse
+
+	// Missing Authorization header.
+	performAllowed(t, r, body, http.StatusUnauthorized, &response)
+	assert.Equal(t, "Token not found", response.Message)
 }

@@ -8,8 +8,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.mozilla.org/mozlogrus"
 
-	"github.com/leplatrem/iam/utilities"
 	"github.com/leplatrem/iam/doorman"
+	"github.com/leplatrem/iam/utilities"
 )
 
 func init() {

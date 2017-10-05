@@ -160,14 +160,22 @@ func allowedHandler(c *gin.Context) {
 	err := doorman.IsAllowed(&accessRequest)
 	allowed := (err == nil)
 
-	// Show some debug information about matched policy.
-	if allowed && gin.Mode() != gin.ReleaseMode {
+	// Show some information about matched policy.
+	matchedInfo := gin.H{}
+	if allowed {
 		policies, _ := doorman.Manager.FindRequestCandidates(&accessRequest)
 		matched := policies[0]
-		log.Debug("Policy matched ", matched.GetID()+": ", matched.GetDescription())
+		matchedInfo = gin.H{
+			"id":          matched.GetID(),
+			"description": matched.GetDescription(),
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"allowed": allowed,
+		"policy":  matchedInfo,
+		"user": gin.H{
+			"id": accessRequest.Subject,
+		},
 	})
 }
