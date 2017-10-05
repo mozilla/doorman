@@ -54,7 +54,11 @@ func setupRouter() *gin.Engine {
 		PoliciesFilename: "",
 		JWTIssuer:        os.Getenv("JWT_ISSUER"),
 	}
-	w := doorman.New(config)
+	w, err := doorman.New(config)
+	if (err != nil) {
+		logrus.Fatal(err.Error())
+	}
+
 	doorman.SetupRoutes(r, w)
 
 	utilities.SetupRoutes(r)
