@@ -129,6 +129,8 @@ func SetupRoutes(r *gin.Engine, doorman *Doorman) {
 	r.Use(ContextMiddleware(doorman))
 	if doorman.Config.JWTIssuer != "" {
 		r.Use(VerifyJWTMiddleware(doorman.Config.JWTIssuer))
+	} else {
+		log.Warning("No JWT issuer configured. No authentication will be required.")
 	}
 	r.POST("/allowed", allowedHandler)
 }
