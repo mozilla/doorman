@@ -113,7 +113,6 @@ The JWT subject is used to match the policies.
 
 ```HTTP
 POST /allowed HTTP/1.1
-Authorization: Basic Zm9vOmJhcg==
 Content-Type: application/json
 Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbG...9USXpOalEzUXpV
 
