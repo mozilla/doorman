@@ -176,11 +176,11 @@ func allowedHandler(c *gin.Context) {
 
 	log.WithFields(
 		log.Fields{
-			"allowed": allowed,
-			"subject": accessRequest.Subject,
-			"action": accessRequest.Action,
+			"allowed":  allowed,
+			"subject":  accessRequest.Subject,
+			"action":   accessRequest.Action,
 			"resource": accessRequest.Resource,
-			"policy": matchedInfo,
+			"policy":   matchedInfo,
 		},
 	).Info("request.authorization")
 

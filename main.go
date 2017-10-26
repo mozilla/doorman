@@ -55,7 +55,7 @@ func setupRouter() *gin.Engine {
 		JWTIssuer:        os.Getenv("JWT_ISSUER"),
 	}
 	w, err := doorman.New(config)
-	if (err != nil) {
+	if err != nil {
 		logrus.Fatal(err.Error())
 	}
 
