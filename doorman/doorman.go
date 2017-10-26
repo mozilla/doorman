@@ -129,6 +129,8 @@ func SetupRoutes(r *gin.Engine, doorman *Doorman) {
 	r.Use(ContextMiddleware(doorman))
 	if doorman.Config.JWTIssuer != "" {
 		r.Use(VerifyJWTMiddleware(doorman.Config.JWTIssuer))
+	} else {
+		log.Warning("No JWT issuer configured. No authentication will be required.")
 	}
 	r.POST("/allowed", allowedHandler)
 }
@@ -170,6 +172,16 @@ func allowedHandler(c *gin.Context) {
 			"description": matched.GetDescription(),
 		}
 	}
+
+	log.WithFields(
+		log.Fields{
+			"allowed": allowed,
+			"subject": accessRequest.Subject,
+			"action": accessRequest.Action,
+			"resource": accessRequest.Resource,
+			"policy": matchedInfo,
+		},
+	).Info("request.authorization")
 
 	c.JSON(http.StatusOK, gin.H{
 		"allowed": allowed,
