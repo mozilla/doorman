@@ -18,10 +18,12 @@ func TestMain(m *testing.M) {
 }
 
 func TestSetupRouter(t *testing.T) {
-	r := setupRouter()
+	r, _ := setupRouter()
 	assert.Equal(t, 6, len(r.Routes()))
 	assert.Equal(t, 3, len(r.RouterGroup.Handlers))
+}
 
+func TestSetupRouterRelease(t *testing.T) {
 	// In release mode, we enable MozLogger middleware.
 	gin.SetMode(gin.ReleaseMode)
 	defer gin.SetMode(gin.TestMode)
@@ -34,4 +36,34 @@ func TestSetupRouter(t *testing.T) {
 	logrus.Info("Haha")
 
 	assert.Contains(t, buf.String(), "\"msg\":\"Haha\"")
+}
+
+func TestSetupRouterBadPolicy(t *testing.T) {
+	os.Setenv("POLICIES_FILE", "/tmp/unknown.yaml")
+	defer os.Unsetenv("POLICIES_FILE")
+	_, err := setupRouter()
+	assert.NotNil(t, err)
+}
+
+func TestEnvLogLevel(t *testing.T) {
+	var cases = []struct {
+		mode  string
+		env   string
+		level logrus.Level
+	}{
+		{gin.DebugMode, "fatal", logrus.FatalLevel},
+		{gin.DebugMode, "error", logrus.ErrorLevel},
+		{gin.DebugMode, "warn", logrus.WarnLevel},
+		{gin.DebugMode, "debug", logrus.DebugLevel},
+		{gin.DebugMode, "info", logrus.DebugLevel},
+		{gin.ReleaseMode, "info", logrus.InfoLevel},
+	}
+	defer gin.SetMode(gin.TestMode)
+	defer os.Unsetenv("LOG_LEVEL")
+	for _, test := range cases {
+		gin.SetMode(test.mode)
+		os.Setenv("LOG_LEVEL", test.env)
+		setLogLevel()
+		assert.Equal(t, test.level, logrus.StandardLogger().Level)
+	}
 }
