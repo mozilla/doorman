@@ -39,15 +39,15 @@ type Doorman struct {
 }
 
 // New instantiates a new doorman.
-func New(config *Config) *Doorman {
+func New(config *Config) (*Doorman, error) {
 	l := ladon.Ladon{
 		Manager: manager.NewMemoryManager(),
 	}
 	w := &Doorman{l, l.Manager, config}
-	if err := w.LoadPolicies(config.PoliciesFilename); err != nil {
-		log.Fatal(err.Error())
+	if err := w.loadPolicies(); err != nil {
+		return nil, err
 	}
-	return w
+	return w, nil
 }
 
 // IsAllowed is responsible for deciding if subject can perform action on a resource with a context.
@@ -56,8 +56,9 @@ func (doorman *Doorman) IsAllowed(request *ladon.Request) error {
 }
 
 // LoadPolicies reads policies from the YAML file.
-func (doorman *Doorman) LoadPolicies(filename string) error {
+func (doorman *Doorman) loadPolicies() error {
 	// If not specified, read it from ENV or read local `.policies.yaml`
+	filename := doorman.Config.PoliciesFilename
 	if filename == "" {
 		filename = os.Getenv("POLICIES_FILE")
 		if filename == "" {
@@ -175,11 +176,11 @@ func allowedHandler(c *gin.Context) {
 
 	log.WithFields(
 		log.Fields{
-			"allowed": allowed,
-			"subject": accessRequest.Subject,
-			"action": accessRequest.Action,
+			"allowed":  allowed,
+			"subject":  accessRequest.Subject,
+			"action":   accessRequest.Action,
 			"resource": accessRequest.Resource,
-			"policy": matchedInfo,
+			"policy":   matchedInfo,
 		},
 	).Info("request.authorization")
 

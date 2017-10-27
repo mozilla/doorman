@@ -12,7 +12,7 @@ import (
 	"github.com/leplatrem/iam/utilities"
 )
 
-func init() {
+func setLogLevel() {
 	logLevel := os.Getenv("LOG_LEVEL")
 	switch logLevel {
 	case "fatal":
@@ -32,7 +32,7 @@ func init() {
 	}
 }
 
-func setupRouter() *gin.Engine {
+func setupRouter() (*gin.Engine, error) {
 	// We disable mozlogrus for development.
 	// See https://github.com/mozilla-services/go-mozlogrus/issues/2#issuecomment-330495098
 	log.SetOutput(os.Stdout)
@@ -48,21 +48,29 @@ func setupRouter() *gin.Engine {
 	} else {
 		r.Use(gin.Logger())
 	}
+	setLogLevel()
 
 	// Setup doorman with default config (read policies from disk)
 	config := &doorman.Config{
 		PoliciesFilename: "",
 		JWTIssuer:        os.Getenv("JWT_ISSUER"),
 	}
-	w := doorman.New(config)
+	w, err := doorman.New(config)
+	if err != nil {
+		return nil, err
+	}
+
 	doorman.SetupRoutes(r, w)
 
 	utilities.SetupRoutes(r)
 
-	return r
+	return r, nil
 }
 
 func main() {
-	r := setupRouter()
+	r, err := setupRouter()
+	if err != nil {
+		logrus.Fatal(err.Error())
+	}
 	r.Run() // listen and serve on 0.0.0.0:$PORT (:8080)
 }
