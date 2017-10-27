@@ -1,12 +1,32 @@
 package main
 
 import (
+	"bytes"
 	"net/http"
+	"net/http/httptest"
+	"os"
+
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestLoggerMiddleware(t *testing.T) {
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request, _ = http.NewRequest("GET", "/get", nil)
+	handler := MozLogger()
+
+	var buf bytes.Buffer
+	logrus.SetOutput(&buf)
+	defer logrus.SetOutput(os.Stdout)
+
+	handler(c)
+
+	assert.Contains(t, buf.String(), "errno=0")
+}
 
 func TestRequestLogFields(t *testing.T) {
 	r, _ := http.NewRequest("GET", "/", nil)
