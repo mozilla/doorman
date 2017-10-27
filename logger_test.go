@@ -22,4 +22,8 @@ func TestRequestLogFields(t *testing.T) {
 	assert.Equal(t, 104, fields["errno"])
 	fields = RequestLogFields(r, 403, time.Duration(100))
 	assert.Equal(t, 121, fields["errno"])
+
+	r, _ = http.NewRequest("POST", "/diff?w=1", nil)
+	fields = RequestLogFields(r, 200, time.Duration(100))
+	assert.Equal(t, "/diff?w=1", fields["path"])
 }
