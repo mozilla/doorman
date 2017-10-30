@@ -66,7 +66,7 @@ func VerifyJWTMiddleware(validator JWTValidator) gin.HandlerFunc {
 			return
 		}
 
-		c.Set("JWT", claims)
+		c.Set(JWTContextKey, claims)
 
 		c.Next()
 	}

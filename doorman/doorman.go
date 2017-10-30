@@ -20,8 +20,11 @@ import (
 // DefaultPoliciesFilename is the default policies filename.
 const DefaultPoliciesFilename string = "policies.yaml"
 
-// ContextKey is the Gin context key to obtain the *Doorman instance.
-const ContextKey string = "doorman"
+// DoormanContextKey is the Gin context key to obtain the *Doorman instance.
+const DoormanContextKey string = "doorman"
+
+// JWTContextKey is the Gin context key to obtain the *jwt.Claims instance.
+const JWTContextKey string = "JWT"
 
 const maxInt int64 = 1<<63 - 1
 
@@ -120,7 +123,7 @@ func (doorman *Doorman) loadPolicies() error {
 // ContextMiddleware adds the Doorman instance to the Gin context.
 func ContextMiddleware(doorman *Doorman) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Set(ContextKey, doorman)
+		c.Set(DoormanContextKey, doorman)
 		c.Next()
 	}
 }
@@ -155,14 +158,14 @@ func allowedHandler(c *gin.Context) {
 		return
 	}
 
-	payloadJWT, ok := c.Get("JWT")
+	payloadJWT, ok := c.Get(JWTContextKey)
 	if ok {
 		// With VerifyJWTMiddleware, subject is overriden by JWT.
 		// (disabled for tests)
 		accessRequest.Subject = payloadJWT.(*jwt.Claims).Subject
 	}
 
-	doorman := c.MustGet(ContextKey).(*Doorman)
+	doorman := c.MustGet(DoormanContextKey).(*Doorman)
 	err := doorman.IsAllowed(&accessRequest)
 	allowed := (err == nil)
 
