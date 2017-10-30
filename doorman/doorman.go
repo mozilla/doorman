@@ -36,6 +36,11 @@ type Doorman struct {
 	JWTIssuer        string
 }
 
+// Configuration represents the policies file content.
+type Configuration struct {
+	Policies []*ladon.DefaultPolicy
+}
+
 // New instantiates a new doorman.
 func New(filename string, issuer string) (*Doorman, error) {
 	l := ladon.Ladon{
@@ -71,8 +76,6 @@ func (doorman *Doorman) loadPolicies() error {
 		return err
 	}
 
-	var policies []*ladon.DefaultPolicy
-
 	// Ladon does not support un/marshaling YAML.
 	// https://github.com/ory/ladon/issues/83
 	var generic interface{}
@@ -84,11 +87,13 @@ func (doorman *Doorman) loadPolicies() error {
 	if err != nil {
 		return err
 	}
-	if err := json.Unmarshal(jsonData, &policies); err != nil {
+
+	var config Configuration
+	if err := json.Unmarshal(jsonData, &config); err != nil {
 		return err
 	}
 
-	if len(policies) == 0 {
+	if len(config.Policies) == 0 {
 		log.Warning("No policies found.")
 	}
 
@@ -103,7 +108,7 @@ func (doorman *Doorman) loadPolicies() error {
 			return err
 		}
 	}
-	for _, pol := range policies {
+	for _, pol := range config.Policies {
 		log.Info("Load policy ", pol.GetID()+": ", pol.GetDescription())
 		err := doorman.Manager.Create(pol)
 		if err != nil {

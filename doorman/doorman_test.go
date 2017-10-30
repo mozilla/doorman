@@ -72,11 +72,12 @@ func TestLoadPolicies(t *testing.T) {
 
 	// Bad policies
 	err = loadTempFile([]byte(`
-	-
-	  id: "1"
-	  conditions:
-	    - a
-	    - b
+	policies:
+	  -
+	    id: "1"
+	    conditions:
+	      - a
+	      - b
 	`))
 	assert.NotNil(t, err)
 
@@ -86,12 +87,13 @@ func TestLoadPolicies(t *testing.T) {
 
 	// Duplicated ID
 	err = loadTempFile([]byte(`
-	-
-	  id: "1"
-	  effect: allow
-	-
-	  id: "1"
-	  effect: deny
+	policies:
+	  -
+	    id: "1"
+	    effect: allow
+	  -
+	    id: "1"
+	    effect: deny
 	`))
 	assert.NotNil(t, err)
 }
