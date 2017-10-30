@@ -51,11 +51,7 @@ func setupRouter() (*gin.Engine, error) {
 	setLogLevel()
 
 	// Setup doorman with default config (read policies from disk)
-	config := &doorman.Config{
-		PoliciesFilename: "",
-		JWTIssuer:        os.Getenv("JWT_ISSUER"),
-	}
-	w, err := doorman.New(config)
+	w, err := doorman.New("", os.Getenv("JWT_ISSUER"))
 	if err != nil {
 		return nil, err
 	}
