@@ -85,6 +85,10 @@ func TestLoadPolicies(t *testing.T) {
 	`))
 	assert.NotNil(t, err)
 
+	// Empty file
+	err = loadTempFile([]byte(``))
+	assert.Nil(t, err)
+
 	// Duplicated ID
 	err = loadTempFile([]byte(`
 	-
@@ -95,6 +99,18 @@ func TestLoadPolicies(t *testing.T) {
 	  effect: deny
 	`))
 	assert.NotNil(t, err)
+}
+
+func TestReloadPolicies(t *testing.T) {
+	doorman, err := New(&Config{"../sample.yaml", ""})
+	assert.Nil(t, err)
+	loaded, _ := doorman.Manager.GetAll(0, maxInt)
+	assert.Equal(t, 5, len(loaded))
+
+	// Second load.
+	doorman.loadPolicies()
+	loaded, _ = doorman.Manager.GetAll(0, maxInt)
+	assert.Equal(t, 5, len(loaded))
 }
 
 func performRequest(r http.Handler, method, path string, body io.Reader) *httptest.ResponseRecorder {
