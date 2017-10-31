@@ -160,25 +160,6 @@ func TestIsAllowed(t *testing.T) {
 	assert.NotNil(t, doorman.IsAllowed("https://bad.audience", request))
 }
 
-func TestFindMatchingPolicy(t *testing.T) {
-	doorman, err := New([]string{"../sample.yaml"}, "")
-	assert.Nil(t, err)
-
-	request := &ladon.Request{
-		Subject:  "group:admins",
-		Action:   "create",
-		Resource: "dns://",
-		Context: ladon.Context{
-			"domain": "kinto.mozilla.org",
-		},
-	}
-	matching, _ := doorman.FindMatchingPolicy("https://sample.yaml", request)
-	assert.Equal(t, matching.GetID(), "1")
-
-	_, err = doorman.FindMatchingPolicy("https://bad.audience", request)
-	assert.NotNil(t, err)
-}
-
 func performRequest(r http.Handler, method, path string, body io.Reader) *httptest.ResponseRecorder {
 	req, _ := http.NewRequest(method, path, body)
 	req.Header.Set("Origin", "https://sample.yaml")

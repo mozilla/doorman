@@ -67,19 +67,6 @@ func (doorman *Doorman) IsAllowed(audience string, request *ladon.Request) error
 	return ladon.IsAllowed(request)
 }
 
-// FindMatchingPolicy returns the first policy to match the audience/request.
-func (doorman *Doorman) FindMatchingPolicy(audience string, request *ladon.Request) (ladon.Policy, error) {
-	ladon, ok := doorman.ladons[audience]
-	if !ok {
-		return nil, fmt.Errorf("unknown audience %q", audience)
-	}
-	matching, err := ladon.Manager.FindRequestCandidates(request)
-	if err != nil {
-		return nil, err
-	}
-	return matching[0], nil
-}
-
 // LoadPolicies (re)loads configuration and policies from the YAML files.
 func (doorman *Doorman) loadPolicies() error {
 	// Clear every existing policy, and load new ones.
@@ -213,30 +200,17 @@ func allowedHandler(c *gin.Context) {
 	err := doorman.IsAllowed(origin, &accessRequest)
 	allowed := (err == nil)
 
-	// Show some information about matched policy.
-	matchedInfo := gin.H{}
-	if allowed {
-		matched, _ := doorman.FindMatchingPolicy(origin, &accessRequest)
-		matchedInfo = gin.H{
-			"id":          matched.GetID(),
-			"description": matched.GetDescription(),
-			"audience":    origin,
-		}
-	}
-
 	log.WithFields(
 		log.Fields{
 			"allowed":  allowed,
 			"subject":  accessRequest.Subject,
 			"action":   accessRequest.Action,
 			"resource": accessRequest.Resource,
-			"policy":   matchedInfo,
 		},
 	).Info("request.authorization")
 
 	c.JSON(http.StatusOK, gin.H{
 		"allowed": allowed,
-		"policy":  matchedInfo,
 		"user": gin.H{
 			"id": accessRequest.Subject,
 		},

@@ -138,10 +138,6 @@ Content-Type: application/json
 
 {
   "allowed": true,
-  "policy": {
-    "id": "1",
-    "description": "One policy to rule them all."
-  },
   "user": {
     "id": "google-auth|2664978978"
   }
