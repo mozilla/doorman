@@ -3,6 +3,7 @@ package doorman
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -113,6 +114,10 @@ func (doorman *Doorman) loadPolicies() error {
 			if err != nil {
 				return err
 			}
+		}
+		_, exists := doorman.ladons[config.Audience]
+		if exists {
+			return fmt.Errorf("duplicated audience %q (filename %q)", config.Audience, filename)
 		}
 		doorman.ladons[config.Audience] = l
 	}

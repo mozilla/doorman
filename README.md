@@ -108,8 +108,10 @@ Is this ``subject`` allowed to perform this ``action`` on this ``resource`` in t
 
 **Requires authentication**
 
-A valid JSON Web Token (JWT) must be provided in the ``Authorization`` header.
+A valid JSON Web Token (JWT) must be provided in the ``Authorization`` request header.
 The JWT subject is used to match the policies.
+
+The JWT claimed audience will be checked against the ``Origin`` request header. The specified value must match one of the known audience from the policies files.
 
 **Request**:
 

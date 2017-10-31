@@ -42,16 +42,20 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func loadTempFile(content []byte) error {
-	tmpfile, _ := ioutil.TempFile("", "")
-	defer os.Remove(tmpfile.Name()) // clean up
-	tmpfile.Write(content)
-	tmpfile.Close()
-	_, err := New([]string{tmpfile.Name()}, "")
+func loadTempFiles(contents ...string) error {
+	var filenames []string
+	for _, content := range contents {
+		tmpfile, _ := ioutil.TempFile("", "")
+		defer os.Remove(tmpfile.Name()) // clean up
+		tmpfile.Write([]byte(content))
+		tmpfile.Close()
+		filenames = append(filenames, tmpfile.Name())
+	}
+	_, err := New(filenames, "")
 	return err
 }
 
-func TestLoadPolicies(t *testing.T) {
+func TestLoadBadPolicies(t *testing.T) {
 	// Loads policies.yaml in current folder by default.
 	_, err := New([]string{}, "")
 	assert.NotNil(t, err) // doorman/policies.yaml does not exists.
@@ -61,54 +65,72 @@ func TestLoadPolicies(t *testing.T) {
 	assert.NotNil(t, err)
 
 	// Empty file
-	err = loadTempFile([]byte(``))
+	err = loadTempFiles("")
 	assert.NotNil(t, err)
 
 	// Bad YAML
-	err = loadTempFile([]byte("$\\--xx"))
+	err = loadTempFiles("$\\--xx")
 	assert.NotNil(t, err)
 
 	// Empty audience
-	err = loadTempFile([]byte(`
-	audience:
-	policies:
-	  -
-	    id: "1"
-	    effect: allow
-	`))
+	err = loadTempFiles(`
+audience:
+policies:
+  -
+    id: "1"
+    effect: allow
+`)
 	assert.NotNil(t, err)
 
 	// Bad audience
-	err = loadTempFile([]byte(`
-	audience: 1
-	policies:
-	  -
-	    id: "1"
-	    effect: allow
-	`))
+	err = loadTempFiles(`
+audience: 1
+policies:
+  -
+    id: "1"
+    effect: allow
+`)
 	assert.NotNil(t, err)
 
-	// Bad policies
-	err = loadTempFile([]byte(`
-	policies:
-	  -
-	    id: "1"
-	    conditions:
-	      - a
-	      - b
-	`))
+	// Bad policies conditions
+	err = loadTempFiles(`
+audience: a
+policies:
+  -
+    id: "1"
+    conditions:
+      - a
+      - b
+`)
 	assert.NotNil(t, err)
 
-	// Duplicated ID
-	err = loadTempFile([]byte(`
-	policies:
-	  -
-	    id: "1"
-	    effect: allow
-	  -
-	    id: "1"
-	    effect: deny
-	`))
+	// Duplicated policy ID
+	err = loadTempFiles(`
+audience: a
+policies:
+  -
+    id: "1"
+    effect: allow
+  -
+    id: "1"
+    effect: deny
+`)
+	assert.NotNil(t, err)
+
+	// Duplicated audience
+	err = loadTempFiles(`
+audience: a
+policies:
+  -
+    id: "1"
+    effect: allow
+`, `
+audience: a
+policies:
+  -
+    id: "1"
+    effect: allow
+`)
 	assert.NotNil(t, err)
 }
 
