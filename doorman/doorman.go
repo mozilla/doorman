@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"errors"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ory/ladon"
@@ -38,6 +39,7 @@ type Doorman struct {
 
 // Configuration represents the policies file content.
 type Configuration struct {
+	Audience string
 	Policies []*ladon.DefaultPolicy
 }
 
@@ -91,6 +93,10 @@ func (doorman *Doorman) loadPolicies() error {
 	var config Configuration
 	if err := json.Unmarshal(jsonData, &config); err != nil {
 		return err
+	}
+
+	if config.Audience == "" {
+		return errors.New("Empty audience in configuration.")
 	}
 
 	if len(config.Policies) == 0 {

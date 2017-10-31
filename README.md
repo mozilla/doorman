@@ -12,6 +12,7 @@ IAM is an **authorization micro-service** that allows to checks if an arbitrary 
 Policies are defined in YAML file (default ``./policies.yaml``) as follow:
 
 ```yaml
+  audience: https://service.stage.net
   policies:
     -
       description: One policy to rule them all.

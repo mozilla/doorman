@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMain(m *testing.M) {
@@ -18,7 +19,10 @@ func TestMain(m *testing.M) {
 }
 
 func TestSetupRouter(t *testing.T) {
-	r, _ := setupRouter()
+	os.Setenv("POLICIES_FILE", "sample.yaml")
+	defer os.Unsetenv("POLICIES_FILE")
+	r, err := setupRouter()
+	require.Nil(t, err)
 	assert.Equal(t, 6, len(r.Routes()))
 	assert.Equal(t, 3, len(r.RouterGroup.Handlers))
 }

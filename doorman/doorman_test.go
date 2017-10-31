@@ -66,8 +66,32 @@ func TestLoadPolicies(t *testing.T) {
 	_, err = New("/tmp/unknown.yaml", "")
 	assert.NotNil(t, err)
 
+	// Empty file
+	err = loadTempFile([]byte(``))
+	assert.NotNil(t, err)
+
 	// Bad YAML
 	err = loadTempFile([]byte("$\\--xx"))
+	assert.NotNil(t, err)
+
+	// Empty audience
+	err = loadTempFile([]byte(`
+	audience:
+	policies:
+	  -
+	    id: "1"
+	    effect: allow
+	`))
+	assert.NotNil(t, err)
+
+	// Bad audience
+	err = loadTempFile([]byte(`
+	audience: 1
+	policies:
+	  -
+	    id: "1"
+	    effect: allow
+	`))
 	assert.NotNil(t, err)
 
 	// Bad policies
@@ -80,10 +104,6 @@ func TestLoadPolicies(t *testing.T) {
 	      - b
 	`))
 	assert.NotNil(t, err)
-
-	// Empty file
-	err = loadTempFile([]byte(``))
-	assert.Nil(t, err)
 
 	// Duplicated ID
 	err = loadTempFile([]byte(`
