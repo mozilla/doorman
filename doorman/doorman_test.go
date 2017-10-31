@@ -146,6 +146,39 @@ func TestReloadPolicies(t *testing.T) {
 	assert.Equal(t, 5, len(loaded))
 }
 
+func TestIsAllowed(t *testing.T) {
+	doorman, err := New([]string{"../sample.yaml"}, "")
+	assert.Nil(t, err)
+
+	request := &ladon.Request{
+		// Policy #1
+		Subject:  "foo",
+		Action:   "update",
+		Resource: "server.org/blocklist:onecrl",
+	}
+	assert.Nil(t, doorman.IsAllowed("https://sample.yaml", request))
+	assert.NotNil(t, doorman.IsAllowed("https://bad.audience", request))
+}
+
+func TestFindMatchingPolicy(t *testing.T) {
+	doorman, err := New([]string{"../sample.yaml"}, "")
+	assert.Nil(t, err)
+
+	request := &ladon.Request{
+		Subject:  "group:admins",
+		Action:   "create",
+		Resource: "dns://",
+		Context: ladon.Context{
+			"domain": "kinto.mozilla.org",
+		},
+	}
+	matching, _ := doorman.FindMatchingPolicy("https://sample.yaml", request)
+	assert.Equal(t, matching.GetID(), "1")
+
+	_, err = doorman.FindMatchingPolicy("https://bad.audience", request)
+	assert.NotNil(t, err)
+}
+
 func performRequest(r http.Handler, method, path string, body io.Reader) *httptest.ResponseRecorder {
 	req, _ := http.NewRequest(method, path, body)
 	req.Header.Set("Origin", "https://sample.yaml")

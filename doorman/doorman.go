@@ -2,7 +2,6 @@ package doorman
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -63,7 +62,7 @@ func New(filenames []string, issuer string) (*Doorman, error) {
 func (doorman *Doorman) IsAllowed(audience string, request *ladon.Request) error {
 	ladon, ok := doorman.ladons[audience]
 	if !ok {
-		return errors.New("Unknown audience")
+		return fmt.Errorf("unknown audience %q", audience)
 	}
 	return ladon.IsAllowed(request)
 }
@@ -72,7 +71,7 @@ func (doorman *Doorman) IsAllowed(audience string, request *ladon.Request) error
 func (doorman *Doorman) FindMatchingPolicy(audience string, request *ladon.Request) (ladon.Policy, error) {
 	ladon, ok := doorman.ladons[audience]
 	if !ok {
-		return nil, errors.New("Unknown audience")
+		return nil, fmt.Errorf("unknown audience %q", audience)
 	}
 	matching, err := ladon.Manager.FindRequestCandidates(request)
 	if err != nil {
@@ -130,7 +129,7 @@ func loadConfiguration(filename string) (*Configuration, error) {
 		return nil, err
 	}
 	if len(yamlFile) == 0 {
-		return nil, errors.New("Empty file")
+		return nil, fmt.Errorf("empty file %q", filename)
 	}
 	// Ladon does not support un/marshaling YAML.
 	// https://github.com/ory/ladon/issues/83
@@ -150,11 +149,11 @@ func loadConfiguration(filename string) (*Configuration, error) {
 	}
 
 	if config.Audience == "" {
-		return nil, errors.New("Empty audience in configuration")
+		return nil, fmt.Errorf("empty audience in %q", filename)
 	}
 
 	if len(config.Policies) == 0 {
-		log.Warning("No policies found.")
+		log.Warningf("no policies found in %q", filename)
 	}
 
 	return &config, nil
