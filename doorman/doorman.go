@@ -70,17 +70,7 @@ func (doorman *Doorman) IsAllowed(audience string, request *ladon.Request) error
 // LoadPolicies (re)loads configuration and policies from the YAML files.
 func (doorman *Doorman) loadPolicies() error {
 	// Clear every existing policy, and load new ones.
-	for audience, l := range doorman.ladons {
-		existing, err := l.Manager.GetAll(0, maxInt)
-		if err != nil {
-			return err
-		}
-		for _, pol := range existing {
-			err := l.Manager.Delete(pol.GetID())
-			if err != nil {
-				return err
-			}
-		}
+	for audience := range doorman.ladons {
 		delete(doorman.ladons, audience)
 	}
 	// Load each configuration file.
