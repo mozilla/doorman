@@ -82,6 +82,13 @@ policies:
 `)
 	assert.NotNil(t, err)
 
+	// Empty policies
+	err = loadTempFiles(`
+audience: a
+policies:
+`)
+	assert.Nil(t, err)
+
 	// Bad audience
 	err = loadTempFiles(`
 audience: 1
