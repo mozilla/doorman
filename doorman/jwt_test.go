@@ -78,7 +78,7 @@ func TestJWTMiddleware(t *testing.T) {
 	v.AssertCalled(t, "ExtractClaims", c.Request)
 
 	// JWT claims are set in context.
-	payloadJWT, ok := c.Get("JWT")
+	payloadJWT, ok := c.Get(JWTContextKey)
 	require.True(t, ok)
 	assert.Equal(t, "ldap|user", payloadJWT.(*jwt.Claims).Subject)
 }

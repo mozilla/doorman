@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"errors"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ory/ladon"
@@ -20,30 +21,34 @@ import (
 // DefaultPoliciesFilename is the default policies filename.
 const DefaultPoliciesFilename string = "policies.yaml"
 
-// ContextKey is the Gin context key to obtain the *Doorman instance.
-const ContextKey string = "doorman"
+// DoormanContextKey is the Gin context key to obtain the *Doorman instance.
+const DoormanContextKey string = "doorman"
+
+// JWTContextKey is the Gin context key to obtain the *jwt.Claims instance.
+const JWTContextKey string = "JWT"
 
 const maxInt int64 = 1<<63 - 1
 
-// Config contains the settings of the doorman.
-type Config struct {
+// Doorman is the backend in charge of checking requests against policies.
+type Doorman struct {
+	l                ladon.Ladon
+	Manager          ladon.Manager
 	PoliciesFilename string
 	JWTIssuer        string
 }
 
-// Doorman is the backend in charge of checking requests against policies.
-type Doorman struct {
-	l       ladon.Ladon
-	Manager ladon.Manager
-	Config  *Config
+// Configuration represents the policies file content.
+type Configuration struct {
+	Audience string
+	Policies []*ladon.DefaultPolicy
 }
 
 // New instantiates a new doorman.
-func New(config *Config) (*Doorman, error) {
+func New(filename string, issuer string) (*Doorman, error) {
 	l := ladon.Ladon{
 		Manager: manager.NewMemoryManager(),
 	}
-	w := &Doorman{l, l.Manager, config}
+	w := &Doorman{l, l.Manager, filename, issuer}
 	if err := w.loadPolicies(); err != nil {
 		return nil, err
 	}
@@ -58,7 +63,7 @@ func (doorman *Doorman) IsAllowed(request *ladon.Request) error {
 // LoadPolicies reads policies from the YAML file.
 func (doorman *Doorman) loadPolicies() error {
 	// If not specified, read it from ENV or read local `.policies.yaml`
-	filename := doorman.Config.PoliciesFilename
+	filename := doorman.PoliciesFilename
 	if filename == "" {
 		filename = os.Getenv("POLICIES_FILE")
 		if filename == "" {
@@ -73,10 +78,7 @@ func (doorman *Doorman) loadPolicies() error {
 		return err
 	}
 
-	var policies []*ladon.DefaultPolicy
-
 	// Ladon does not support un/marshaling YAML.
-	// XXX: I chose to convert to JSON first :|
 	// https://github.com/ory/ladon/issues/83
 	var generic interface{}
 	if err := yaml.Unmarshal(yamlFile, &generic); err != nil {
@@ -87,11 +89,17 @@ func (doorman *Doorman) loadPolicies() error {
 	if err != nil {
 		return err
 	}
-	if err := json.Unmarshal(jsonData, &policies); err != nil {
+
+	var config Configuration
+	if err := json.Unmarshal(jsonData, &config); err != nil {
 		return err
 	}
 
-	if len(policies) == 0 {
+	if config.Audience == "" {
+		return errors.New("Empty audience in configuration.")
+	}
+
+	if len(config.Policies) == 0 {
 		log.Warning("No policies found.")
 	}
 
@@ -106,7 +114,7 @@ func (doorman *Doorman) loadPolicies() error {
 			return err
 		}
 	}
-	for _, pol := range policies {
+	for _, pol := range config.Policies {
 		log.Info("Load policy ", pol.GetID()+": ", pol.GetDescription())
 		err := doorman.Manager.Create(pol)
 		if err != nil {
@@ -120,7 +128,7 @@ func (doorman *Doorman) loadPolicies() error {
 // ContextMiddleware adds the Doorman instance to the Gin context.
 func ContextMiddleware(doorman *Doorman) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Set(ContextKey, doorman)
+		c.Set(DoormanContextKey, doorman)
 		c.Next()
 	}
 }
@@ -128,9 +136,9 @@ func ContextMiddleware(doorman *Doorman) gin.HandlerFunc {
 // SetupRoutes adds doorman views to query the policies.
 func SetupRoutes(r *gin.Engine, doorman *Doorman) {
 	r.Use(ContextMiddleware(doorman))
-	if doorman.Config.JWTIssuer != "" {
+	if doorman.JWTIssuer != "" {
 		validator := &Auth0Validator{
-			Issuer: doorman.Config.JWTIssuer,
+			Issuer: doorman.JWTIssuer,
 		}
 		r.Use(VerifyJWTMiddleware(validator))
 	} else {
@@ -155,14 +163,14 @@ func allowedHandler(c *gin.Context) {
 		return
 	}
 
-	payloadJWT, ok := c.Get("JWT")
+	payloadJWT, ok := c.Get(JWTContextKey)
 	if ok {
 		// With VerifyJWTMiddleware, subject is overriden by JWT.
 		// (disabled for tests)
 		accessRequest.Subject = payloadJWT.(*jwt.Claims).Subject
 	}
 
-	doorman := c.MustGet(ContextKey).(*Doorman)
+	doorman := c.MustGet(DoormanContextKey).(*Doorman)
 	err := doorman.IsAllowed(&accessRequest)
 	allowed := (err == nil)
 

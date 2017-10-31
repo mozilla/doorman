@@ -12,24 +12,26 @@ IAM is an **authorization micro-service** that allows to checks if an arbitrary 
 Policies are defined in YAML file (default ``./policies.yaml``) as follow:
 
 ```yaml
-  -
-    description: One policy to rule them all.
-    subjects:
-      - maria
-      - <[peter|ken]>
-      - group:admin
-    actions:
-      - delete
-      - <[create|update]>
-    resources:
-      - resources:articles:<.*>
-      - resources:printer
-    conditions:
-      remoteIP:
-        type: CIDRCondition
-        options:
-          cidr: 192.168.0.1/16
-    effect: allow
+  audience: https://service.stage.net
+  policies:
+    -
+      description: One policy to rule them all.
+      subjects:
+        - maria
+        - <[peter|ken]>
+        - group:admin
+      actions:
+        - delete
+        - <[create|update]>
+      resources:
+        - resources:articles:<.*>
+        - resources:printer
+      conditions:
+        remoteIP:
+          type: CIDRCondition
+          options:
+            cidr: 192.168.0.1/16
+      effect: allow
 ```
 
 Use `effect: deny` to deny explicitly.
