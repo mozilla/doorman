@@ -47,23 +47,17 @@ func loadTempFile(content []byte) error {
 	defer os.Remove(tmpfile.Name()) // clean up
 	tmpfile.Write(content)
 	tmpfile.Close()
-	_, err := New(tmpfile.Name(), "")
+	_, err := New([]string{tmpfile.Name()}, "")
 	return err
 }
 
 func TestLoadPolicies(t *testing.T) {
 	// Loads policies.yaml in current folder by default.
-	_, err := New("", "")
+	_, err := New([]string{}, "")
 	assert.NotNil(t, err) // doorman/policies.yaml does not exists.
 
-	// Loads policies from env.
-	os.Setenv("POLICIES_FILE", "/tmp/unknown.yaml")
-	defer os.Unsetenv("POLICIES_FILE")
-	_, err = New("", "")
-	assert.NotNil(t, err)
-
 	// Missing file
-	_, err = New("/tmp/unknown.yaml", "")
+	_, err = New([]string{"/tmp/unknown.yaml"}, "")
 	assert.NotNil(t, err)
 
 	// Empty file
@@ -119,19 +113,20 @@ func TestLoadPolicies(t *testing.T) {
 }
 
 func TestReloadPolicies(t *testing.T) {
-	doorman, err := New("../sample.yaml", "")
+	doorman, err := New([]string{"../sample.yaml"}, "")
 	assert.Nil(t, err)
-	loaded, _ := doorman.Manager.GetAll(0, maxInt)
+	loaded, _ := doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
 	assert.Equal(t, 5, len(loaded))
 
 	// Second load.
 	doorman.loadPolicies()
-	loaded, _ = doorman.Manager.GetAll(0, maxInt)
+	loaded, _ = doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
 	assert.Equal(t, 5, len(loaded))
 }
 
 func performRequest(r http.Handler, method, path string, body io.Reader) *httptest.ResponseRecorder {
 	req, _ := http.NewRequest(method, path, body)
+	req.Header.Set("Origin", "https://sample.yaml")
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -147,7 +142,7 @@ func performAllowed(t *testing.T, r *gin.Engine, body io.Reader, expected int, r
 
 func TestDoormanGet(t *testing.T) {
 	r := gin.New()
-	doorman, _ := New("../sample.yaml", "")
+	doorman, _ := New([]string{"../sample.yaml"}, "")
 	SetupRoutes(r, doorman)
 
 	w := performRequest(r, "GET", "/allowed", nil)
@@ -156,7 +151,7 @@ func TestDoormanGet(t *testing.T) {
 
 func TestDoormanEmpty(t *testing.T) {
 	r := gin.New()
-	doorman, _ := New("../sample.yaml", "")
+	doorman, _ := New([]string{"../sample.yaml"}, "")
 	SetupRoutes(r, doorman)
 
 	var response ErrorResponse
@@ -166,7 +161,7 @@ func TestDoormanEmpty(t *testing.T) {
 
 func TestDoormanInvalidJSON(t *testing.T) {
 	r := gin.New()
-	doorman, _ := New("../sample.yaml", "")
+	doorman, _ := New([]string{"../sample.yaml"}, "")
 	SetupRoutes(r, doorman)
 
 	body := bytes.NewBuffer([]byte("{\"random\\;mess\"}"))
@@ -177,7 +172,7 @@ func TestDoormanInvalidJSON(t *testing.T) {
 
 func TestDoormanAllowed(t *testing.T) {
 	r := gin.New()
-	doorman, _ := New("../sample.yaml", "")
+	doorman, _ := New([]string{"../sample.yaml"}, "")
 	SetupRoutes(r, doorman)
 
 	for _, request := range []*ladon.Request{
@@ -234,7 +229,7 @@ func TestDoormanAllowed(t *testing.T) {
 
 func TestDoormanNotAllowed(t *testing.T) {
 	r := gin.New()
-	doorman, _ := New("../sample.yaml", "")
+	doorman, _ := New([]string{"../sample.yaml"}, "")
 	SetupRoutes(r, doorman)
 
 	for _, request := range []*ladon.Request{
@@ -293,7 +288,7 @@ func TestDoormanNotAllowed(t *testing.T) {
 
 func TestDoormanVerifiesJWT(t *testing.T) {
 	r := gin.New()
-	doorman, _ := New("../sample.yaml", "https://auth.mozilla.auth0.com/")
+	doorman, _ := New([]string{"../sample.yaml"}, "https://auth.mozilla.auth0.com/")
 	SetupRoutes(r, doorman)
 
 	// Policy #1 will match.

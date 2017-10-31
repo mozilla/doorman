@@ -2,11 +2,11 @@ package doorman
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
-	"errors"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ory/ladon"
@@ -31,10 +31,9 @@ const maxInt int64 = 1<<63 - 1
 
 // Doorman is the backend in charge of checking requests against policies.
 type Doorman struct {
-	l                ladon.Ladon
-	Manager          ladon.Manager
-	PoliciesFilename string
-	JWTIssuer        string
+	PoliciesFilenames []string
+	JWTIssuer         string
+	ladons            map[string]ladon.Ladon
 }
 
 // Configuration represents the policies file content.
@@ -44,11 +43,15 @@ type Configuration struct {
 }
 
 // New instantiates a new doorman.
-func New(filename string, issuer string) (*Doorman, error) {
-	l := ladon.Ladon{
-		Manager: manager.NewMemoryManager(),
+func New(filenames []string, issuer string) (*Doorman, error) {
+	// If not specified, read default file in current directory `./policies.yaml`
+	if len(filenames) == 0 {
+		here, _ := os.Getwd()
+		filename := filepath.Join(here, DefaultPoliciesFilename)
+		filenames = []string{filename}
 	}
-	w := &Doorman{l, l.Manager, filename, issuer}
+
+	w := &Doorman{filenames, issuer, map[string]ladon.Ladon{}}
 	if err := w.loadPolicies(); err != nil {
 		return nil, err
 	}
@@ -56,73 +59,100 @@ func New(filename string, issuer string) (*Doorman, error) {
 }
 
 // IsAllowed is responsible for deciding if subject can perform action on a resource with a context.
-func (doorman *Doorman) IsAllowed(request *ladon.Request) error {
-	return doorman.l.IsAllowed(request)
+func (doorman *Doorman) IsAllowed(audience string, request *ladon.Request) error {
+	ladon, ok := doorman.ladons[audience]
+	if !ok {
+		return errors.New("Unknown audience")
+	}
+	return ladon.IsAllowed(request)
 }
 
-// LoadPolicies reads policies from the YAML file.
-func (doorman *Doorman) loadPolicies() error {
-	// If not specified, read it from ENV or read local `.policies.yaml`
-	filename := doorman.PoliciesFilename
-	if filename == "" {
-		filename = os.Getenv("POLICIES_FILE")
-		if filename == "" {
-			// Look in current working directory.
-			here, _ := os.Getwd()
-			filename = filepath.Join(here, DefaultPoliciesFilename)
-		}
+// FindMatchingPolicy returns the first policy to match the audience/request.
+func (doorman *Doorman) FindMatchingPolicy(audience string, request *ladon.Request) (ladon.Policy, error) {
+	ladon, ok := doorman.ladons[audience]
+	if !ok {
+		return nil, errors.New("Unknown audience")
 	}
+	matching, err := ladon.Manager.FindRequestCandidates(request)
+	if err != nil {
+		return nil, err
+	}
+	return matching[0], nil
+}
 
+// LoadPolicies (re)loads configuration and policies from the YAML files.
+func (doorman *Doorman) loadPolicies() error {
+	// Clear every existing policy, and load new ones.
+	for audience, l := range doorman.ladons {
+		existing, err := l.Manager.GetAll(0, maxInt)
+		if err != nil {
+			return err
+		}
+		for _, pol := range existing {
+			err := l.Manager.Delete(pol.GetID())
+			if err != nil {
+				return err
+			}
+		}
+		delete(doorman.ladons, audience)
+	}
+	// Load each configuration file.
+	for _, filename := range doorman.PoliciesFilenames {
+		log.Info("Load configuration ", filename)
+		config, err := loadConfiguration(filename)
+		if err != nil {
+			return err
+		}
+
+		l := ladon.Ladon{
+			Manager: manager.NewMemoryManager(),
+		}
+		for _, pol := range config.Policies {
+			log.Info("Load policy ", pol.GetID()+": ", pol.GetDescription())
+			err := l.Manager.Create(pol)
+			if err != nil {
+				return err
+			}
+		}
+		doorman.ladons[config.Audience] = l
+	}
+	return nil
+}
+
+func loadConfiguration(filename string) (*Configuration, error) {
 	yamlFile, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
+	if len(yamlFile) == 0 {
+		return nil, errors.New("Empty file")
+	}
 	// Ladon does not support un/marshaling YAML.
 	// https://github.com/ory/ladon/issues/83
 	var generic interface{}
 	if err := yaml.Unmarshal(yamlFile, &generic); err != nil {
-		return err
+		return nil, err
 	}
 	asJSON := utilities.Yaml2JSON(generic)
 	jsonData, err := json.Marshal(asJSON)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var config Configuration
 	if err := json.Unmarshal(jsonData, &config); err != nil {
-		return err
+		return nil, err
 	}
 
 	if config.Audience == "" {
-		return errors.New("Empty audience in configuration.")
+		return nil, errors.New("Empty audience in configuration")
 	}
 
 	if len(config.Policies) == 0 {
 		log.Warning("No policies found.")
 	}
 
-	// Clear every existing policy, and load new ones.
-	existing, err := doorman.Manager.GetAll(0, maxInt)
-	if err != nil {
-		return err
-	}
-	for _, pol := range existing {
-		err := doorman.Manager.Delete(pol.GetID())
-		if err != nil {
-			return err
-		}
-	}
-	for _, pol := range config.Policies {
-		log.Info("Load policy ", pol.GetID()+": ", pol.GetDescription())
-		err := doorman.Manager.Create(pol)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return &config, nil
 }
 
 // ContextMiddleware adds the Doorman instance to the Gin context.
@@ -164,24 +194,29 @@ func allowedHandler(c *gin.Context) {
 	}
 
 	payloadJWT, ok := c.Get(JWTContextKey)
+	// Is VerifyJWTMiddleware enabled? (disabled in tests)
 	if ok {
-		// With VerifyJWTMiddleware, subject is overriden by JWT.
-		// (disabled for tests)
-		accessRequest.Subject = payloadJWT.(*jwt.Claims).Subject
+		claims := payloadJWT.(*jwt.Claims)
+		// Subject is taken from JWT.
+		accessRequest.Subject = claims.Subject
 	}
 
 	doorman := c.MustGet(DoormanContextKey).(*Doorman)
-	err := doorman.IsAllowed(&accessRequest)
+
+	origin := c.Request.Header.Get("Origin")
+
+	// Will fail if origin is unknown.
+	err := doorman.IsAllowed(origin, &accessRequest)
 	allowed := (err == nil)
 
 	// Show some information about matched policy.
 	matchedInfo := gin.H{}
 	if allowed {
-		policies, _ := doorman.Manager.FindRequestCandidates(&accessRequest)
-		matched := policies[0]
+		matched, _ := doorman.FindMatchingPolicy(origin, &accessRequest)
 		matchedInfo = gin.H{
 			"id":          matched.GetID(),
 			"description": matched.GetDescription(),
+			"audience":    origin,
 		}
 	}
 

@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -50,8 +51,9 @@ func setupRouter() (*gin.Engine, error) {
 	}
 	setLogLevel()
 
-	// Setup doorman with default config (read policies from disk)
-	w, err := doorman.New("", os.Getenv("JWT_ISSUER"))
+	// Setup doorman and load configuration files.
+	filenames := strings.Split(os.Getenv("POLICIES_FILES"), " ")
+	w, err := doorman.New(filenames, os.Getenv("JWT_ISSUER"))
 	if err != nil {
 		return nil, err
 	}

@@ -45,10 +45,6 @@ func (v *Auth0Validator) ExtractClaims(request *http.Request) (*jwt.Claims, erro
 	if err != nil {
 		return nil, err
 	}
-	// XXX: verify API ID / audience here.
-	//if !claims.Audience.Contains(v) {
-	// 	return ErrInvalidAudience
-	// }
 	return &claims, nil
 }
 
@@ -62,6 +58,24 @@ func VerifyJWTMiddleware(validator JWTValidator) gin.HandlerFunc {
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"message": err.Error(),
+			})
+			return
+		}
+
+		// The service requesting must send its location. It will be compared
+		// with the audiences defined in policies files.
+		// XXX: The Origin request header might not be the best choice.
+		origin := c.Request.Header.Get("Origin")
+		if origin == "" {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"message": "Missing `Origin` request header",
+			})
+			return
+		}
+		// Check that origin matches audiences from JWT token .
+		if !claims.Audience.Contains(origin) {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"message": "Invalid audience claim",
 			})
 			return
 		}
