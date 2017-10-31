@@ -83,4 +83,19 @@ func TestJWTMiddleware(t *testing.T) {
 	payloadJWT, ok := c.Get(JWTContextKey)
 	require.True(t, ok)
 	assert.Equal(t, "ldap|user", payloadJWT.(*jwt.Claims).Subject)
+
+	c, _ = gin.CreateTestContext(httptest.NewRecorder())
+
+	// Missing origin.
+	c.Request, _ = http.NewRequest("GET", "/get", nil)
+	handler(c)
+	_, ok = c.Get(JWTContextKey)
+	assert.False(t, ok)
+
+	// Wrong origin.
+	c.Request, _ = http.NewRequest("GET", "/get", nil)
+	c.Request.Header.Set("Origin", "https://wrong.com")
+	handler(c)
+	_, ok = c.Get(JWTContextKey)
+	assert.False(t, ok)
 }
