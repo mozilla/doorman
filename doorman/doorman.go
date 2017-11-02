@@ -25,12 +25,20 @@ type Doorman struct {
 	PoliciesFilenames []string
 	JWTIssuer         string
 	ladons            map[string]ladon.Ladon
+	groups            map[string][]UserGroup
 }
 
 // Configuration represents the policies file content.
 type Configuration struct {
 	Audience string
+	Groups   map[string][]string
 	Policies []*ladon.DefaultPolicy
+}
+
+// UserGroup is a group of principals.
+type UserGroup struct {
+	Name    string
+	Members []string
 }
 
 // New instantiates a new doorman.
@@ -42,7 +50,12 @@ func New(filenames []string, issuer string) (*Doorman, error) {
 		filenames = []string{filename}
 	}
 
-	w := &Doorman{filenames, issuer, map[string]ladon.Ladon{}}
+	w := &Doorman{
+		PoliciesFilenames: filenames,
+		JWTIssuer: issuer,
+		ladons: map[string]ladon.Ladon{},
+		groups: map[string][]UserGroup{},
+	}
 	if err := w.loadPolicies(); err != nil {
 		return nil, err
 	}
@@ -87,6 +100,13 @@ func (doorman *Doorman) loadPolicies() error {
 			return fmt.Errorf("duplicated audience %q (filename %q)", config.Audience, filename)
 		}
 		doorman.ladons[config.Audience] = l
+
+		var groups []UserGroup
+		for name, members := range config.Groups {
+			log.Infof("Load group %q", name)
+			groups = append(groups, UserGroup{name, members})
+		}
+		doorman.groups[config.Audience] = groups
 	}
 	return nil
 }

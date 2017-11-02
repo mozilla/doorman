@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func loadTempFiles(contents ...string) error {
+func loadTempFiles(contents ...string) (*Doorman, error) {
 	var filenames []string
 	for _, content := range contents {
 		tmpfile, _ := ioutil.TempFile("", "")
@@ -45,8 +45,7 @@ func loadTempFiles(contents ...string) error {
 		tmpfile.Close()
 		filenames = append(filenames, tmpfile.Name())
 	}
-	_, err := New(filenames, "")
-	return err
+	return New(filenames, "")
 }
 
 func TestLoadBadPolicies(t *testing.T) {
@@ -59,15 +58,15 @@ func TestLoadBadPolicies(t *testing.T) {
 	assert.NotNil(t, err)
 
 	// Empty file
-	err = loadTempFiles("")
+	_, err = loadTempFiles("")
 	assert.NotNil(t, err)
 
 	// Bad YAML
-	err = loadTempFiles("$\\--xx")
+	_, err = loadTempFiles("$\\--xx")
 	assert.NotNil(t, err)
 
 	// Empty audience
-	err = loadTempFiles(`
+	_, err = loadTempFiles(`
 audience:
 policies:
   -
@@ -77,14 +76,14 @@ policies:
 	assert.NotNil(t, err)
 
 	// Empty policies
-	err = loadTempFiles(`
+	_, err = loadTempFiles(`
 audience: a
 policies:
 `)
 	assert.Nil(t, err)
 
 	// Bad audience
-	err = loadTempFiles(`
+	_, err = loadTempFiles(`
 audience: 1
 policies:
   -
@@ -94,7 +93,7 @@ policies:
 	assert.NotNil(t, err)
 
 	// Bad policies conditions
-	err = loadTempFiles(`
+	_, err = loadTempFiles(`
 audience: a
 policies:
   -
@@ -106,7 +105,7 @@ policies:
 	assert.NotNil(t, err)
 
 	// Duplicated policy ID
-	err = loadTempFiles(`
+	_, err = loadTempFiles(`
 audience: a
 policies:
   -
@@ -119,7 +118,7 @@ policies:
 	assert.NotNil(t, err)
 
 	// Duplicated audience
-	err = loadTempFiles(`
+	_, err = loadTempFiles(`
 audience: a
 policies:
   -
@@ -133,6 +132,27 @@ policies:
     effect: allow
 `)
 	assert.NotNil(t, err)
+}
+
+
+func TestLoadGroups(t *testing.T) {
+	d, err := loadTempFiles(`
+audience: a
+groups:
+  admins:
+    - alice@mit.edu
+    - ldap|bob
+  editors:
+    - mathieu@mozilla.com
+policies:
+  -
+    id: "1"
+    effect: allow
+`)
+	assert.Nil(t, err)
+	assert.Equal(t, len(d.groups["a"]), 2)
+	// Dict iteration not guaranteed (hence admins or editors)
+	assert.Regexp(t, "admins|editors", d.groups["a"][0].Name)
 }
 
 func TestReloadPolicies(t *testing.T) {
