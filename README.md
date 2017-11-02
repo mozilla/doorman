@@ -108,8 +108,10 @@ Is this ``subject`` allowed to perform this ``action`` on this ``resource`` in t
 
 **Requires authentication**
 
-A valid JSON Web Token (JWT) must be provided in the ``Authorization`` header.
+A valid JSON Web Token (JWT) must be provided in the ``Authorization`` request header.
 The JWT subject is used to match the policies.
+
+The JWT claimed audience will be checked against the ``Origin`` request header. The specified value must match one of the known audience from the policies files.
 
 **Request**:
 
@@ -136,10 +138,6 @@ Content-Type: application/json
 
 {
   "allowed": true,
-  "policy": {
-    "id": "1",
-    "description": "One policy to rule them all."
-  },
   "user": {
     "id": "google-auth|2664978978"
   }
@@ -160,7 +158,7 @@ Via environment variables:
 * ``GIN_MODE``: server mode (``release`` or default ``debug``)
 * ``LOG_LEVEL``: logging level (``fatal|error|warn|info|debug``, default: ``info`` with ``GIN_MODE=release`` else ``debug``)
 * ``VERSION_FILE``: location of JSON file with version information (default: ``./version.json``)
-* ``POLICIES_FILE``: location of YAML file with policies (default: ``./policies.yaml``)
+* ``POLICIES_FILES``: locations of YAML files with policies (default: ``./policies.yaml``)
 * ``JWT_ISSUER``:  issuer of the JWT tokens to match. For JWTs issued by Auth0, use the domain with a `https://` prefix and a trailing `/` (eg. `https://auth.mozilla.auth0.com/`)
 
 > Note: the ``Dockerfile`` contains different default values, suited for production.

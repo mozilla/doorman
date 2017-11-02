@@ -42,96 +42,134 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func loadTempFile(content []byte) error {
-	tmpfile, _ := ioutil.TempFile("", "")
-	defer os.Remove(tmpfile.Name()) // clean up
-	tmpfile.Write(content)
-	tmpfile.Close()
-	_, err := New(tmpfile.Name(), "")
+func loadTempFiles(contents ...string) error {
+	var filenames []string
+	for _, content := range contents {
+		tmpfile, _ := ioutil.TempFile("", "")
+		defer os.Remove(tmpfile.Name()) // clean up
+		tmpfile.Write([]byte(content))
+		tmpfile.Close()
+		filenames = append(filenames, tmpfile.Name())
+	}
+	_, err := New(filenames, "")
 	return err
 }
 
-func TestLoadPolicies(t *testing.T) {
+func TestLoadBadPolicies(t *testing.T) {
 	// Loads policies.yaml in current folder by default.
-	_, err := New("", "")
+	_, err := New([]string{}, "")
 	assert.NotNil(t, err) // doorman/policies.yaml does not exists.
 
-	// Loads policies from env.
-	os.Setenv("POLICIES_FILE", "/tmp/unknown.yaml")
-	defer os.Unsetenv("POLICIES_FILE")
-	_, err = New("", "")
-	assert.NotNil(t, err)
-
 	// Missing file
-	_, err = New("/tmp/unknown.yaml", "")
+	_, err = New([]string{"/tmp/unknown.yaml"}, "")
 	assert.NotNil(t, err)
 
 	// Empty file
-	err = loadTempFile([]byte(``))
+	err = loadTempFiles("")
 	assert.NotNil(t, err)
 
 	// Bad YAML
-	err = loadTempFile([]byte("$\\--xx"))
+	err = loadTempFiles("$\\--xx")
 	assert.NotNil(t, err)
 
 	// Empty audience
-	err = loadTempFile([]byte(`
-	audience:
-	policies:
-	  -
-	    id: "1"
-	    effect: allow
-	`))
+	err = loadTempFiles(`
+audience:
+policies:
+  -
+    id: "1"
+    effect: allow
+`)
 	assert.NotNil(t, err)
+
+	// Empty policies
+	err = loadTempFiles(`
+audience: a
+policies:
+`)
+	assert.Nil(t, err)
 
 	// Bad audience
-	err = loadTempFile([]byte(`
-	audience: 1
-	policies:
-	  -
-	    id: "1"
-	    effect: allow
-	`))
+	err = loadTempFiles(`
+audience: 1
+policies:
+  -
+    id: "1"
+    effect: allow
+`)
 	assert.NotNil(t, err)
 
-	// Bad policies
-	err = loadTempFile([]byte(`
-	policies:
-	  -
-	    id: "1"
-	    conditions:
-	      - a
-	      - b
-	`))
+	// Bad policies conditions
+	err = loadTempFiles(`
+audience: a
+policies:
+  -
+    id: "1"
+    conditions:
+      - a
+      - b
+`)
 	assert.NotNil(t, err)
 
-	// Duplicated ID
-	err = loadTempFile([]byte(`
-	policies:
-	  -
-	    id: "1"
-	    effect: allow
-	  -
-	    id: "1"
-	    effect: deny
-	`))
+	// Duplicated policy ID
+	err = loadTempFiles(`
+audience: a
+policies:
+  -
+    id: "1"
+    effect: allow
+  -
+    id: "1"
+    effect: deny
+`)
+	assert.NotNil(t, err)
+
+	// Duplicated audience
+	err = loadTempFiles(`
+audience: a
+policies:
+  -
+    id: "1"
+    effect: allow
+`, `
+audience: a
+policies:
+  -
+    id: "1"
+    effect: allow
+`)
 	assert.NotNil(t, err)
 }
 
 func TestReloadPolicies(t *testing.T) {
-	doorman, err := New("../sample.yaml", "")
+	doorman, err := New([]string{"../sample.yaml"}, "")
 	assert.Nil(t, err)
-	loaded, _ := doorman.Manager.GetAll(0, maxInt)
+	loaded, _ := doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
 	assert.Equal(t, 5, len(loaded))
 
 	// Second load.
 	doorman.loadPolicies()
-	loaded, _ = doorman.Manager.GetAll(0, maxInt)
+	loaded, _ = doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
 	assert.Equal(t, 5, len(loaded))
+}
+
+func TestIsAllowed(t *testing.T) {
+	doorman, err := New([]string{"../sample.yaml"}, "")
+	assert.Nil(t, err)
+
+	request := &ladon.Request{
+		// Policy #1
+		Subject:  "foo",
+		Action:   "update",
+		Resource: "server.org/blocklist:onecrl",
+	}
+	assert.Nil(t, doorman.IsAllowed("https://sample.yaml", request))
+	assert.NotNil(t, doorman.IsAllowed("https://bad.audience", request))
 }
 
 func performRequest(r http.Handler, method, path string, body io.Reader) *httptest.ResponseRecorder {
 	req, _ := http.NewRequest(method, path, body)
+	req.Header.Set("Origin", "https://sample.yaml")
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -147,7 +185,7 @@ func performAllowed(t *testing.T, r *gin.Engine, body io.Reader, expected int, r
 
 func TestDoormanGet(t *testing.T) {
 	r := gin.New()
-	doorman, _ := New("../sample.yaml", "")
+	doorman, _ := New([]string{"../sample.yaml"}, "")
 	SetupRoutes(r, doorman)
 
 	w := performRequest(r, "GET", "/allowed", nil)
@@ -156,7 +194,7 @@ func TestDoormanGet(t *testing.T) {
 
 func TestDoormanEmpty(t *testing.T) {
 	r := gin.New()
-	doorman, _ := New("../sample.yaml", "")
+	doorman, _ := New([]string{"../sample.yaml"}, "")
 	SetupRoutes(r, doorman)
 
 	var response ErrorResponse
@@ -166,7 +204,7 @@ func TestDoormanEmpty(t *testing.T) {
 
 func TestDoormanInvalidJSON(t *testing.T) {
 	r := gin.New()
-	doorman, _ := New("../sample.yaml", "")
+	doorman, _ := New([]string{"../sample.yaml"}, "")
 	SetupRoutes(r, doorman)
 
 	body := bytes.NewBuffer([]byte("{\"random\\;mess\"}"))
@@ -177,7 +215,7 @@ func TestDoormanInvalidJSON(t *testing.T) {
 
 func TestDoormanAllowed(t *testing.T) {
 	r := gin.New()
-	doorman, _ := New("../sample.yaml", "")
+	doorman, _ := New([]string{"../sample.yaml"}, "")
 	SetupRoutes(r, doorman)
 
 	for _, request := range []*ladon.Request{
@@ -234,7 +272,7 @@ func TestDoormanAllowed(t *testing.T) {
 
 func TestDoormanNotAllowed(t *testing.T) {
 	r := gin.New()
-	doorman, _ := New("../sample.yaml", "")
+	doorman, _ := New([]string{"../sample.yaml"}, "")
 	SetupRoutes(r, doorman)
 
 	for _, request := range []*ladon.Request{
@@ -293,7 +331,7 @@ func TestDoormanNotAllowed(t *testing.T) {
 
 func TestDoormanVerifiesJWT(t *testing.T) {
 	r := gin.New()
-	doorman, _ := New("../sample.yaml", "https://auth.mozilla.auth0.com/")
+	doorman, _ := New([]string{"../sample.yaml"}, "https://auth.mozilla.auth0.com/")
 	SetupRoutes(r, doorman)
 
 	// Policy #1 will match.

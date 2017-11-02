@@ -9,8 +9,8 @@ import (
 	jwt "gopkg.in/square/go-jose.v2/jwt"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 // TestMain defined in doorman_test.go
@@ -44,10 +44,10 @@ func TestExtractClaims(t *testing.T) {
 	assert.Equal(t, "google-oauth2|104102306111350576628", claims.Subject)
 }
 
-
 type TestValidator struct {
-  mock.Mock
+	mock.Mock
 }
+
 func (v *TestValidator) Initialize() error {
 	args := v.Called()
 	return args.Error(0)
@@ -67,11 +67,13 @@ func TestJWTMiddleware(t *testing.T) {
 
 	// Extract claims is ran on every request.
 	claims := &jwt.Claims{
-		Subject: "ldap|user",
+		Subject:  "ldap|user",
+		Audience: []string{"https://some.domain.com"},
 	}
 	v.On("ExtractClaims", mock.Anything).Return(claims, nil)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request, _ = http.NewRequest("GET", "/get", nil)
+	c.Request.Header.Set("Origin", "https://some.domain.com")
 
 	handler(c)
 
@@ -81,4 +83,19 @@ func TestJWTMiddleware(t *testing.T) {
 	payloadJWT, ok := c.Get(JWTContextKey)
 	require.True(t, ok)
 	assert.Equal(t, "ldap|user", payloadJWT.(*jwt.Claims).Subject)
+
+	c, _ = gin.CreateTestContext(httptest.NewRecorder())
+
+	// Missing origin.
+	c.Request, _ = http.NewRequest("GET", "/get", nil)
+	handler(c)
+	_, ok = c.Get(JWTContextKey)
+	assert.False(t, ok)
+
+	// Wrong origin.
+	c.Request, _ = http.NewRequest("GET", "/get", nil)
+	c.Request.Header.Set("Origin", "https://wrong.com")
+	handler(c)
+	_, ok = c.Get(JWTContextKey)
+	assert.False(t, ok)
 }

@@ -1,4 +1,4 @@
-audience: https://service.prod.net
+audience: https://sample.yaml
 policies:
   -
     id: "1"

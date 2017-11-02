@@ -19,8 +19,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestSetupRouter(t *testing.T) {
-	os.Setenv("POLICIES_FILE", "sample.yaml")
-	defer os.Unsetenv("POLICIES_FILE")
+	os.Setenv("POLICIES_FILES", "sample.yaml")
+	defer os.Unsetenv("POLICIES_FILES")
 	r, err := setupRouter()
 	require.Nil(t, err)
 	assert.Equal(t, 6, len(r.Routes()))
@@ -43,8 +43,8 @@ func TestSetupRouterRelease(t *testing.T) {
 }
 
 func TestSetupRouterBadPolicy(t *testing.T) {
-	os.Setenv("POLICIES_FILE", "/tmp/unknown.yaml")
-	defer os.Unsetenv("POLICIES_FILE")
+	os.Setenv("POLICIES_FILES", "/tmp/unknown.yaml")
+	defer os.Unsetenv("POLICIES_FILES")
 	_, err := setupRouter()
 	assert.NotNil(t, err)
 }
