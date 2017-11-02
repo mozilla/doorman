@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ory/ladon"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -134,7 +133,6 @@ policies:
 	assert.NotNil(t, err)
 }
 
-
 func TestLoadGroups(t *testing.T) {
 	d, err := loadTempFiles(`
 audience: a
@@ -171,12 +169,14 @@ func TestIsAllowed(t *testing.T) {
 	doorman, err := New([]string{"../sample.yaml"}, "")
 	assert.Nil(t, err)
 
-	request := &ladon.Request{
+	request := &Request{
 		// Policy #1
-		Subject:  "foo",
-		Action:   "update",
-		Resource: "server.org/blocklist:onecrl",
+		Principals: Principals{"userid:foo"},
+		Action:     "update",
+		Resource:   "server.org/blocklist:onecrl",
 	}
-	assert.Nil(t, doorman.IsAllowed("https://sample.yaml", request))
-	assert.NotNil(t, doorman.IsAllowed("https://bad.audience", request))
+	allowed, _ := doorman.IsAllowed("https://sample.yaml", request)
+	assert.True(t, allowed)
+	allowed, _ = doorman.IsAllowed("https://bad.audience", request)
+	assert.False(t, allowed)
 }

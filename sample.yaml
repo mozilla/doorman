@@ -2,9 +2,9 @@ audience: https://sample.yaml
 policies:
   -
     id: "1"
-    description: This policy allows 'foo' to update any resource
+    description: This policy allows 'userid:foo' to update any resource
     subjects:
-      - foo
+      - userid:foo
     actions:
       - update
     resources:

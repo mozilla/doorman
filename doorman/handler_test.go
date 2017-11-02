@@ -65,45 +65,45 @@ func TestDoormanAllowed(t *testing.T) {
 	doorman, _ := New([]string{"../sample.yaml"}, "")
 	SetupRoutes(r, doorman)
 
-	for _, request := range []*ladon.Request{
+	for _, request := range []*Request{
 		// Policy #1
 		{
-			Subject:  "foo",
-			Action:   "update",
-			Resource: "server.org/blocklist:onecrl",
+			Principals: []string{"userid:foo"},
+			Action:     "update",
+			Resource:   "server.org/blocklist:onecrl",
 		},
 		// Policy #2
 		{
-			Subject:  "foo",
-			Action:   "update",
-			Resource: "server.org/blocklist:onecrl",
+			Principals: []string{"userid:foo"},
+			Action:     "update",
+			Resource:   "server.org/blocklist:onecrl",
 			Context: ladon.Context{
 				"planet": "Mars", // "mars" is case-sensitive
 			},
 		},
 		// Policy #3
 		{
-			Subject:  "foo",
-			Action:   "read",
-			Resource: "server.org/blocklist:onecrl",
+			Principals: []string{"userid:foo"},
+			Action:     "read",
+			Resource:   "server.org/blocklist:onecrl",
 			Context: ladon.Context{
 				"ip": "127.0.0.1",
 			},
 		},
 		// Policy #4
 		{
-			Subject:  "bilbo",
-			Action:   "wear",
-			Resource: "ring",
+			Principals: []string{"userid:bilbo"},
+			Action:     "wear",
+			Resource:   "ring",
 			Context: ladon.Context{
-				"owner": "bilbo",
+				"owner": "userid:bilbo",
 			},
 		},
 		// Policy #5
 		{
-			Subject:  "group:admins",
-			Action:   "create",
-			Resource: "dns://",
+			Principals: []string{"group:admins"},
+			Action:     "create",
+			Resource:   "dns://",
 			Context: ladon.Context{
 				"domain": "kinto.mozilla.org",
 			},
@@ -122,45 +122,45 @@ func TestDoormanNotAllowed(t *testing.T) {
 	doorman, _ := New([]string{"../sample.yaml"}, "")
 	SetupRoutes(r, doorman)
 
-	for _, request := range []*ladon.Request{
+	for _, request := range []*Request{
 		// Policy #1
 		{
-			Subject:  "foo",
-			Action:   "delete",
-			Resource: "server.org/blocklist:onecrl",
+			Principals: []string{"userid:foo"},
+			Action:     "delete",
+			Resource:   "server.org/blocklist:onecrl",
 		},
 		// Policy #2
 		{
-			Subject:  "foo",
-			Action:   "update",
-			Resource: "server.org/blocklist:onecrl",
+			Principals: []string{"userid:foo"},
+			Action:     "update",
+			Resource:   "server.org/blocklist:onecrl",
 			Context: ladon.Context{
 				"planet": "mars",
 			},
 		},
 		// Policy #3
 		{
-			Subject:  "foo",
-			Action:   "read",
-			Resource: "server.org/blocklist:onecrl",
+			Principals: []string{"userid:foo"},
+			Action:     "read",
+			Resource:   "server.org/blocklist:onecrl",
 			Context: ladon.Context{
 				"ip": "10.0.0.1",
 			},
 		},
 		// Policy #4
 		{
-			Subject:  "gollum",
-			Action:   "wear",
-			Resource: "ring",
+			Principals: []string{"userid:gollum"},
+			Action:     "wear",
+			Resource:   "ring",
 			Context: ladon.Context{
 				"owner": "bilbo",
 			},
 		},
 		// Policy #5
 		{
-			Subject:  "group:admins",
-			Action:   "create",
-			Resource: "dns://",
+			Principals: []string{"group:admins"},
+			Action:     "create",
+			Resource:   "dns://",
 			Context: ladon.Context{
 				"domain": "kinto-storage.org",
 			},
@@ -182,15 +182,14 @@ func TestDoormanVerifiesJWT(t *testing.T) {
 	SetupRoutes(r, doorman)
 
 	// Policy #1 will match.
-	request := ladon.Request{
-		Subject:  "foo",
-		Action:   "delete",
-		Resource: "server.org/blocklist:onecrl",
+	request := Request{
+		Principals: []string{"userid:foo"},
+		Action:     "delete",
+		Resource:   "server.org/blocklist:onecrl",
 	}
 	token, _ := json.Marshal(request)
 	body := bytes.NewBuffer(token)
 	var response ErrorResponse
-
 	// Missing Authorization header.
 	performAllowed(t, r, body, http.StatusUnauthorized, &response)
 	assert.Equal(t, "Token not found", response.Message)

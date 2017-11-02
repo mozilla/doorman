@@ -28,17 +28,32 @@ type Doorman struct {
 	groups            map[string][]UserGroup
 }
 
+// Principals represent a user (userid, email, groups, ...)
+type Principals []string
+
 // Configuration represents the policies file content.
 type Configuration struct {
 	Audience string
-	Groups   map[string][]string
+	Groups   map[string]Principals
 	Policies []*ladon.DefaultPolicy
 }
 
 // UserGroup is a group of principals.
 type UserGroup struct {
 	Name    string
-	Members []string
+	Members Principals
+}
+
+// Request is the authorization request.
+type Request struct {
+	// Principals are strings that identify the user.
+	Principals Principals
+	// Resource is the resource that access is requested to.
+	Resource string
+	// Action is the action that is requested on the resource.
+	Action string
+	// Context is the request's environmental context.
+	Context ladon.Context
 }
 
 // New instantiates a new doorman.
@@ -52,9 +67,9 @@ func New(filenames []string, issuer string) (*Doorman, error) {
 
 	w := &Doorman{
 		PoliciesFilenames: filenames,
-		JWTIssuer: issuer,
-		ladons: map[string]ladon.Ladon{},
-		groups: map[string][]UserGroup{},
+		JWTIssuer:         issuer,
+		ladons:            map[string]ladon.Ladon{},
+		groups:            map[string][]UserGroup{},
 	}
 	if err := w.loadPolicies(); err != nil {
 		return nil, err
@@ -63,12 +78,48 @@ func New(filenames []string, issuer string) (*Doorman, error) {
 }
 
 // IsAllowed is responsible for deciding if subject can perform action on a resource with a context.
-func (doorman *Doorman) IsAllowed(audience string, request *ladon.Request) error {
-	ladon, ok := doorman.ladons[audience]
+func (doorman *Doorman) IsAllowed(audience string, request *Request) (bool, Principals) {
+	l, ok := doorman.ladons[audience]
 	if !ok {
-		return fmt.Errorf("unknown audience %q", audience)
+		return false, request.Principals
 	}
-	return ladon.IsAllowed(request)
+
+	// Expand principals with local groups.
+	groupPrincipals := doorman.lookupGroups(audience, request.Principals)
+	principals := append(request.Principals, groupPrincipals...)
+	// XXX: expand with request roles.
+	// XXX: expand with specific checks.
+
+	// For each principal, use it as the subject and query ladon backend.
+	for _, principal := range principals {
+		r := &ladon.Request{
+			Subject:  principal,
+			Resource: request.Resource,
+			Action:   request.Action,
+			Context:  request.Context,
+		}
+		if err := l.IsAllowed(r); err == nil {
+			return true, principals
+		}
+	}
+	return false, principals
+}
+
+// lookupGroups will match the groups defined in the configuration for this audience
+// against each of the specified principals.
+func (doorman *Doorman) lookupGroups(audience string, principals Principals) Principals {
+	var groups Principals
+	for _, group := range doorman.groups[audience] {
+		for _, member := range group.Members {
+			for _, principal := range principals {
+				if principal == member {
+					prefixed := fmt.Sprintf("group:%s", group.Name)
+					groups = append(groups, prefixed)
+				}
+			}
+		}
+	}
+	return groups
 }
 
 // LoadPolicies (re)loads configuration and policies from the YAML files.

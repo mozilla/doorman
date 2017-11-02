@@ -138,8 +138,10 @@ Content-Type: application/json
 
 {
   "allowed": true,
-  "user": {
-    "id": "google-auth|2664978978"
+  "principals": [
+    "userid:google-auth|2664978978",
+    "email:alex@skynet.corp",
+    "group:admins"
   }
 }
 ```

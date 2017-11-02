@@ -4,9 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ory/ladon"
 	log "github.com/sirupsen/logrus"
-	jwt "gopkg.in/square/go-jose.v2/jwt"
 )
 
 // DoormanContextKey is the Gin context key to obtain the *Doorman instance.
@@ -42,7 +40,7 @@ func allowedHandler(c *gin.Context) {
 		return
 	}
 
-	var accessRequest ladon.Request
+	var accessRequest Request
 	if err := c.BindJSON(&accessRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": err.Error(),
@@ -50,35 +48,30 @@ func allowedHandler(c *gin.Context) {
 		return
 	}
 
-	payloadJWT, ok := c.Get(JWTContextKey)
-	// Is VerifyJWTMiddleware enabled? (disabled in tests)
+	doorman := c.MustGet(DoormanContextKey).(*Doorman)
+	audience := c.Request.Header.Get("Origin")
+
+	// Is VerifyJWTMiddleware enabled?
+	// If disabled (like in tests), principals can be posted in JSON.
+	principals, ok := c.Get(PrincipalsContextKey)
 	if ok {
-		claims := payloadJWT.(*jwt.Claims)
-		// Subject is taken from JWT.
-		accessRequest.Subject = claims.Subject
+		accessRequest.Principals = principals.(Principals)
 	}
 
-	doorman := c.MustGet(DoormanContextKey).(*Doorman)
-
-	origin := c.Request.Header.Get("Origin")
-
-	// Will fail if origin is unknown.
-	err := doorman.IsAllowed(origin, &accessRequest)
-	allowed := (err == nil)
+	// Will fail if audience is unknown.
+	allowed, principals := doorman.IsAllowed(audience, &accessRequest)
 
 	log.WithFields(
 		log.Fields{
-			"allowed":  allowed,
-			"subject":  accessRequest.Subject,
-			"action":   accessRequest.Action,
-			"resource": accessRequest.Resource,
+			"allowed":    allowed,
+			"principals": principals,
+			"action":     accessRequest.Action,
+			"resource":   accessRequest.Resource,
 		},
 	).Info("request.authorization")
 
 	c.JSON(http.StatusOK, gin.H{
-		"allowed": allowed,
-		"user": gin.H{
-			"id": accessRequest.Subject,
-		},
+		"allowed":    allowed,
+		"principals": principals,
 	})
 }
