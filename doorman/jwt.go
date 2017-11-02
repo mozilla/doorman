@@ -11,6 +11,9 @@ import (
 	jwt "gopkg.in/square/go-jose.v2/jwt"
 )
 
+// JWTContextKey is the Gin context key to obtain the *jwt.Claims instance.
+const JWTContextKey string = "JWT"
+
 // JWTValidator is the interface in charge of extracting JWT claims from request.
 type JWTValidator interface {
 	Initialize() error
