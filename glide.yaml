@@ -1,4 +1,4 @@
-package: iam
+package: github.com/leplatrem/iam
 import:
 - package: github.com/gin-gonic/gin
   version: ^1.2.0
@@ -11,7 +11,6 @@ import:
 - package: github.com/sirupsen/logrus
   version: ^1.0.3
 - package: go.mozilla.org/mozlogrus
-- package: go.mozilla.org/mozlog
 - package: github.com/ory/ladon
   version: ~0.8.2
 - package: github.com/hashicorp/golang-lru

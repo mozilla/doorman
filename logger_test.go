@@ -20,12 +20,13 @@ func TestLoggerMiddleware(t *testing.T) {
 	handler := MozLogger()
 
 	var buf bytes.Buffer
-	logrus.SetOutput(&buf)
-	defer logrus.SetOutput(os.Stdout)
+	summaryLog.Out = &buf
 
 	handler(c)
 
-	assert.Contains(t, buf.String(), "errno=0")
+	summaryLog.Out = os.Stdout
+
+	assert.Contains(t, buf.String(), "\"errno\":0")
 }
 
 func TestRequestLogFields(t *testing.T) {
@@ -46,4 +47,43 @@ func TestRequestLogFields(t *testing.T) {
 	r, _ = http.NewRequest("POST", "/diff?w=1", nil)
 	fields = RequestLogFields(r, 200, time.Duration(100))
 	assert.Equal(t, "/diff?w=1", fields["path"])
+}
+
+func TestEnvLogLevel(t *testing.T) {
+	logger := logrus.StandardLogger()
+	var cases = []struct {
+		mode  string
+		env   string
+		level logrus.Level
+	}{
+		{gin.DebugMode, "fatal", logrus.FatalLevel},
+		{gin.DebugMode, "error", logrus.ErrorLevel},
+		{gin.DebugMode, "warn", logrus.WarnLevel},
+		{gin.DebugMode, "debug", logrus.DebugLevel},
+		{gin.DebugMode, "info", logrus.DebugLevel},
+		{gin.ReleaseMode, "info", logrus.InfoLevel},
+	}
+	defer gin.SetMode(gin.TestMode)
+	defer os.Unsetenv("LOG_LEVEL")
+	for _, test := range cases {
+		gin.SetMode(test.mode)
+		os.Setenv("LOG_LEVEL", test.env)
+		setLevelFromEnv(logger)
+		assert.Equal(t, test.level, logger.Level)
+	}
+}
+
+func TestSetupRouterRelease(t *testing.T) {
+	// In release mode, we enable MozLogger middleware.
+	gin.SetMode(gin.ReleaseMode)
+	defer gin.SetMode(gin.TestMode)
+	setupRouter()
+
+	var buf bytes.Buffer
+	logrus.SetOutput(&buf)
+	defer logrus.SetOutput(os.Stdout)
+
+	logrus.Info("Haha")
+
+	assert.Contains(t, buf.String(), "\"msg\":\"Haha\"")
 }
