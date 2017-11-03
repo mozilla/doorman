@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ory/ladon"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
@@ -157,8 +158,10 @@ func TestIsAllowed(t *testing.T) {
 		Resource:   "server.org/blocklist:onecrl",
 	}
 
+	audience := "https://sample.yaml"
+
 	// Check audience
-	allowed, _ := doorman.IsAllowed("https://sample.yaml", request)
+	allowed, _ := doorman.IsAllowed(audience, request)
 	assert.True(t, allowed)
 	allowed, _ = doorman.IsAllowed("https://bad.audience", request)
 	assert.False(t, allowed)
@@ -167,6 +170,18 @@ func TestIsAllowed(t *testing.T) {
 	request = &Request{
 		Principals: Principals{"userid:maria"},
 	}
-	_, principals := doorman.IsAllowed("https://sample.yaml", request)
+	_, principals := doorman.IsAllowed(audience, request)
 	assert.Equal(t, principals, Principals{"userid:maria", "tag:admins"})
+
+	// Expand principals from context roles
+	request = &Request{
+		Principals: Principals{"userid:bob"},
+		Action: "update",
+		Resource: "pto",
+		Context: ladon.Context{
+			"roles": []string{"editor"},
+		},
+	}
+	_, principals = doorman.IsAllowed(audience, request)
+	assert.Equal(t, principals, Principals{"userid:bob", "role:editor"})
 }

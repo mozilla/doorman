@@ -84,7 +84,13 @@ func (doorman *Doorman) IsAllowed(audience string, request *Request) (bool, Prin
 	// Expand principals with local tags.
 	tagPrincipals := doorman.lookupTags(audience, request.Principals)
 	principals := append(request.Principals, tagPrincipals...)
-	// XXX: expand with request roles.
+	// Expand principals with roles.
+	if roles, ok := request.Context["roles"]; ok {
+		for _, role := range roles.([]string) {
+			prefixed := fmt.Sprintf("role:%s", role)
+			principals = append(principals, prefixed)
+		}
+	}
 
 	// For each principal, use it as the subject and query ladon backend.
 	for _, principal := range principals {
