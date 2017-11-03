@@ -52,8 +52,7 @@ func setupRouter() (*gin.Engine, error) {
 	setLogLevel()
 
 	// Setup doorman and load configuration files.
-	filenames := strings.Split(os.Getenv("POLICIES_FILES"), " ")
-	w, err := doorman.New(filenames, os.Getenv("JWT_ISSUER"))
+	w, err := doorman.New(filenames(), os.Getenv("JWT_ISSUER"))
 	if err != nil {
 		return nil, err
 	}
@@ -71,4 +70,17 @@ func main() {
 		logrus.Fatal(err.Error())
 	}
 	r.Run() // listen and serve on 0.0.0.0:$PORT (:8080)
+}
+
+func filenames() []string {
+	filenames := strings.Split(os.Getenv("POLICIES_FILES"), " ")
+	// Filter empty strings
+	var r []string
+	for _, v := range filenames {
+		s := strings.TrimSpace(v)
+		if s != "" {
+			r = append(r, s)
+		}
+	}
+	return r
 }
