@@ -30,7 +30,7 @@ Policies are defined in YAML file (default ``./policies.yaml``) as follow:
         - resources:articles:<.*>
         - resources:printer
       conditions:
-        remoteIP:
+        clientIP:
           type: CIDRCondition
           options:
             cidr: 192.168.0.1/16
@@ -49,10 +49,10 @@ Supported prefixes:
 
 * ``userid:``: provided by IdP
 * ``tag:``: local tags
+* ``role:``: provided in context of authorization request (see below)
 <!--
 * ``email:``: provided by IdP
 * ``group:``: provided by IdP/LDAP
-* ``role:``: provided by service
  -->
 
 ### Conditions
@@ -133,17 +133,21 @@ The JWT claimed audience will be checked against the ``Origin`` request header. 
 ```HTTP
 POST /allowed HTTP/1.1
 Content-Type: application/json
+Origin: https://api.service.org
 Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbG...9USXpOalEzUXpV
 
 {
   "action" : "delete",
   "resource": "resource:articles:ladon-introduction",
   "context": {
-    "remoteIP": "192.168.0.5"
+    "clientIP": "192.168.0.5",
+    "roles": ["editor"]
   }
 }
 
 ```
+
+> Note: None of authorization request field is mandatory.
 
 **Response**:
 
