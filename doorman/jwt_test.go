@@ -79,23 +79,23 @@ func TestJWTMiddleware(t *testing.T) {
 
 	v.AssertCalled(t, "ExtractClaims", c.Request)
 
-	// JWT claims are set in context.
-	payloadJWT, ok := c.Get(JWTContextKey)
+	// Principals are set in context.
+	principals, ok := c.Get(PrincipalsContextKey)
 	require.True(t, ok)
-	assert.Equal(t, "ldap|user", payloadJWT.(*jwt.Claims).Subject)
+	assert.Contains(t, principals, "userid:ldap|user")
 
 	c, _ = gin.CreateTestContext(httptest.NewRecorder())
 
 	// Missing origin.
 	c.Request, _ = http.NewRequest("GET", "/get", nil)
 	handler(c)
-	_, ok = c.Get(JWTContextKey)
+	_, ok = c.Get(PrincipalsContextKey)
 	assert.False(t, ok)
 
 	// Wrong origin.
 	c.Request, _ = http.NewRequest("GET", "/get", nil)
 	c.Request.Header.Set("Origin", "https://wrong.com")
 	handler(c)
-	_, ok = c.Get(JWTContextKey)
+	_, ok = c.Get(PrincipalsContextKey)
 	assert.False(t, ok)
 }

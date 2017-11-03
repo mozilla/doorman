@@ -11,8 +11,8 @@ import (
 	jwt "gopkg.in/square/go-jose.v2/jwt"
 )
 
-// JWTContextKey is the Gin context key to obtain the *jwt.Claims instance.
-const JWTContextKey string = "JWT"
+// PrincipalsContextKey is the Gin context key to obtain the current user principals.
+const PrincipalsContextKey string = "principals"
 
 // JWTValidator is the interface in charge of extracting JWT claims from request.
 type JWTValidator interface {
@@ -77,13 +77,20 @@ func VerifyJWTMiddleware(validator JWTValidator) gin.HandlerFunc {
 		}
 		// Check that origin matches audiences from JWT token .
 		if !claims.Audience.Contains(origin) {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"message": "Invalid audience claim",
 			})
 			return
 		}
 
-		c.Set(JWTContextKey, claims)
+		// Extract principals from JWT
+		var principals Principals
+		userid := fmt.Sprintf("userid:%s", claims.Subject)
+		principals = append(principals, userid)
+		// XXX email:{email} if present
+		// XXX ldap:{group} if groups are present
+
+		c.Set(PrincipalsContextKey, principals)
 
 		c.Next()
 	}

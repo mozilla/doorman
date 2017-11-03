@@ -13,13 +13,16 @@ Policies are defined in YAML file (default ``./policies.yaml``) as follow:
 
 ```yaml
   audience: https://service.stage.net
+  tags:
+    admins:
+      - userid:maria
   policies:
     -
       description: One policy to rule them all.
       subjects:
-        - maria
-        - <[peter|ken]>
-        - group:admin
+        - userid:<[peter|ken]>
+        - tag:admins
+        - group:europe
       actions:
         - delete
         - <[create|update]>
@@ -27,7 +30,7 @@ Policies are defined in YAML file (default ``./policies.yaml``) as follow:
         - resources:articles:<.*>
         - resources:printer
       conditions:
-        remoteIP:
+        clientIP:
           type: CIDRCondition
           options:
             cidr: 192.168.0.1/16
@@ -39,6 +42,18 @@ Use `effect: deny` to deny explicitly.
 Otherwise, requests that don't match any rule are denied.
 
 Regular expressions begin with ``<`` and end with ``>``.
+
+### Subjects
+
+Supported prefixes:
+
+* ``userid:``: provided by IdP
+* ``tag:``: local tags
+* ``role:``: provided in context of authorization request (see below)
+<!--
+* ``email:``: provided by IdP
+* ``group:``: provided by IdP/LDAP
+ -->
 
 ### Conditions
 
@@ -118,17 +133,24 @@ The JWT claimed audience will be checked against the ``Origin`` request header. 
 ```HTTP
 POST /allowed HTTP/1.1
 Content-Type: application/json
+Origin: https://api.service.org
 Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbG...9USXpOalEzUXpV
 
 {
   "action" : "delete",
   "resource": "resource:articles:ladon-introduction",
   "context": {
-    "remoteIP": "192.168.0.5"
+    "clientIP": "192.168.0.5",
+    "roles": ["editor"]
   }
 }
 
 ```
+
+> Notes:
+>
+> * None of authorization request field is mandatory.
+> * When the service runs without `JWT_ISSUER` environment variable, the `principals` can be posted in the authorization request.
 
 **Response**:
 
@@ -138,9 +160,11 @@ Content-Type: application/json
 
 {
   "allowed": true,
-  "user": {
-    "id": "google-auth|2664978978"
-  }
+  "principals": [
+    "userid:google-auth|2664978978",
+    "email:alex@skynet.corp",
+    "group:admins"
+  ]
 }
 ```
 

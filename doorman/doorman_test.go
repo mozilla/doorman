@@ -5,29 +5,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/ory/ladon"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
-
-type Policy struct {
-	ID          string
-	Description string
-}
-
-type User struct {
-	ID string
-}
-
-type Response struct {
-	Allowed bool
-	User    User
-	Policy  Policy
-}
-
-type ErrorResponse struct {
-	Message string
-}
 
 func TestMain(m *testing.M) {
 	//Set Gin to Test Mode
@@ -36,7 +17,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func loadTempFiles(contents ...string) error {
+func loadTempFiles(contents ...string) (*Doorman, error) {
 	var filenames []string
 	for _, content := range contents {
 		tmpfile, _ := ioutil.TempFile("", "")
@@ -45,8 +26,7 @@ func loadTempFiles(contents ...string) error {
 		tmpfile.Close()
 		filenames = append(filenames, tmpfile.Name())
 	}
-	_, err := New(filenames, "")
-	return err
+	return New(filenames, "")
 }
 
 func TestLoadBadPolicies(t *testing.T) {
@@ -59,15 +39,15 @@ func TestLoadBadPolicies(t *testing.T) {
 	assert.NotNil(t, err)
 
 	// Empty file
-	err = loadTempFiles("")
+	_, err = loadTempFiles("")
 	assert.NotNil(t, err)
 
 	// Bad YAML
-	err = loadTempFiles("$\\--xx")
+	_, err = loadTempFiles("$\\--xx")
 	assert.NotNil(t, err)
 
 	// Empty audience
-	err = loadTempFiles(`
+	_, err = loadTempFiles(`
 audience:
 policies:
   -
@@ -77,14 +57,14 @@ policies:
 	assert.NotNil(t, err)
 
 	// Empty policies
-	err = loadTempFiles(`
+	_, err = loadTempFiles(`
 audience: a
 policies:
 `)
 	assert.Nil(t, err)
 
 	// Bad audience
-	err = loadTempFiles(`
+	_, err = loadTempFiles(`
 audience: 1
 policies:
   -
@@ -94,7 +74,7 @@ policies:
 	assert.NotNil(t, err)
 
 	// Bad policies conditions
-	err = loadTempFiles(`
+	_, err = loadTempFiles(`
 audience: a
 policies:
   -
@@ -106,7 +86,7 @@ policies:
 	assert.NotNil(t, err)
 
 	// Duplicated policy ID
-	err = loadTempFiles(`
+	_, err = loadTempFiles(`
 audience: a
 policies:
   -
@@ -119,7 +99,7 @@ policies:
 	assert.NotNil(t, err)
 
 	// Duplicated audience
-	err = loadTempFiles(`
+	_, err = loadTempFiles(`
 audience: a
 policies:
   -
@@ -135,28 +115,73 @@ policies:
 	assert.NotNil(t, err)
 }
 
+func TestLoadGroups(t *testing.T) {
+	d, err := loadTempFiles(`
+audience: a
+tags:
+  admins:
+    - alice@mit.edu
+    - ldap|bob
+  editors:
+    - mathieu@mozilla.com
+policies:
+  -
+    id: "1"
+    effect: allow
+`)
+	assert.Nil(t, err)
+	assert.Equal(t, len(d.tags["a"]), 2)
+	assert.Equal(t, len(d.tags["a"]["admins"]), 2)
+	assert.Equal(t, len(d.tags["a"]["editors"]), 1)
+}
+
 func TestReloadPolicies(t *testing.T) {
 	doorman, err := New([]string{"../sample.yaml"}, "")
 	assert.Nil(t, err)
 	loaded, _ := doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
-	assert.Equal(t, 5, len(loaded))
+	assert.Equal(t, 6, len(loaded))
 
 	// Second load.
 	doorman.loadPolicies()
 	loaded, _ = doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
-	assert.Equal(t, 5, len(loaded))
+	assert.Equal(t, 6, len(loaded))
 }
 
 func TestIsAllowed(t *testing.T) {
 	doorman, err := New([]string{"../sample.yaml"}, "")
 	assert.Nil(t, err)
 
-	request := &ladon.Request{
-		// Policy #1
-		Subject:  "foo",
-		Action:   "update",
-		Resource: "server.org/blocklist:onecrl",
+	// Policy #1
+	request := &Request{
+		Principals: Principals{"userid:foo"},
+		Action:     "update",
+		Resource:   "server.org/blocklist:onecrl",
 	}
-	assert.Nil(t, doorman.IsAllowed("https://sample.yaml", request))
-	assert.NotNil(t, doorman.IsAllowed("https://bad.audience", request))
+
+	audience := "https://sample.yaml"
+
+	// Check audience
+	allowed, _ := doorman.IsAllowed(audience, request)
+	assert.True(t, allowed)
+	allowed, _ = doorman.IsAllowed("https://bad.audience", request)
+	assert.False(t, allowed)
+
+	// Expand principals from tags
+	request = &Request{
+		Principals: Principals{"userid:maria"},
+	}
+	_, principals := doorman.IsAllowed(audience, request)
+	assert.Equal(t, principals, Principals{"userid:maria", "tag:admins"})
+
+	// Expand principals from context roles
+	request = &Request{
+		Principals: Principals{"userid:bob"},
+		Action: "update",
+		Resource: "pto",
+		Context: ladon.Context{
+			"roles": []string{"editor"},
+		},
+	}
+	_, principals = doorman.IsAllowed(audience, request)
+	assert.Equal(t, principals, Principals{"userid:bob", "role:editor"})
 }

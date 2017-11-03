@@ -20,17 +20,37 @@ const DefaultPoliciesFilename string = "policies.yaml"
 
 const maxInt int64 = 1<<63 - 1
 
+// Principals represent a user (userid, email, tags, ...)
+type Principals []string
+
+// Tags map tag names to principals.
+type Tags map[string]Principals
+
 // Doorman is the backend in charge of checking requests against policies.
 type Doorman struct {
 	PoliciesFilenames []string
 	JWTIssuer         string
 	ladons            map[string]ladon.Ladon
+	tags              map[string]Tags
 }
 
 // Configuration represents the policies file content.
 type Configuration struct {
 	Audience string
+	Tags     Tags
 	Policies []*ladon.DefaultPolicy
+}
+
+// Request is the authorization request.
+type Request struct {
+	// Principals are strings that identify the user.
+	Principals Principals
+	// Resource is the resource that access is requested to.
+	Resource string
+	// Action is the action that is requested on the resource.
+	Action string
+	// Context is the request's environmental context.
+	Context ladon.Context
 }
 
 // New instantiates a new doorman.
@@ -42,7 +62,12 @@ func New(filenames []string, issuer string) (*Doorman, error) {
 		filenames = []string{filename}
 	}
 
-	w := &Doorman{filenames, issuer, map[string]ladon.Ladon{}}
+	w := &Doorman{
+		PoliciesFilenames: filenames,
+		JWTIssuer:         issuer,
+		ladons:            map[string]ladon.Ladon{},
+		tags:              map[string]Tags{},
+	}
 	if err := w.loadPolicies(); err != nil {
 		return nil, err
 	}
@@ -50,12 +75,53 @@ func New(filenames []string, issuer string) (*Doorman, error) {
 }
 
 // IsAllowed is responsible for deciding if subject can perform action on a resource with a context.
-func (doorman *Doorman) IsAllowed(audience string, request *ladon.Request) error {
-	ladon, ok := doorman.ladons[audience]
+func (doorman *Doorman) IsAllowed(audience string, request *Request) (bool, Principals) {
+	l, ok := doorman.ladons[audience]
 	if !ok {
-		return fmt.Errorf("unknown audience %q", audience)
+		return false, request.Principals
 	}
-	return ladon.IsAllowed(request)
+
+	// Expand principals with local tags.
+	tagPrincipals := doorman.lookupTags(audience, request.Principals)
+	principals := append(request.Principals, tagPrincipals...)
+	// Expand principals with roles.
+	if roles, ok := request.Context["roles"]; ok {
+		for _, role := range roles.([]string) {
+			prefixed := fmt.Sprintf("role:%s", role)
+			principals = append(principals, prefixed)
+		}
+	}
+
+	// For each principal, use it as the subject and query ladon backend.
+	for _, principal := range principals {
+		r := &ladon.Request{
+			Subject:  principal,
+			Resource: request.Resource,
+			Action:   request.Action,
+			Context:  request.Context,
+		}
+		if err := l.IsAllowed(r); err == nil {
+			return true, principals
+		}
+	}
+	return false, principals
+}
+
+// lookupTags will match the tags defined in the configuration for this audience
+// against each of the specified principals.
+func (doorman *Doorman) lookupTags(audience string, principals Principals) Principals {
+	var tags Principals
+	for tag, members := range doorman.tags[audience] {
+		for _, member := range members {
+			for _, principal := range principals {
+				if principal == member {
+					prefixed := fmt.Sprintf("tag:%s", tag)
+					tags = append(tags, prefixed)
+				}
+			}
+		}
+	}
+	return tags
 }
 
 // LoadPolicies (re)loads configuration and policies from the YAML files.
@@ -87,6 +153,7 @@ func (doorman *Doorman) loadPolicies() error {
 			return fmt.Errorf("duplicated audience %q (filename %q)", config.Audience, filename)
 		}
 		doorman.ladons[config.Audience] = l
+		doorman.tags[config.Audience] = config.Tags
 	}
 	return nil
 }

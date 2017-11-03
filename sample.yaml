@@ -1,10 +1,14 @@
 audience: https://sample.yaml
+tags:
+  admins:
+    - userid:maria
 policies:
   -
     id: "1"
-    description: This policy allows 'foo' to update any resource
+    description: This policy allows 'userid:foo' to update any resource
     subjects:
-      - foo
+      - userid:foo
+      - tag:admins
     actions:
       - update
     resources:
@@ -68,3 +72,12 @@ policies:
         options:
           matches: .*\.mozilla\.org
     effect: allow
+  -
+    id: "6"
+    description: Editors can update PTO
+    subjects:
+      - role:editor
+    actions:
+      - update
+    resources:
+      - pto
