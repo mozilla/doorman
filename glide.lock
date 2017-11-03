@@ -1,5 +1,5 @@
-hash: 505daf54884a4577c654f360376e6fcd49941123208a10b75fba87f1d10f6d9d
-updated: 2017-10-02T17:18:44.660405911+02:00
+hash: 5024ebf06e334d02fdb32aa2daae7fe9044dd0cdd242a843ccc320825a2afe64
+updated: 2017-11-03T11:51:56.528137918+01:00
 imports:
 - name: github.com/auth0-community/go-auth0
   version: 3de339a55934c49fa256181e63b9ecf0234c15b7
@@ -31,7 +31,7 @@ imports:
 - name: github.com/mattn/go-isatty
   version: a5cdd64afdee435007ee3e9f6ed4684af949d568
 - name: github.com/ory/ladon
-  version: 306b2e6adf322d429e72ace6be16818dda75f574
+  version: 4223d97b7a16808bc1213cc641d529e764e67eea
   subpackages:
   - compiler
   - manager/memory
@@ -49,15 +49,14 @@ imports:
   version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
   subpackages:
   - assert
+  - mock
   - require
 - name: github.com/ugorji/go
   version: 54210f4e076c57f351166f0ed60e67d3fca57a36
   subpackages:
   - codec
-- name: go.mozilla.org/mozlog
-  version: 4bb13139d40339f59bf140d0f5f28be83b07cc58
 - name: go.mozilla.org/mozlogrus
-  version: c97d20ca01613789b0c87089e39493537f4cad6b
+  version: a4ca0c1ee1cb5e580348b1e1aac9bd3e5f07f26d
 - name: golang.org/x/crypto
   version: 9419663f5a44be8b34ca85f08abc5fe1be11f8a3
   subpackages:
@@ -79,4 +78,6 @@ imports:
   - jwt
 - name: gopkg.in/yaml.v2
   version: eb3733d160e74a9c7e442f435eb3bea458e1d19f
-testImports: []
+testImports:
+- name: github.com/stretchr/objx
+  version: cbeaeb16a013161a98496fad62933b1d21786672
