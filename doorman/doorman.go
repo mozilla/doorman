@@ -20,28 +20,25 @@ const DefaultPoliciesFilename string = "policies.yaml"
 
 const maxInt int64 = 1<<63 - 1
 
+// Principals represent a user (userid, email, tags, ...)
+type Principals []string
+
+// Tags map tag names to principals.
+type Tags map[string]Principals
+
 // Doorman is the backend in charge of checking requests against policies.
 type Doorman struct {
 	PoliciesFilenames []string
 	JWTIssuer         string
 	ladons            map[string]ladon.Ladon
-	groups            map[string][]UserGroup
+	tags              map[string]Tags
 }
-
-// Principals represent a user (userid, email, groups, ...)
-type Principals []string
 
 // Configuration represents the policies file content.
 type Configuration struct {
 	Audience string
-	Groups   map[string]Principals
+	Tags     Tags
 	Policies []*ladon.DefaultPolicy
-}
-
-// UserGroup is a group of principals.
-type UserGroup struct {
-	Name    string
-	Members Principals
 }
 
 // Request is the authorization request.
@@ -69,7 +66,7 @@ func New(filenames []string, issuer string) (*Doorman, error) {
 		PoliciesFilenames: filenames,
 		JWTIssuer:         issuer,
 		ladons:            map[string]ladon.Ladon{},
-		groups:            map[string][]UserGroup{},
+		tags:              map[string]Tags{},
 	}
 	if err := w.loadPolicies(); err != nil {
 		return nil, err
@@ -84,11 +81,10 @@ func (doorman *Doorman) IsAllowed(audience string, request *Request) (bool, Prin
 		return false, request.Principals
 	}
 
-	// Expand principals with local groups.
-	groupPrincipals := doorman.lookupGroups(audience, request.Principals)
-	principals := append(request.Principals, groupPrincipals...)
+	// Expand principals with local tags.
+	tagPrincipals := doorman.lookupTags(audience, request.Principals)
+	principals := append(request.Principals, tagPrincipals...)
 	// XXX: expand with request roles.
-	// XXX: expand with specific checks.
 
 	// For each principal, use it as the subject and query ladon backend.
 	for _, principal := range principals {
@@ -105,21 +101,21 @@ func (doorman *Doorman) IsAllowed(audience string, request *Request) (bool, Prin
 	return false, principals
 }
 
-// lookupGroups will match the groups defined in the configuration for this audience
+// lookupTags will match the tags defined in the configuration for this audience
 // against each of the specified principals.
-func (doorman *Doorman) lookupGroups(audience string, principals Principals) Principals {
-	var groups Principals
-	for _, group := range doorman.groups[audience] {
-		for _, member := range group.Members {
+func (doorman *Doorman) lookupTags(audience string, principals Principals) Principals {
+	var tags Principals
+	for tag, members := range doorman.tags[audience] {
+		for _, member := range members {
 			for _, principal := range principals {
 				if principal == member {
-					prefixed := fmt.Sprintf("group:%s", group.Name)
-					groups = append(groups, prefixed)
+					prefixed := fmt.Sprintf("tag:%s", tag)
+					tags = append(tags, prefixed)
 				}
 			}
 		}
 	}
-	return groups
+	return tags
 }
 
 // LoadPolicies (re)loads configuration and policies from the YAML files.
@@ -151,13 +147,7 @@ func (doorman *Doorman) loadPolicies() error {
 			return fmt.Errorf("duplicated audience %q (filename %q)", config.Audience, filename)
 		}
 		doorman.ladons[config.Audience] = l
-
-		var groups []UserGroup
-		for name, members := range config.Groups {
-			log.Infof("Load group %q", name)
-			groups = append(groups, UserGroup{name, members})
-		}
-		doorman.groups[config.Audience] = groups
+		doorman.tags[config.Audience] = config.Tags
 	}
 	return nil
 }

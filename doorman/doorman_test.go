@@ -136,7 +136,7 @@ policies:
 func TestLoadGroups(t *testing.T) {
 	d, err := loadTempFiles(`
 audience: a
-groups:
+tags:
   admins:
     - alice@mit.edu
     - ldap|bob
@@ -148,9 +148,9 @@ policies:
     effect: allow
 `)
 	assert.Nil(t, err)
-	assert.Equal(t, len(d.groups["a"]), 2)
-	// Dict iteration not guaranteed (hence admins or editors)
-	assert.Regexp(t, "admins|editors", d.groups["a"][0].Name)
+	assert.Equal(t, len(d.tags["a"]), 2)
+	assert.Equal(t, len(d.tags["a"]["admins"]), 2)
+	assert.Equal(t, len(d.tags["a"]["editors"]), 1)
 }
 
 func TestReloadPolicies(t *testing.T) {

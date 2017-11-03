@@ -13,13 +13,16 @@ Policies are defined in YAML file (default ``./policies.yaml``) as follow:
 
 ```yaml
   audience: https://service.stage.net
+  tags:
+    admins:
+      - userid:maria
   policies:
     -
       description: One policy to rule them all.
       subjects:
-        - maria
-        - <[peter|ken]>
-        - group:admin
+        - userid:<[peter|ken]>
+        - tag:admins
+        - group:europe
       actions:
         - delete
         - <[create|update]>
@@ -39,6 +42,18 @@ Use `effect: deny` to deny explicitly.
 Otherwise, requests that don't match any rule are denied.
 
 Regular expressions begin with ``<`` and end with ``>``.
+
+### Subjects
+
+Supported prefixes:
+
+* ``email:``: provided by IdP
+* ``userid:``: provided by IdP
+* ``tag:``: local tags
+* ``iam:``: IAM specific checks
+* ``group:``: provided by IdP/LDAP
+* ``role:``: provided by service
+
 
 ### Conditions
 

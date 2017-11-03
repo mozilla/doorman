@@ -1,4 +1,7 @@
 audience: https://sample.yaml
+tags:
+  admins:
+    - userid:maria
 policies:
   -
     id: "1"
@@ -58,6 +61,7 @@ policies:
     description: Admins on Mozilla domain
     subjects:
       - group:admins
+      - tag:admins
     actions:
       - create
     resources:
