@@ -14,10 +14,18 @@ import (
 // PrincipalsContextKey is the Gin context key to obtain the current user principals.
 const PrincipalsContextKey string = "principals"
 
+// Claims is the set of information we extract from the JWT payload.
+type Claims struct {
+	Subject  string       `json:"sub,omitempty"`
+	Audience jwt.Audience `json:"aud,omitempty"`
+	Email    string       `json:"email,omitempty"`
+	Groups   []string     `json:"groups,omitempty"`
+}
+
 // JWTValidator is the interface in charge of extracting JWT claims from request.
 type JWTValidator interface {
 	Initialize() error
-	ExtractClaims(*http.Request) (*jwt.Claims, error)
+	ExtractClaims(*http.Request) (*Claims, error)
 }
 
 // Auth0Validator is the implementation of JWTValidator for Auth0.
@@ -41,9 +49,9 @@ func (v *Auth0Validator) Initialize() error {
 }
 
 // ExtractClaims validates the token from request, and returns the JWT claims.
-func (v *Auth0Validator) ExtractClaims(request *http.Request) (*jwt.Claims, error) {
+func (v *Auth0Validator) ExtractClaims(request *http.Request) (*Claims, error) {
 	token, err := v.validator.ValidateRequest(request)
-	claims := jwt.Claims{}
+	claims := Claims{}
 	err = v.validator.Claims(request, token, &claims)
 	if err != nil {
 		return nil, err
@@ -87,8 +95,16 @@ func VerifyJWTMiddleware(validator JWTValidator) gin.HandlerFunc {
 		var principals Principals
 		userid := fmt.Sprintf("userid:%s", claims.Subject)
 		principals = append(principals, userid)
-		// XXX email:{email} if present
-		// XXX ldap:{group} if groups are present
+		// Main email (no alias)
+		if claims.Email != "" {
+			email := fmt.Sprintf("email:%s", claims.Email)
+			principals = append(principals, email)
+		}
+		// Groups
+		for _, group := range claims.Groups {
+			prefixed := fmt.Sprintf("group:%s", group)
+			principals = append(principals, prefixed)
+		}
 
 		c.Set(PrincipalsContextKey, principals)
 

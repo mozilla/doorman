@@ -50,10 +50,8 @@ Supported prefixes:
 * ``userid:``: provided by IdP
 * ``tag:``: local tags
 * ``role:``: provided in context of authorization request (see below)
-<!--
 * ``email:``: provided by IdP
 * ``group:``: provided by IdP/LDAP
- -->
 
 ### Conditions
 

@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ory/ladon"
 	"github.com/gin-gonic/gin"
+	"github.com/ory/ladon"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -176,8 +176,8 @@ func TestIsAllowed(t *testing.T) {
 	// Expand principals from context roles
 	request = &Request{
 		Principals: Principals{"userid:bob"},
-		Action: "update",
-		Resource: "pto",
+		Action:     "update",
+		Resource:   "pto",
 		Context: ladon.Context{
 			"roles": []string{"editor"},
 		},

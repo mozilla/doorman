@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	jwt "gopkg.in/square/go-jose.v2/jwt"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -52,9 +51,9 @@ func (v *TestValidator) Initialize() error {
 	args := v.Called()
 	return args.Error(0)
 }
-func (v *TestValidator) ExtractClaims(request *http.Request) (*jwt.Claims, error) {
+func (v *TestValidator) ExtractClaims(request *http.Request) (*Claims, error) {
 	args := v.Called(request)
-	return args.Get(0).(*jwt.Claims), args.Error(1)
+	return args.Get(0).(*Claims), args.Error(1)
 }
 
 func TestJWTMiddleware(t *testing.T) {
@@ -66,9 +65,11 @@ func TestJWTMiddleware(t *testing.T) {
 	v.AssertCalled(t, "Initialize")
 
 	// Extract claims is ran on every request.
-	claims := &jwt.Claims{
+	claims := &Claims{
 		Subject:  "ldap|user",
 		Audience: []string{"https://some.domain.com"},
+		Email:    "user@corp.com",
+		Groups:   []string{"Employee", "Admins"},
 	}
 	v.On("ExtractClaims", mock.Anything).Return(claims, nil)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
@@ -82,7 +83,12 @@ func TestJWTMiddleware(t *testing.T) {
 	// Principals are set in context.
 	principals, ok := c.Get(PrincipalsContextKey)
 	require.True(t, ok)
-	assert.Contains(t, principals, "userid:ldap|user")
+	assert.Equal(t, principals, Principals{
+		"userid:ldap|user",
+		"email:user@corp.com",
+		"group:Employee",
+		"group:Admins",
+	})
 
 	c, _ = gin.CreateTestContext(httptest.NewRecorder())
 
@@ -98,4 +104,20 @@ func TestJWTMiddleware(t *testing.T) {
 	handler(c)
 	_, ok = c.Get(PrincipalsContextKey)
 	assert.False(t, ok)
+
+	// Missing attributes in Payload
+	claims = &Claims{
+		Subject:  "ldap|user",
+		Audience: []string{"https://some.domain.com"},
+	}
+	v = &TestValidator{}
+	v.On("Initialize").Return(nil)
+	v.On("ExtractClaims", mock.Anything).Return(claims, nil)
+	c, _ = gin.CreateTestContext(httptest.NewRecorder())
+	c.Request, _ = http.NewRequest("GET", "/get", nil)
+	c.Request.Header.Set("Origin", "https://some.domain.com")
+	handler = VerifyJWTMiddleware(v)
+	handler(c)
+	principals, _ = c.Get(PrincipalsContextKey)
+	assert.Equal(t, Principals{"userid:ldap|user"}, principals)
 }
