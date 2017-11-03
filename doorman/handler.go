@@ -66,7 +66,7 @@ func allowedHandler(c *gin.Context) {
 	err := doorman.IsAllowed(origin, &accessRequest)
 	allowed := (err == nil)
 
-	log.WithFields(
+	authzLog.WithFields(
 		log.Fields{
 			"allowed":  allowed,
 			"subject":  accessRequest.Subject,
