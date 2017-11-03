@@ -138,26 +138,35 @@ func TestReloadPolicies(t *testing.T) {
 	doorman, err := New([]string{"../sample.yaml"}, "")
 	assert.Nil(t, err)
 	loaded, _ := doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
-	assert.Equal(t, 5, len(loaded))
+	assert.Equal(t, 6, len(loaded))
 
 	// Second load.
 	doorman.loadPolicies()
 	loaded, _ = doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
-	assert.Equal(t, 5, len(loaded))
+	assert.Equal(t, 6, len(loaded))
 }
 
 func TestIsAllowed(t *testing.T) {
 	doorman, err := New([]string{"../sample.yaml"}, "")
 	assert.Nil(t, err)
 
+	// Policy #1
 	request := &Request{
-		// Policy #1
 		Principals: Principals{"userid:foo"},
 		Action:     "update",
 		Resource:   "server.org/blocklist:onecrl",
 	}
+
+	// Check audience
 	allowed, _ := doorman.IsAllowed("https://sample.yaml", request)
 	assert.True(t, allowed)
 	allowed, _ = doorman.IsAllowed("https://bad.audience", request)
 	assert.False(t, allowed)
+
+	// Expand principals from tags
+	request = &Request{
+		Principals: Principals{"userid:maria"},
+	}
+	_, principals := doorman.IsAllowed("https://sample.yaml", request)
+	assert.Equal(t, principals, Principals{"userid:maria", "tag:admins"})
 }

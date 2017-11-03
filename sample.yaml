@@ -72,3 +72,12 @@ policies:
         options:
           matches: .*\.mozilla\.org
     effect: allow
+  -
+    id: "6"
+    description: Editors can update PTO
+    subjects:
+      - role:editor
+    actions:
+      - update
+    resources:
+      - pto
