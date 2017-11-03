@@ -25,6 +25,11 @@ func TestSetupRouter(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(t, 6, len(r.Routes()))
 	assert.Equal(t, 3, len(r.RouterGroup.Handlers))
+
+	os.Setenv("POLICIES_FILES", " \tsample.yaml")
+	defer os.Unsetenv("POLICIES_FILES")
+	_, err = setupRouter()
+	require.Nil(t, err)
 }
 
 func TestSetupRouterRelease(t *testing.T) {
