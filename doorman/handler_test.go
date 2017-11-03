@@ -206,6 +206,23 @@ func TestAllowedHandlerBadRequest(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	json.Unmarshal(w.Body.Bytes(), &errResp)
 	assert.Contains(t, errResp.Message, "invalid character ';'")
+
+	// Posted principals with JWT middleware enabled.
+	w = httptest.NewRecorder()
+	c, _ = gin.CreateTestContext(w)
+	doorman, _ := New([]string{"../sample.yaml"}, "")
+	c.Set(DoormanContextKey, doorman)
+	c.Set(PrincipalsContextKey, Principals{"userid:maria"})  // Simulate JWT middleware.
+	authzRequest := Request{
+		Principals: Principals{"userid:superuser"},
+	}
+	post, _ := json.Marshal(authzRequest)
+	body = bytes.NewBuffer(post)
+	c.Request, _ = http.NewRequest("POST", "/allowed", body)
+	allowedHandler(c)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	json.Unmarshal(w.Body.Bytes(), &errResp)
+	assert.Contains(t, errResp.Message, "cannot submit principals with JWT enabled")
 }
 
 func TestAllowedHandler(t *testing.T) {
@@ -222,7 +239,6 @@ func TestAllowedHandler(t *testing.T) {
 
 	authzRequest := Request{
 		Action:   "update",
-		Resource: "server.org/blocklist:onecrl",
 	}
 	post, _ := json.Marshal(authzRequest)
 	body := bytes.NewBuffer(post)

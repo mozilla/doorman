@@ -55,6 +55,12 @@ func allowedHandler(c *gin.Context) {
 	// If disabled (like in tests), principals can be posted in JSON.
 	jwtPrincipals, ok := c.Get(PrincipalsContextKey)
 	if ok {
+		if len(accessRequest.Principals) > 0 {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": "cannot submit principals with JWT enabled",
+			})
+			return
+		}
 		accessRequest.Principals = jwtPrincipals.(Principals)
 	}
 

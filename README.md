@@ -147,7 +147,10 @@ Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbG...9USXpOalEzUXpV
 
 ```
 
-> Note: None of authorization request field is mandatory.
+> Notes:
+>
+> * None of authorization request field is mandatory.
+> * When the service runs without `JWT_ISSUER` environment variable, the `principals` can be posted in the authorization request.
 
 **Response**:
 
@@ -161,7 +164,7 @@ Content-Type: application/json
     "userid:google-auth|2664978978",
     "email:alex@skynet.corp",
     "group:admins"
-  }
+  ]
 }
 ```
 
