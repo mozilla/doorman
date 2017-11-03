@@ -14,6 +14,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type Response struct {
+	Allowed    bool
+	Principals Principals
+}
+
+type ErrorResponse struct {
+	Message string
+}
+
 func performRequest(r http.Handler, method, path string, body io.Reader) *httptest.ResponseRecorder {
 	req, _ := http.NewRequest(method, path, body)
 	req.Header.Set("Origin", "https://sample.yaml")
@@ -37,27 +46,6 @@ func TestDoormanGet(t *testing.T) {
 
 	w := performRequest(r, "GET", "/allowed", nil)
 	assert.Equal(t, w.Code, http.StatusNotFound)
-}
-
-func TestDoormanEmpty(t *testing.T) {
-	r := gin.New()
-	doorman, _ := New([]string{"../sample.yaml"}, "")
-	SetupRoutes(r, doorman)
-
-	var response ErrorResponse
-	performAllowed(t, r, nil, http.StatusBadRequest, &response)
-	assert.Equal(t, response.Message, "Missing body")
-}
-
-func TestDoormanInvalidJSON(t *testing.T) {
-	r := gin.New()
-	doorman, _ := New([]string{"../sample.yaml"}, "")
-	SetupRoutes(r, doorman)
-
-	body := bytes.NewBuffer([]byte("{\"random\\;mess\"}"))
-	var response ErrorResponse
-	performAllowed(t, r, body, http.StatusBadRequest, &response)
-	assert.Contains(t, response.Message, "invalid character ';'")
 }
 
 func TestDoormanAllowed(t *testing.T) {
@@ -182,15 +170,69 @@ func TestDoormanVerifiesJWT(t *testing.T) {
 	SetupRoutes(r, doorman)
 
 	// Policy #1 will match.
-	request := Request{
+	authzRequest := Request{
 		Principals: []string{"userid:foo"},
 		Action:     "delete",
 		Resource:   "server.org/blocklist:onecrl",
 	}
-	token, _ := json.Marshal(request)
+	token, _ := json.Marshal(authzRequest)
 	body := bytes.NewBuffer(token)
 	var response ErrorResponse
 	// Missing Authorization header.
 	performAllowed(t, r, body, http.StatusUnauthorized, &response)
 	assert.Equal(t, "Token not found", response.Message)
+}
+
+func TestAllowedHandlerBadRequest(t *testing.T) {
+	var errResp ErrorResponse
+
+	// Empty body
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	c.Request, _ = http.NewRequest("POST", "/allowed", nil)
+	allowedHandler(c)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	json.Unmarshal(w.Body.Bytes(), &errResp)
+	assert.Equal(t, errResp.Message, "Missing body")
+
+	// Invalid JSON
+	w = httptest.NewRecorder()
+	c, _ = gin.CreateTestContext(w)
+
+	body := bytes.NewBuffer([]byte("{\"random\\;mess\"}"))
+	c.Request, _ = http.NewRequest("POST", "/allowed", body)
+	allowedHandler(c)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	json.Unmarshal(w.Body.Bytes(), &errResp)
+	assert.Contains(t, errResp.Message, "invalid character ';'")
+}
+
+func TestAllowedHandler(t *testing.T) {
+	var resp Response
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	doorman, _ := New([]string{"../sample.yaml"}, "")
+	c.Set(DoormanContextKey, doorman)
+
+	// Using principals from context (JWT middleware)
+	c.Set(PrincipalsContextKey, Principals{"userid:maria"})
+
+	authzRequest := Request{
+		Action:   "update",
+		Resource: "server.org/blocklist:onecrl",
+	}
+	post, _ := json.Marshal(authzRequest)
+	body := bytes.NewBuffer(post)
+	c.Request, _ = http.NewRequest("POST", "/allowed", body)
+	c.Request.Header.Set("Origin", "https://sample.yaml")
+
+	allowedHandler(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	assert.True(t, resp.Allowed)
+	assert.Equal(t, Principals{"userid:maria", "tag:admins"}, resp.Principals)
 }

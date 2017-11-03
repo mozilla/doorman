@@ -9,25 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type Policy struct {
-	ID          string
-	Description string
-}
-
-type User struct {
-	ID string
-}
-
-type Response struct {
-	Allowed bool
-	User    User
-	Policy  Policy
-}
-
-type ErrorResponse struct {
-	Message string
-}
-
 func TestMain(m *testing.M) {
 	//Set Gin to Test Mode
 	gin.SetMode(gin.TestMode)

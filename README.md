@@ -47,13 +47,13 @@ Regular expressions begin with ``<`` and end with ``>``.
 
 Supported prefixes:
 
-* ``email:``: provided by IdP
 * ``userid:``: provided by IdP
 * ``tag:``: local tags
-* ``iam:``: IAM specific checks
+<!--
+* ``email:``: provided by IdP
 * ``group:``: provided by IdP/LDAP
 * ``role:``: provided by service
-
+ -->
 
 ### Conditions
 

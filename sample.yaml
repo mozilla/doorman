@@ -8,6 +8,7 @@ policies:
     description: This policy allows 'userid:foo' to update any resource
     subjects:
       - userid:foo
+      - tag:admins
     actions:
       - update
     resources:
@@ -61,7 +62,6 @@ policies:
     description: Admins on Mozilla domain
     subjects:
       - group:admins
-      - tag:admins
     actions:
       - create
     resources:

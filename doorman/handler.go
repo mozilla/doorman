@@ -53,9 +53,9 @@ func allowedHandler(c *gin.Context) {
 
 	// Is VerifyJWTMiddleware enabled?
 	// If disabled (like in tests), principals can be posted in JSON.
-	principals, ok := c.Get(PrincipalsContextKey)
+	jwtPrincipals, ok := c.Get(PrincipalsContextKey)
 	if ok {
-		accessRequest.Principals = principals.(Principals)
+		accessRequest.Principals = jwtPrincipals.(Principals)
 	}
 
 	// Will fail if audience is unknown.

@@ -79,7 +79,7 @@ func TestJWTMiddleware(t *testing.T) {
 
 	v.AssertCalled(t, "ExtractClaims", c.Request)
 
-	// JWT claims are set in context.
+	// Principals are set in context.
 	principals, ok := c.Get(PrincipalsContextKey)
 	require.True(t, ok)
 	assert.Contains(t, principals, "userid:ldap|user")
