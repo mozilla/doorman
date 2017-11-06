@@ -15,7 +15,13 @@ import (
 // TestMain defined in doorman_test.go
 // func TestMain(m *testing.M) {}
 
-func TestExtractClaims(t *testing.T) {
+func TestAuth0Initialize(t *testing.T) {
+	validator := Auth0Validator{"demo.oath-zero.com/", nil}
+	err := validator.Initialize()
+	assert.NotNil(t, err)
+}
+
+func TestAuth0ExtractClaims(t *testing.T) {
 	var err error
 
 	validator := Auth0Validator{"https://minimal-demo-iam.auth0.com/", nil}

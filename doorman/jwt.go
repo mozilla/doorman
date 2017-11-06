@@ -3,6 +3,7 @@ package doorman
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	auth0 "github.com/auth0-community/go-auth0"
 	"github.com/gin-gonic/gin"
@@ -36,6 +37,9 @@ type Auth0Validator struct {
 
 // Initialize will fetch Auth0 public keys and instantiate a validator.
 func (v *Auth0Validator) Initialize() error {
+	if !strings.HasSuffix(v.Issuer, "auth0.com/") {
+		return fmt.Errorf("issuer %q not supported or has bad format", v.Issuer)
+	}
 	jwksURI := fmt.Sprintf("%s.well-known/jwks.json", v.Issuer)
 	log.Infof("JWT keys: %s", jwksURI)
 
