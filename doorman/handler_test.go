@@ -212,7 +212,7 @@ func TestAllowedHandlerBadRequest(t *testing.T) {
 	c, _ = gin.CreateTestContext(w)
 	doorman, _ := New([]string{"../sample.yaml"}, "")
 	c.Set(DoormanContextKey, doorman)
-	c.Set(PrincipalsContextKey, Principals{"userid:maria"})  // Simulate JWT middleware.
+	c.Set(PrincipalsContextKey, Principals{"userid:maria"}) // Simulate JWT middleware.
 	authzRequest := Request{
 		Principals: Principals{"userid:superuser"},
 	}
@@ -238,7 +238,7 @@ func TestAllowedHandler(t *testing.T) {
 	c.Set(PrincipalsContextKey, Principals{"userid:maria"})
 
 	authzRequest := Request{
-		Action:   "update",
+		Action: "update",
 	}
 	post, _ := json.Marshal(authzRequest)
 	body := bytes.NewBuffer(post)

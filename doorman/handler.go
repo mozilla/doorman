@@ -22,6 +22,7 @@ func ContextMiddleware(doorman *Doorman) gin.HandlerFunc {
 func SetupRoutes(r *gin.Engine, doorman *Doorman) {
 	r.Use(ContextMiddleware(doorman))
 	if doorman.JWTIssuer != "" {
+		// XXX: currently only Auth0 is supported.
 		validator := &Auth0Validator{
 			Issuer: doorman.JWTIssuer,
 		}
