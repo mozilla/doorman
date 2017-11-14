@@ -132,7 +132,7 @@ func (doorman *LadonDoorman) loadPolicies() error {
 
 		l := ladon.Ladon{
 			Manager: manager.NewMemoryManager(),
-			AuditLogger: NewAuditLogger(),
+			AuditLogger: newAuditLogger(),
 		}
 		for _, pol := range config.Policies {
 			log.Info("Load policy ", pol.GetID()+": ", pol.GetDescription())

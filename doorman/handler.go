@@ -50,9 +50,6 @@ func allowedHandler(c *gin.Context) {
 		return
 	}
 
-	doorman := c.MustGet(DoormanContextKey).(Doorman)
-	audience := c.Request.Header.Get("Origin")
-
 	// Is VerifyJWTMiddleware enabled?
 	// If disabled (like in tests), principals can be posted in JSON.
 	jwtPrincipals, ok := c.Get(PrincipalsContextKey)
@@ -64,7 +61,17 @@ func allowedHandler(c *gin.Context) {
 			return
 		}
 		r.Principals = jwtPrincipals.(Principals)
+	} else {
+		if len(r.Principals) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": "missing principals",
+			})
+			return
+		}
 	}
+
+	doorman := c.MustGet(DoormanContextKey).(Doorman)
+	audience := c.Request.Header.Get("Origin")
 
 	// Expand principals with local ones.
 	// Will do nothing if audience is unknown.

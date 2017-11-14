@@ -90,6 +90,17 @@ func TestAllowedHandlerBadRequest(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &errResp)
 	assert.Contains(t, errResp.Message, "invalid character ';'")
 
+	// Missing principals when JWT middleware not enabled.
+	w = httptest.NewRecorder()
+	c, _ = gin.CreateTestContext(w)
+
+	body = bytes.NewBuffer([]byte("{\"action\":\"update\"}"))
+	c.Request, _ = http.NewRequest("POST", "/allowed", body)
+	allowedHandler(c)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	json.Unmarshal(w.Body.Bytes(), &errResp)
+	assert.Contains(t, errResp.Message, "missing principals")
+
 	// Posted principals with JWT middleware enabled.
 	w = httptest.NewRecorder()
 	c, _ = gin.CreateTestContext(w)
