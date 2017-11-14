@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ory/ladon"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +16,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func loadTempFiles(contents ...string) (*Doorman, error) {
+func loadTempFiles(contents ...string) (*LadonDoorman, error) {
 	var filenames []string
 	for _, content := range contents {
 		tmpfile, _ := ioutil.TempFile("", "")
@@ -158,30 +157,122 @@ func TestIsAllowed(t *testing.T) {
 		Resource:   "server.org/blocklist:onecrl",
 	}
 
-	audience := "https://sample.yaml"
-
 	// Check audience
-	allowed, _ := doorman.IsAllowed(audience, request)
+	allowed := doorman.IsAllowed("https://sample.yaml", request)
 	assert.True(t, allowed)
-	allowed, _ = doorman.IsAllowed("https://bad.audience", request)
+	allowed = doorman.IsAllowed("https://bad.audience", request)
 	assert.False(t, allowed)
+}
+
+func TestExpandPrincipals(t *testing.T) {
+	doorman, err := New([]string{"../sample.yaml"}, "")
+	assert.Nil(t, err)
 
 	// Expand principals from tags
-	request = &Request{
-		Principals: Principals{"userid:maria"},
-	}
-	_, principals := doorman.IsAllowed(audience, request)
+	principals := doorman.ExpandPrincipals("https://sample.yaml", Principals{"userid:maria"})
 	assert.Equal(t, principals, Principals{"userid:maria", "tag:admins"})
+}
 
-	// Expand principals from context roles
-	request = &Request{
-		Principals: Principals{"userid:bob"},
-		Action:     "update",
-		Resource:   "pto",
-		Context: ladon.Context{
-			"roles": []string{"editor"},
+func TestDoormanAllowed(t *testing.T) {
+	doorman, _ := New([]string{"../sample.yaml"}, "")
+
+	for _, request := range []*Request{
+		// Policy #1
+		{
+			Principals: []string{"userid:foo"},
+			Action:     "update",
+			Resource:   "server.org/blocklist:onecrl",
 		},
+		// Policy #2
+		{
+			Principals: []string{"userid:foo"},
+			Action:     "update",
+			Resource:   "server.org/blocklist:onecrl",
+			Context: Context{
+				"planet": "Mars", // "mars" is case-sensitive
+			},
+		},
+		// Policy #3
+		{
+			Principals: []string{"userid:foo"},
+			Action:     "read",
+			Resource:   "server.org/blocklist:onecrl",
+			Context: Context{
+				"ip": "127.0.0.1",
+			},
+		},
+		// Policy #4
+		{
+			Principals: []string{"userid:bilbo"},
+			Action:     "wear",
+			Resource:   "ring",
+			Context: Context{
+				"owner": "userid:bilbo",
+			},
+		},
+		// Policy #5
+		{
+			Principals: []string{"group:admins"},
+			Action:     "create",
+			Resource:   "dns://",
+			Context: Context{
+				"domain": "kinto.mozilla.org",
+			},
+		},
+	} {
+		assert.Equal(t, true, doorman.IsAllowed("https://sample.yaml", request))
 	}
-	_, principals = doorman.IsAllowed(audience, request)
-	assert.Equal(t, principals, Principals{"userid:bob", "role:editor"})
+}
+
+func TestDoormanNotAllowed(t *testing.T) {
+	doorman, _ := New([]string{"../sample.yaml"}, "")
+
+	for _, request := range []*Request{
+		// Policy #1
+		{
+			Principals: []string{"userid:foo"},
+			Action:     "delete",
+			Resource:   "server.org/blocklist:onecrl",
+		},
+		// Policy #2
+		{
+			Principals: []string{"userid:foo"},
+			Action:     "update",
+			Resource:   "server.org/blocklist:onecrl",
+			Context: Context{
+				"planet": "mars",
+			},
+		},
+		// Policy #3
+		{
+			Principals: []string{"userid:foo"},
+			Action:     "read",
+			Resource:   "server.org/blocklist:onecrl",
+			Context: Context{
+				"ip": "10.0.0.1",
+			},
+		},
+		// Policy #4
+		{
+			Principals: []string{"userid:gollum"},
+			Action:     "wear",
+			Resource:   "ring",
+			Context: Context{
+				"owner": "bilbo",
+			},
+		},
+		// Policy #5
+		{
+			Principals: []string{"group:admins"},
+			Action:     "create",
+			Resource:   "dns://",
+			Context: Context{
+				"domain": "kinto-storage.org",
+			},
+		},
+		// Default
+		{},
+	} {
+		assert.Equal(t, false, doorman.IsAllowed("https://sample.yaml", request))
+	}
 }
