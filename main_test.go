@@ -17,22 +17,22 @@ func TestMain(m *testing.M) {
 }
 
 func TestSetupRouter(t *testing.T) {
-	os.Setenv("POLICIES_FILES", "sample.yaml")
-	defer os.Unsetenv("POLICIES_FILES")
+	os.Setenv("POLICIES", "sample.yaml")
+	defer os.Unsetenv("POLICIES")
 	r, err := setupRouter()
 	require.Nil(t, err)
 	assert.Equal(t, 6, len(r.Routes()))
 	assert.Equal(t, 3, len(r.RouterGroup.Handlers))
 
-	os.Setenv("POLICIES_FILES", " \tsample.yaml")
-	defer os.Unsetenv("POLICIES_FILES")
+	os.Setenv("POLICIES", " \tsample.yaml")
+	defer os.Unsetenv("POLICIES")
 	_, err = setupRouter()
 	require.Nil(t, err)
 }
 
 func TestSetupRouterBadPolicy(t *testing.T) {
-	os.Setenv("POLICIES_FILES", "/tmp/unknown.yaml")
-	defer os.Unsetenv("POLICIES_FILES")
+	os.Setenv("POLICIES", "/tmp/unknown.yaml")
+	defer os.Unsetenv("POLICIES")
 	_, err := setupRouter()
 	assert.NotNil(t, err)
 }
