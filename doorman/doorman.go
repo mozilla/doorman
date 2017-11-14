@@ -1,5 +1,9 @@
 package doorman
 
+import (
+	"fmt"
+)
+
 // Context is used as request's context.
 type Context map[string]interface{}
 
@@ -16,6 +20,22 @@ type Request struct {
 	Action string
 	// Context is the request's environmental context.
 	Context Context
+}
+
+// Roles reads the roles from request context and returns the principals.
+func (r *Request) Roles() Principals {
+	p := Principals{}
+	if roles, ok := r.Context["roles"]; ok {
+		if rolesI, ok := roles.([]interface{}); ok {
+			for _, roleI := range rolesI {
+				if role, ok := roleI.(string); ok {
+					prefixed := fmt.Sprintf("role:%s", role)
+					p = append(p, prefixed)
+				}
+			}
+		}
+	}
+	return p
 }
 
 // Doorman is the backend in charge of checking requests against policies.

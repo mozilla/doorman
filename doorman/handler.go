@@ -1,7 +1,6 @@
 package doorman
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -78,16 +77,7 @@ func allowedHandler(c *gin.Context) {
 	r.Principals = doorman.ExpandPrincipals(audience, r.Principals)
 
 	// Expand principals with specified roles.
-	if roles, ok := r.Context["roles"]; ok {
-		if rolesI, ok := roles.([]interface{}); ok {
-			for _, roleI := range rolesI {
-				if role, ok := roleI.(string); ok {
-					prefixed := fmt.Sprintf("role:%s", role)
-					r.Principals = append(r.Principals, prefixed)
-				}
-			}
-		}
-	}
+	r.Principals = append(r.Principals, r.Roles()...)
 
 	// Will deny if audience is unknown.
 	allowed := doorman.IsAllowed(audience, &r)
