@@ -85,15 +85,6 @@ func allowedHandler(c *gin.Context) {
 	// Will deny if audience is unknown.
 	allowed := doorman.IsAllowed(audience, &r)
 
-	authzLog.WithFields(
-		log.Fields{
-			"allowed":    allowed,
-			"principals": r.Principals,
-			"action":     r.Action,
-			"resource":   r.Resource,
-		},
-	).Info("request.authorization")
-
 	c.JSON(http.StatusOK, gin.H{
 		"allowed":    allowed,
 		"principals": r.Principals,
