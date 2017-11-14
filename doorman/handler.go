@@ -1,6 +1,7 @@
 package doorman
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -41,8 +42,8 @@ func allowedHandler(c *gin.Context) {
 		return
 	}
 
-	var accessRequest Request
-	if err := c.BindJSON(&accessRequest); err != nil {
+	var r Request
+	if err := c.BindJSON(&r); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": err.Error(),
 		})
@@ -56,29 +57,45 @@ func allowedHandler(c *gin.Context) {
 	// If disabled (like in tests), principals can be posted in JSON.
 	jwtPrincipals, ok := c.Get(PrincipalsContextKey)
 	if ok {
-		if len(accessRequest.Principals) > 0 {
+		if len(r.Principals) > 0 {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": "cannot submit principals with JWT enabled",
 			})
 			return
 		}
-		accessRequest.Principals = jwtPrincipals.(Principals)
+		r.Principals = jwtPrincipals.(Principals)
 	}
 
-	// Will fail if audience is unknown.
-	allowed, principals := doorman.IsAllowed(audience, &accessRequest)
+	// Expand principals with local ones.
+	// Will do nothing if audience is unknown.
+	r.Principals = doorman.ExpandPrincipals(audience, r.Principals)
+
+	// Expand principals with specified roles.
+	if roles, ok := r.Context["roles"]; ok {
+		if rolesI, ok := roles.([]interface{}); ok {
+			for _, roleI := range rolesI {
+				if role, ok := roleI.(string); ok {
+					prefixed := fmt.Sprintf("role:%s", role)
+					r.Principals = append(r.Principals, prefixed)
+				}
+			}
+		}
+	}
+
+	// Will deny if audience is unknown.
+	allowed := doorman.IsAllowed(audience, &r)
 
 	authzLog.WithFields(
 		log.Fields{
 			"allowed":    allowed,
-			"principals": principals,
-			"action":     accessRequest.Action,
-			"resource":   accessRequest.Resource,
+			"principals": r.Principals,
+			"action":     r.Action,
+			"resource":   r.Resource,
 		},
 	).Info("request.authorization")
 
 	c.JSON(http.StatusOK, gin.H{
 		"allowed":    allowed,
-		"principals": principals,
+		"principals": r.Principals,
 	})
 }

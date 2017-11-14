@@ -22,6 +22,8 @@ type Request struct {
 type Doorman interface {
 	// JWTIssuer returns the URL of the JWT issuer (if configured)
 	JWTIssuer() string
+	// ExpandPrincipals looks up and add extra principals to the ones specified.
+	ExpandPrincipals(audience string, principals Principals) Principals
 	// IsAllowed is responsible for deciding if subject can perform action on a resource with a context.
-	IsAllowed(audience string, request *Request) (bool, Principals)
+	IsAllowed(audience string, request *Request) bool
 }

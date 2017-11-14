@@ -65,21 +65,10 @@ func (doorman *LadonDoorman) JWTIssuer() string {
 }
 
 // IsAllowed is responsible for deciding if subject can perform action on a resource with a context.
-func (doorman *LadonDoorman) IsAllowed(audience string, request *Request) (bool, Principals) {
+func (doorman *LadonDoorman) IsAllowed(audience string, request *Request) bool {
 	l, ok := doorman.ladons[audience]
 	if !ok {
-		return false, request.Principals
-	}
-
-	// Expand principals with local tags.
-	tagPrincipals := doorman.lookupTags(audience, request.Principals)
-	principals := append(request.Principals, tagPrincipals...)
-	// Expand principals with roles.
-	if roles, ok := request.Context["roles"]; ok {
-		for _, role := range roles.([]string) {
-			prefixed := fmt.Sprintf("role:%s", role)
-			principals = append(principals, prefixed)
-		}
+		return false
 	}
 
 	// Instantiate objects from the ladon API.
@@ -95,30 +84,36 @@ func (doorman *LadonDoorman) IsAllowed(audience string, request *Request) (bool,
 	}
 
 	// For each principal, use it as the subject and query ladon backend.
-	for _, principal := range principals {
+	for _, principal := range request.Principals {
 		r.Subject = principal
 		if err := l.IsAllowed(r); err == nil {
-			return true, principals
+			return true
 		}
 	}
-	return false, principals
+	return false
 }
 
-// lookupTags will match the tags defined in the configuration for this audience
+// ExpandPrincipals will match the tags defined in the configuration for this audience
 // against each of the specified principals.
-func (doorman *LadonDoorman) lookupTags(audience string, principals Principals) Principals {
-	var tags Principals
-	for tag, members := range doorman.tags[audience] {
+func (doorman *LadonDoorman) ExpandPrincipals(audience string, principals Principals) Principals {
+	result := principals[:]
+
+	tags, ok := doorman.tags[audience]
+	if !ok {
+		return result
+	}
+
+	for tag, members := range tags {
 		for _, member := range members {
 			for _, principal := range principals {
 				if principal == member {
 					prefixed := fmt.Sprintf("tag:%s", tag)
-					tags = append(tags, prefixed)
+					result = append(result, prefixed)
 				}
 			}
 		}
 	}
-	return tags
+	return result
 }
 
 // LoadPolicies (re)loads configuration and policies from the YAML files.

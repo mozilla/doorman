@@ -47,122 +47,6 @@ func TestDoormanGet(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusNotFound)
 }
 
-func TestDoormanAllowed(t *testing.T) {
-	r := gin.New()
-	doorman, _ := New([]string{"../sample.yaml"}, "")
-	SetupRoutes(r, doorman)
-
-	for _, request := range []*Request{
-		// Policy #1
-		{
-			Principals: []string{"userid:foo"},
-			Action:     "update",
-			Resource:   "server.org/blocklist:onecrl",
-		},
-		// Policy #2
-		{
-			Principals: []string{"userid:foo"},
-			Action:     "update",
-			Resource:   "server.org/blocklist:onecrl",
-			Context: Context{
-				"planet": "Mars", // "mars" is case-sensitive
-			},
-		},
-		// Policy #3
-		{
-			Principals: []string{"userid:foo"},
-			Action:     "read",
-			Resource:   "server.org/blocklist:onecrl",
-			Context: Context{
-				"ip": "127.0.0.1",
-			},
-		},
-		// Policy #4
-		{
-			Principals: []string{"userid:bilbo"},
-			Action:     "wear",
-			Resource:   "ring",
-			Context: Context{
-				"owner": "userid:bilbo",
-			},
-		},
-		// Policy #5
-		{
-			Principals: []string{"group:admins"},
-			Action:     "create",
-			Resource:   "dns://",
-			Context: Context{
-				"domain": "kinto.mozilla.org",
-			},
-		},
-	} {
-		token, _ := json.Marshal(request)
-		body := bytes.NewBuffer(token)
-		var response Response
-		performAllowed(t, r, body, http.StatusOK, &response)
-		assert.Equal(t, true, response.Allowed)
-	}
-}
-
-func TestDoormanNotAllowed(t *testing.T) {
-	r := gin.New()
-	doorman, _ := New([]string{"../sample.yaml"}, "")
-	SetupRoutes(r, doorman)
-
-	for _, request := range []*Request{
-		// Policy #1
-		{
-			Principals: []string{"userid:foo"},
-			Action:     "delete",
-			Resource:   "server.org/blocklist:onecrl",
-		},
-		// Policy #2
-		{
-			Principals: []string{"userid:foo"},
-			Action:     "update",
-			Resource:   "server.org/blocklist:onecrl",
-			Context: Context{
-				"planet": "mars",
-			},
-		},
-		// Policy #3
-		{
-			Principals: []string{"userid:foo"},
-			Action:     "read",
-			Resource:   "server.org/blocklist:onecrl",
-			Context: Context{
-				"ip": "10.0.0.1",
-			},
-		},
-		// Policy #4
-		{
-			Principals: []string{"userid:gollum"},
-			Action:     "wear",
-			Resource:   "ring",
-			Context: Context{
-				"owner": "bilbo",
-			},
-		},
-		// Policy #5
-		{
-			Principals: []string{"group:admins"},
-			Action:     "create",
-			Resource:   "dns://",
-			Context: Context{
-				"domain": "kinto-storage.org",
-			},
-		},
-		// Default
-		{},
-	} {
-		token, _ := json.Marshal(request)
-		body := bytes.NewBuffer(token)
-		var response Response
-		performAllowed(t, r, body, http.StatusOK, &response)
-		assert.Equal(t, false, response.Allowed)
-	}
-}
-
 func TestDoormanVerifiesJWT(t *testing.T) {
 	r := gin.New()
 	doorman, _ := New([]string{"../sample.yaml"}, "https://auth.mozilla.auth0.com/")
@@ -250,4 +134,25 @@ func TestAllowedHandler(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.True(t, resp.Allowed)
 	assert.Equal(t, Principals{"userid:maria", "tag:admins"}, resp.Principals)
+
+	// Expand principals from context roles
+	authzRequest = Request{
+		Principals: Principals{"userid:bob"},
+		Action:     "update",
+		Resource:   "pto",
+		Context: Context{
+			"roles": []string{"editor"},
+		},
+	}
+	post, _ = json.Marshal(authzRequest)
+	body = bytes.NewBuffer(post)
+	w = httptest.NewRecorder()
+	c, _ = gin.CreateTestContext(w)
+	c.Set(DoormanContextKey, doorman)
+	c.Request, _ = http.NewRequest("POST", "/allowed", body)
+
+	allowedHandler(c)
+
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	assert.Equal(t, Principals{"userid:bob", "role:editor"}, resp.Principals)
 }
