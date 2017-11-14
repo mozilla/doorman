@@ -44,7 +44,7 @@ func (a *auditLogger) logRequest(allowed bool, r *ladon.Request, policies ladon.
 func (a *auditLogger) LogRejectedAccessRequest(request *ladon.Request, pool ladon.Policies, deciders ladon.Policies) {
 	if len(deciders) > 0 {
 		// Explicitly denied by the last one.
-		a.logRequest(false, request, deciders[len(deciders)-1:len(deciders)-1])
+		a.logRequest(false, request, deciders[len(deciders)-1:])
 	} else {
 		// No matching policy.
 		a.logRequest(false, request, deciders)

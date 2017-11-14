@@ -29,7 +29,7 @@ type LadonDoorman struct {
 	jwtIssuer       string
 	ladons          map[string]ladon.Ladon
 	tags            map[string]Tags
-	auditLogger     *auditLogger
+	_auditLogger    *auditLogger
 }
 
 // Configuration represents the policies file content.
@@ -53,12 +53,18 @@ func New(policies []string, issuer string) (*LadonDoorman, error) {
 		jwtIssuer:       issuer,
 		ladons:          map[string]ladon.Ladon{},
 		tags:            map[string]Tags{},
-		auditLogger:     newAuditLogger(),
 	}
 	if err := w.loadPolicies(); err != nil {
 		return nil, err
 	}
 	return w, nil
+}
+
+func (doorman *LadonDoorman) auditLogger() *auditLogger {
+	if doorman._auditLogger == nil {
+		doorman._auditLogger = newAuditLogger()
+	}
+	return doorman._auditLogger
 }
 
 // JWTIssuer returns the URL of the JWT issuer (if configured)
@@ -83,7 +89,7 @@ func (doorman *LadonDoorman) IsAllowed(audience string, request *Request) bool {
 	l, ok := doorman.ladons[audience]
 	if !ok {
 		// Explicitly log denied request using audit logger.
-		doorman.auditLogger.logRequest(false, r, ladon.Policies{})
+		doorman.auditLogger().logRequest(false, r, ladon.Policies{})
 		return false
 	}
 
@@ -136,8 +142,8 @@ func (doorman *LadonDoorman) loadPolicies() error {
 		}
 
 		l := ladon.Ladon{
-			Manager: manager.NewMemoryManager(),
-			AuditLogger: doorman.auditLogger,
+			Manager:     manager.NewMemoryManager(),
+			AuditLogger: doorman.auditLogger(),
 		}
 		for _, pol := range config.Policies {
 			log.Info("Load policy ", pol.GetID()+": ", pol.GetDescription())
