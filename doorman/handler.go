@@ -72,6 +72,13 @@ func allowedHandler(c *gin.Context) {
 	doorman := c.MustGet(DoormanContextKey).(Doorman)
 	audience := c.Request.Header.Get("Origin")
 
+	// Force some context values.
+	if r.Context == nil {
+		r.Context = Context{}
+	}
+	r.Context["audience"] = audience
+	r.Context["remoteIP"] = c.Request.RemoteAddr
+
 	// Expand principals with local ones.
 	// Will do nothing if audience is unknown.
 	r.Principals = doorman.ExpandPrincipals(audience, r.Principals)
