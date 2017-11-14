@@ -29,6 +29,7 @@ type LadonDoorman struct {
 	jwtIssuer       string
 	ladons          map[string]ladon.Ladon
 	tags            map[string]Tags
+	auditLogger     *auditLogger
 }
 
 // Configuration represents the policies file content.
@@ -52,6 +53,7 @@ func New(policies []string, issuer string) (*LadonDoorman, error) {
 		jwtIssuer:       issuer,
 		ladons:          map[string]ladon.Ladon{},
 		tags:            map[string]Tags{},
+		auditLogger:     newAuditLogger()
 	}
 	if err := w.loadPolicies(); err != nil {
 		return nil, err
@@ -132,7 +134,7 @@ func (doorman *LadonDoorman) loadPolicies() error {
 
 		l := ladon.Ladon{
 			Manager: manager.NewMemoryManager(),
-			AuditLogger: newAuditLogger(),
+			AuditLogger: doorman.auditLogger,
 		}
 		for _, pol := range config.Policies {
 			log.Info("Load policy ", pol.GetID()+": ", pol.GetDescription())
