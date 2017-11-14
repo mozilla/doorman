@@ -53,7 +53,7 @@ func New(policies []string, issuer string) (*LadonDoorman, error) {
 		jwtIssuer:       issuer,
 		ladons:          map[string]ladon.Ladon{},
 		tags:            map[string]Tags{},
-		auditLogger:     newAuditLogger()
+		auditLogger:     newAuditLogger(),
 	}
 	if err := w.loadPolicies(); err != nil {
 		return nil, err
