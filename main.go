@@ -20,7 +20,7 @@ func setupRouter() (*gin.Engine, error) {
 	r.Use(HTTPLoggerMiddleware())
 
 	// Setup doorman and load configuration files.
-	w, err := doorman.New(filenames(), os.Getenv("JWT_ISSUER"))
+	w, err := doorman.New(policies(), os.Getenv("JWT_ISSUER"))
 	if err != nil {
 		return nil, err
 	}
@@ -32,23 +32,23 @@ func setupRouter() (*gin.Engine, error) {
 	return r, nil
 }
 
-func main() {
-	r, err := setupRouter()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	r.Run() // listen and serve on 0.0.0.0:$PORT (:8080)
-}
-
-func filenames() []string {
-	filenames := strings.Split(os.Getenv("POLICIES_FILES"), " ")
+func policies() []string {
+	policies := strings.Split(os.Getenv("POLICIES"), " ")
 	// Filter empty strings
 	var r []string
-	for _, v := range filenames {
+	for _, v := range policies {
 		s := strings.TrimSpace(v)
 		if s != "" {
 			r = append(r, s)
 		}
 	}
 	return r
+}
+
+func main() {
+	r, err := setupRouter()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	r.Run() // listen and serve on 0.0.0.0:$PORT (:8080)
 }
