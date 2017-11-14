@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ory/ladon"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +16,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func loadTempFiles(contents ...string) (*Doorman, error) {
+func loadTempFiles(contents ...string) (*LadonDoorman, error) {
 	var filenames []string
 	for _, content := range contents {
 		tmpfile, _ := ioutil.TempFile("", "")
@@ -178,7 +177,7 @@ func TestIsAllowed(t *testing.T) {
 		Principals: Principals{"userid:bob"},
 		Action:     "update",
 		Resource:   "pto",
-		Context: ladon.Context{
+		Context: Context{
 			"roles": []string{"editor"},
 		},
 	}

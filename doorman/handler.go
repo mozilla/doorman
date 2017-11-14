@@ -11,7 +11,7 @@ import (
 const DoormanContextKey string = "doorman"
 
 // ContextMiddleware adds the Doorman instance to the Gin context.
-func ContextMiddleware(doorman *Doorman) gin.HandlerFunc {
+func ContextMiddleware(doorman Doorman) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set(DoormanContextKey, doorman)
 		c.Next()
@@ -19,12 +19,12 @@ func ContextMiddleware(doorman *Doorman) gin.HandlerFunc {
 }
 
 // SetupRoutes adds doorman views to query the policies.
-func SetupRoutes(r *gin.Engine, doorman *Doorman) {
+func SetupRoutes(r *gin.Engine, doorman Doorman) {
 	r.Use(ContextMiddleware(doorman))
-	if doorman.JWTIssuer != "" {
+	if jwtIssuer := doorman.JWTIssuer(); jwtIssuer != "" {
 		// XXX: currently only Auth0 is supported.
 		validator := &Auth0Validator{
-			Issuer: doorman.JWTIssuer,
+			Issuer: jwtIssuer,
 		}
 		r.Use(VerifyJWTMiddleware(validator))
 	} else {
@@ -49,7 +49,7 @@ func allowedHandler(c *gin.Context) {
 		return
 	}
 
-	doorman := c.MustGet(DoormanContextKey).(*Doorman)
+	doorman := c.MustGet(DoormanContextKey).(Doorman)
 	audience := c.Request.Header.Get("Origin")
 
 	// Is VerifyJWTMiddleware enabled?

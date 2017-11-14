@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ory/ladon"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -65,7 +64,7 @@ func TestDoormanAllowed(t *testing.T) {
 			Principals: []string{"userid:foo"},
 			Action:     "update",
 			Resource:   "server.org/blocklist:onecrl",
-			Context: ladon.Context{
+			Context: Context{
 				"planet": "Mars", // "mars" is case-sensitive
 			},
 		},
@@ -74,7 +73,7 @@ func TestDoormanAllowed(t *testing.T) {
 			Principals: []string{"userid:foo"},
 			Action:     "read",
 			Resource:   "server.org/blocklist:onecrl",
-			Context: ladon.Context{
+			Context: Context{
 				"ip": "127.0.0.1",
 			},
 		},
@@ -83,7 +82,7 @@ func TestDoormanAllowed(t *testing.T) {
 			Principals: []string{"userid:bilbo"},
 			Action:     "wear",
 			Resource:   "ring",
-			Context: ladon.Context{
+			Context: Context{
 				"owner": "userid:bilbo",
 			},
 		},
@@ -92,7 +91,7 @@ func TestDoormanAllowed(t *testing.T) {
 			Principals: []string{"group:admins"},
 			Action:     "create",
 			Resource:   "dns://",
-			Context: ladon.Context{
+			Context: Context{
 				"domain": "kinto.mozilla.org",
 			},
 		},
@@ -122,7 +121,7 @@ func TestDoormanNotAllowed(t *testing.T) {
 			Principals: []string{"userid:foo"},
 			Action:     "update",
 			Resource:   "server.org/blocklist:onecrl",
-			Context: ladon.Context{
+			Context: Context{
 				"planet": "mars",
 			},
 		},
@@ -131,7 +130,7 @@ func TestDoormanNotAllowed(t *testing.T) {
 			Principals: []string{"userid:foo"},
 			Action:     "read",
 			Resource:   "server.org/blocklist:onecrl",
-			Context: ladon.Context{
+			Context: Context{
 				"ip": "10.0.0.1",
 			},
 		},
@@ -140,7 +139,7 @@ func TestDoormanNotAllowed(t *testing.T) {
 			Principals: []string{"userid:gollum"},
 			Action:     "wear",
 			Resource:   "ring",
-			Context: ladon.Context{
+			Context: Context{
 				"owner": "bilbo",
 			},
 		},
@@ -149,7 +148,7 @@ func TestDoormanNotAllowed(t *testing.T) {
 			Principals: []string{"group:admins"},
 			Action:     "create",
 			Resource:   "dns://",
-			Context: ladon.Context{
+			Context: Context{
 				"domain": "kinto-storage.org",
 			},
 		},
