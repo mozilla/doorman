@@ -76,7 +76,7 @@ func MozLogger() gin.HandlerFunc {
 
 		summaryLog.WithFields(
 			RequestLogFields(c.Request, c.Writer.Status(), latency),
-		).Info("request.summary")
+		).Info("")
 	}
 }
 
