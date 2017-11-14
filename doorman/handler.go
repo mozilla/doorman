@@ -1,7 +1,6 @@
 package doorman
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -50,9 +49,6 @@ func allowedHandler(c *gin.Context) {
 		return
 	}
 
-	doorman := c.MustGet(DoormanContextKey).(Doorman)
-	audience := c.Request.Header.Get("Origin")
-
 	// Is VerifyJWTMiddleware enabled?
 	// If disabled (like in tests), principals can be posted in JSON.
 	jwtPrincipals, ok := c.Get(PrincipalsContextKey)
@@ -64,35 +60,34 @@ func allowedHandler(c *gin.Context) {
 			return
 		}
 		r.Principals = jwtPrincipals.(Principals)
+	} else {
+		if len(r.Principals) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": "missing principals",
+			})
+			return
+		}
 	}
+
+	doorman := c.MustGet(DoormanContextKey).(Doorman)
+	audience := c.Request.Header.Get("Origin")
+
+	// Force some context values.
+	if r.Context == nil {
+		r.Context = Context{}
+	}
+	r.Context["audience"] = audience
+	r.Context["remoteIP"] = c.Request.RemoteAddr
 
 	// Expand principals with local ones.
 	// Will do nothing if audience is unknown.
 	r.Principals = doorman.ExpandPrincipals(audience, r.Principals)
 
 	// Expand principals with specified roles.
-	if roles, ok := r.Context["roles"]; ok {
-		if rolesI, ok := roles.([]interface{}); ok {
-			for _, roleI := range rolesI {
-				if role, ok := roleI.(string); ok {
-					prefixed := fmt.Sprintf("role:%s", role)
-					r.Principals = append(r.Principals, prefixed)
-				}
-			}
-		}
-	}
+	r.Principals = append(r.Principals, r.Roles()...)
 
 	// Will deny if audience is unknown.
 	allowed := doorman.IsAllowed(audience, &r)
-
-	authzLog.WithFields(
-		log.Fields{
-			"allowed":    allowed,
-			"principals": r.Principals,
-			"action":     r.Action,
-			"resource":   r.Resource,
-		},
-	).Info("request.authorization")
 
 	c.JSON(http.StatusOK, gin.H{
 		"allowed":    allowed,

@@ -102,6 +102,10 @@ paths:
             schema:
               type: object
               properties:
+                principals:
+                  type: array
+                  items:
+                    type: string
                 action:
                   type: string
                 resource:

@@ -149,6 +149,7 @@ Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbG...9USXpOalEzUXpV
 >
 > * None of the authorization request fields is mandatory.
 > * When the service runs without `JWT_ISSUER` environment variable, the `principals` can be posted in the authorization request.
+> * The context fields `remoteIP` and `audience` will be forced by the server before matching policies.
 
 **Response**:
 

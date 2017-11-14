@@ -1,5 +1,5 @@
-hash: 5024ebf06e334d02fdb32aa2daae7fe9044dd0cdd242a843ccc320825a2afe64
-updated: 2017-11-03T11:51:56.528137918+01:00
+hash: ae50f8a875f9a6ba47924fc6d6b3824fe768c3558c881cc5fa085bfe352d0e86
+updated: 2017-11-14T16:52:11.280879928+01:00
 imports:
 - name: github.com/auth0-community/go-auth0
   version: 3de339a55934c49fa256181e63b9ecf0234c15b7
@@ -31,7 +31,7 @@ imports:
 - name: github.com/mattn/go-isatty
   version: a5cdd64afdee435007ee3e9f6ed4684af949d568
 - name: github.com/ory/ladon
-  version: 4223d97b7a16808bc1213cc641d529e764e67eea
+  version: 8128aeca0a774620b4f3be9fb2a1f7c53eac662c
   subpackages:
   - compiler
   - manager/memory
@@ -64,7 +64,7 @@ imports:
   - ed25519/internal/edwards25519
   - ssh/terminal
 - name: golang.org/x/sys
-  version: 314a259e304ff91bd6985da2a7149bbf91237993
+  version: 6faef541c73732f438fb660a212750a9ba9f9362
   subpackages:
   - unix
   - windows

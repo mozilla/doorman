@@ -29,6 +29,7 @@ type LadonDoorman struct {
 	jwtIssuer       string
 	ladons          map[string]ladon.Ladon
 	tags            map[string]Tags
+	_auditLogger    *auditLogger
 }
 
 // Configuration represents the policies file content.
@@ -59,6 +60,13 @@ func New(policies []string, issuer string) (*LadonDoorman, error) {
 	return w, nil
 }
 
+func (doorman *LadonDoorman) auditLogger() *auditLogger {
+	if doorman._auditLogger == nil {
+		doorman._auditLogger = newAuditLogger()
+	}
+	return doorman._auditLogger
+}
+
 // JWTIssuer returns the URL of the JWT issuer (if configured)
 func (doorman *LadonDoorman) JWTIssuer() string {
 	return doorman.jwtIssuer
@@ -66,11 +74,6 @@ func (doorman *LadonDoorman) JWTIssuer() string {
 
 // IsAllowed is responsible for deciding if subject can perform action on a resource with a context.
 func (doorman *LadonDoorman) IsAllowed(audience string, request *Request) bool {
-	l, ok := doorman.ladons[audience]
-	if !ok {
-		return false
-	}
-
 	// Instantiate objects from the ladon API.
 	context := ladon.Context{}
 	for key, value := range request.Context {
@@ -81,6 +84,13 @@ func (doorman *LadonDoorman) IsAllowed(audience string, request *Request) bool {
 		Resource: request.Resource,
 		Action:   request.Action,
 		Context:  context,
+	}
+
+	l, ok := doorman.ladons[audience]
+	if !ok {
+		// Explicitly log denied request using audit logger.
+		doorman.auditLogger().logRequest(false, r, ladon.Policies{})
+		return false
 	}
 
 	// For each principal, use it as the subject and query ladon backend.
@@ -122,6 +132,7 @@ func (doorman *LadonDoorman) loadPolicies() error {
 	for audience := range doorman.ladons {
 		delete(doorman.ladons, audience)
 	}
+
 	// Load each configuration file.
 	for _, filename := range doorman.policiesSources {
 		log.Info("Load configuration ", filename)
@@ -131,7 +142,8 @@ func (doorman *LadonDoorman) loadPolicies() error {
 		}
 
 		l := ladon.Ladon{
-			Manager: manager.NewMemoryManager(),
+			Manager:     manager.NewMemoryManager(),
+			AuditLogger: doorman.auditLogger(),
 		}
 		for _, pol := range config.Policies {
 			log.Info("Load policy ", pol.GetID()+": ", pol.GetDescription())

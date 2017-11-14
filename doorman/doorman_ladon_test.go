@@ -1,6 +1,7 @@
 package doorman
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -275,4 +276,42 @@ func TestDoormanNotAllowed(t *testing.T) {
 	} {
 		assert.Equal(t, false, doorman.IsAllowed("https://sample.yaml", request))
 	}
+}
+
+func TestDoormanAuditLogger(t *testing.T) {
+	doorman, _ := New([]string{"../sample.yaml"}, "")
+
+	var buf bytes.Buffer
+	doorman.auditLogger().logger.Out = &buf
+	defer func() {
+		doorman.auditLogger().logger.Out = os.Stdout
+	}()
+
+	// Logs when audience is bad.
+	doorman.IsAllowed("bad audience", &Request{})
+	assert.Contains(t, buf.String(), "\"allowed\":false")
+
+	audience := "https://sample.yaml"
+
+	// Logs policies.
+	buf.Reset()
+	doorman.IsAllowed(audience, &Request{
+		Principals: []string{"userid:any"},
+		Action:     "any",
+		Resource:   "any",
+		Context: Context{
+			"planet": "mars",
+		},
+	})
+	assert.Contains(t, buf.String(), "\"allowed\":false")
+	assert.Contains(t, buf.String(), "\"policies\":[\"2\"]")
+
+	buf.Reset()
+	doorman.IsAllowed(audience, &Request{
+		Principals: []string{"userid:foo"},
+		Action:     "update",
+		Resource:   "server.org/blocklist:onecrl",
+	})
+	assert.Contains(t, buf.String(), "\"allowed\":true")
+	assert.Contains(t, buf.String(), "\"policies\":[\"1\"]")
 }
