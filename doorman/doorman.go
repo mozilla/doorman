@@ -40,6 +40,8 @@ func (r *Request) Roles() Principals {
 
 // Doorman is the backend in charge of checking requests against policies.
 type Doorman interface {
+	// LoadPolicies is responsible for reading and loading the policies files.
+	LoadPolicies() error
 	// JWTIssuer returns the URL of the JWT issuer (if configured)
 	JWTIssuer() string
 	// ExpandPrincipals looks up and add extra principals to the ones specified.

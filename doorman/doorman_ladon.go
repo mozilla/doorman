@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
-	"path/filepath"
 
 	"github.com/ory/ladon"
 	manager "github.com/ory/ladon/manager/memory"
@@ -14,9 +12,6 @@ import (
 
 	"github.com/leplatrem/iam/utilities"
 )
-
-// DefaultPoliciesFilename is the default policies filename.
-const DefaultPoliciesFilename string = "policies.yaml"
 
 const maxInt int64 = 1<<63 - 1
 
@@ -27,8 +22,7 @@ type Tags map[string]Principals
 type LadonDoorman struct {
 	policiesSources []string
 	jwtIssuer       string
-	ladons          map[string]ladon.Ladon
-	tags            map[string]Tags
+	configs         map[string]*Configuration
 	_auditLogger    *auditLogger
 }
 
@@ -37,27 +31,17 @@ type Configuration struct {
 	Audience string
 	Tags     Tags
 	Policies []*ladon.DefaultPolicy
+	ladon    *ladon.Ladon
 }
 
 // New instantiates a new doorman.
-func New(policies []string, issuer string) (*LadonDoorman, error) {
-	// If not specified, read default file in current directory `./policies.yaml`
-	if len(policies) == 0 {
-		here, _ := os.Getwd()
-		filename := filepath.Join(here, DefaultPoliciesFilename)
-		policies = []string{filename}
-	}
-
+func New(policies []string, issuer string) *LadonDoorman {
 	w := &LadonDoorman{
 		policiesSources: policies,
 		jwtIssuer:       issuer,
-		ladons:          map[string]ladon.Ladon{},
-		tags:            map[string]Tags{},
+		configs:         map[string]*Configuration{},
 	}
-	if err := w.loadPolicies(); err != nil {
-		return nil, err
-	}
-	return w, nil
+	return w
 }
 
 func (doorman *LadonDoorman) auditLogger() *auditLogger {
@@ -65,6 +49,38 @@ func (doorman *LadonDoorman) auditLogger() *auditLogger {
 		doorman._auditLogger = newAuditLogger()
 	}
 	return doorman._auditLogger
+}
+
+// LoadPolicies (re)loads configuration and policies from the YAML files.
+func (doorman *LadonDoorman) LoadPolicies() error {
+	// First, load each configuration file.
+	configs := map[string]*Configuration{}
+	for _, filename := range doorman.policiesSources {
+		log.Info("Load configuration ", filename)
+		config, err := loadConfiguration(filename)
+		if err != nil {
+			return err
+		}
+		config.ladon = &ladon.Ladon{
+			Manager:     manager.NewMemoryManager(),
+			AuditLogger: doorman.auditLogger(),
+		}
+		for _, pol := range config.Policies {
+			log.Info("Load policy ", pol.GetID()+": ", pol.GetDescription())
+			err := config.ladon.Manager.Create(pol)
+			if err != nil {
+				return err
+			}
+		}
+		_, exists := configs[config.Audience]
+		if exists {
+			return fmt.Errorf("duplicated audience %q (filename %q)", config.Audience, filename)
+		}
+		configs[config.Audience] = config
+	}
+	// Only if everything went well, replace existing configs with new ones.
+	doorman.configs = configs
+	return nil
 }
 
 // JWTIssuer returns the URL of the JWT issuer (if configured)
@@ -86,7 +102,7 @@ func (doorman *LadonDoorman) IsAllowed(audience string, request *Request) bool {
 		Context:  context,
 	}
 
-	l, ok := doorman.ladons[audience]
+	c, ok := doorman.configs[audience]
 	if !ok {
 		// Explicitly log denied request using audit logger.
 		doorman.auditLogger().logRequest(false, r, ladon.Policies{})
@@ -96,7 +112,7 @@ func (doorman *LadonDoorman) IsAllowed(audience string, request *Request) bool {
 	// For each principal, use it as the subject and query ladon backend.
 	for _, principal := range request.Principals {
 		r.Subject = principal
-		if err := l.IsAllowed(r); err == nil {
+		if err := c.ladon.IsAllowed(r); err == nil {
 			return true
 		}
 	}
@@ -108,12 +124,12 @@ func (doorman *LadonDoorman) IsAllowed(audience string, request *Request) bool {
 func (doorman *LadonDoorman) ExpandPrincipals(audience string, principals Principals) Principals {
 	result := principals[:]
 
-	tags, ok := doorman.tags[audience]
+	c, ok := doorman.configs[audience]
 	if !ok {
 		return result
 	}
 
-	for tag, members := range tags {
+	for tag, members := range c.Tags {
 		for _, member := range members {
 			for _, principal := range principals {
 				if principal == member {
@@ -124,42 +140,6 @@ func (doorman *LadonDoorman) ExpandPrincipals(audience string, principals Princi
 		}
 	}
 	return result
-}
-
-// LoadPolicies (re)loads configuration and policies from the YAML files.
-func (doorman *LadonDoorman) loadPolicies() error {
-	// Clear every existing policy, and load new ones.
-	for audience := range doorman.ladons {
-		delete(doorman.ladons, audience)
-	}
-
-	// Load each configuration file.
-	for _, filename := range doorman.policiesSources {
-		log.Info("Load configuration ", filename)
-		config, err := loadConfiguration(filename)
-		if err != nil {
-			return err
-		}
-
-		l := ladon.Ladon{
-			Manager:     manager.NewMemoryManager(),
-			AuditLogger: doorman.auditLogger(),
-		}
-		for _, pol := range config.Policies {
-			log.Info("Load policy ", pol.GetID()+": ", pol.GetDescription())
-			err := l.Manager.Create(pol)
-			if err != nil {
-				return err
-			}
-		}
-		_, exists := doorman.ladons[config.Audience]
-		if exists {
-			return fmt.Errorf("duplicated audience %q (filename %q)", config.Audience, filename)
-		}
-		doorman.ladons[config.Audience] = l
-		doorman.tags[config.Audience] = config.Tags
-	}
-	return nil
 }
 
 func loadConfiguration(filename string) (*Configuration, error) {

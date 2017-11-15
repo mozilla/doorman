@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -13,9 +15,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type Response struct {
+type AllowedResponse struct {
 	Allowed    bool
 	Principals Principals
+}
+
+type ReloadResponse struct {
+	Success bool
+	Message string
 }
 
 type ErrorResponse struct {
@@ -38,18 +45,19 @@ func performAllowed(t *testing.T, r *gin.Engine, body io.Reader, expected int, r
 	require.Nil(t, err)
 }
 
-func TestDoormanGet(t *testing.T) {
+func TestAllowedGet(t *testing.T) {
 	r := gin.New()
-	doorman, _ := New([]string{"../sample.yaml"}, "")
+	doorman := sampleDoorman()
 	SetupRoutes(r, doorman)
 
 	w := performRequest(r, "GET", "/allowed", nil)
 	assert.Equal(t, w.Code, http.StatusNotFound)
 }
 
-func TestDoormanVerifiesJWT(t *testing.T) {
+func TestAllowedVerifiesJWT(t *testing.T) {
 	r := gin.New()
-	doorman, _ := New([]string{"../sample.yaml"}, "https://auth.mozilla.auth0.com/")
+	doorman := New([]string{"../sample.yaml"}, "https://auth.mozilla.auth0.com/")
+	doorman.LoadPolicies()
 	SetupRoutes(r, doorman)
 
 	// Policy #1 will match.
@@ -101,10 +109,11 @@ func TestAllowedHandlerBadRequest(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &errResp)
 	assert.Contains(t, errResp.Message, "missing principals")
 
+	doorman := sampleDoorman()
+
 	// Posted principals with JWT middleware enabled.
 	w = httptest.NewRecorder()
 	c, _ = gin.CreateTestContext(w)
-	doorman, _ := New([]string{"../sample.yaml"}, "")
 	c.Set(DoormanContextKey, doorman)
 	c.Set(PrincipalsContextKey, Principals{"userid:maria"}) // Simulate JWT middleware.
 	authzRequest := Request{
@@ -120,12 +129,12 @@ func TestAllowedHandlerBadRequest(t *testing.T) {
 }
 
 func TestAllowedHandler(t *testing.T) {
-	var resp Response
+	var resp AllowedResponse
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 
-	doorman, _ := New([]string{"../sample.yaml"}, "")
+	doorman := sampleDoorman()
 	c.Set(DoormanContextKey, doorman)
 
 	// Using principals from context (JWT middleware)
@@ -145,9 +154,19 @@ func TestAllowedHandler(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.True(t, resp.Allowed)
 	assert.Equal(t, Principals{"userid:maria", "tag:admins"}, resp.Principals)
+}
+
+func TestAllowedHandlerRoles(t *testing.T) {
+	var resp AllowedResponse
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	doorman := sampleDoorman()
+	c.Set(DoormanContextKey, doorman)
 
 	// Expand principals from context roles
-	authzRequest = Request{
+	authzRequest := Request{
 		Principals: Principals{"userid:bob"},
 		Action:     "update",
 		Resource:   "pto",
@@ -155,15 +174,55 @@ func TestAllowedHandler(t *testing.T) {
 			"roles": []string{"editor"},
 		},
 	}
-	post, _ = json.Marshal(authzRequest)
-	body = bytes.NewBuffer(post)
-	w = httptest.NewRecorder()
-	c, _ = gin.CreateTestContext(w)
-	c.Set(DoormanContextKey, doorman)
+	post, _ := json.Marshal(authzRequest)
+	body := bytes.NewBuffer(post)
 	c.Request, _ = http.NewRequest("POST", "/allowed", body)
 
 	allowedHandler(c)
 
 	json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.Equal(t, Principals{"userid:bob", "role:editor"}, resp.Principals)
+}
+
+func TestReloadHandler(t *testing.T) {
+	tmpfile, _ := ioutil.TempFile("", "")
+	defer os.Remove(tmpfile.Name()) // clean up
+
+	tmpfile.Write([]byte(`
+audience: a
+policies:
+  -
+    id: "1"
+    action: update
+`))
+
+	var resp ReloadResponse
+
+	doorman := New([]string{tmpfile.Name()}, "")
+
+	// Reload same file.
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Set(DoormanContextKey, doorman)
+	c.Request, _ = http.NewRequest("POST", "/__reload__", nil)
+
+	reloadHandler(c)
+
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	assert.True(t, resp.Success)
+
+	// Reload bad file.
+	tmpfile.Write([]byte("*some$bad@cont\tent"))
+	w.Flush()
+
+	w = httptest.NewRecorder()
+	c, _ = gin.CreateTestContext(w)
+	c.Set(DoormanContextKey, doorman)
+	c.Request, _ = http.NewRequest("POST", "/__reload__", nil)
+
+	reloadHandler(c)
+
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	assert.False(t, resp.Success)
+	assert.Contains(t, resp.Message, "did not find expected alphabetic or numeric character")
 }

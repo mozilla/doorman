@@ -17,6 +17,12 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func sampleDoorman() *LadonDoorman {
+	doorman := New([]string{"../sample.yaml"}, "")
+	doorman.LoadPolicies()
+	return doorman
+}
+
 func loadTempFiles(contents ...string) (*LadonDoorman, error) {
 	var filenames []string
 	for _, content := range contents {
@@ -26,16 +32,15 @@ func loadTempFiles(contents ...string) (*LadonDoorman, error) {
 		tmpfile.Close()
 		filenames = append(filenames, tmpfile.Name())
 	}
-	return New(filenames, "")
+	w := New(filenames, "")
+	err := w.LoadPolicies()
+	return w, err
 }
 
 func TestLoadBadPolicies(t *testing.T) {
-	// Loads policies.yaml in current folder by default.
-	_, err := New([]string{}, "")
-	assert.NotNil(t, err) // doorman/policies.yaml does not exists.
-
 	// Missing file
-	_, err = New([]string{"/tmp/unknown.yaml"}, "")
+	w := New([]string{"/tmp/unknown.yaml"}, "")
+	err := w.LoadPolicies()
 	assert.NotNil(t, err)
 
 	// Empty file
@@ -130,26 +135,30 @@ policies:
     effect: allow
 `)
 	assert.Nil(t, err)
-	assert.Equal(t, len(d.tags["a"]), 2)
-	assert.Equal(t, len(d.tags["a"]["admins"]), 2)
-	assert.Equal(t, len(d.tags["a"]["editors"]), 1)
+	assert.Equal(t, len(d.configs["a"].Tags), 2)
+	assert.Equal(t, len(d.configs["a"].Tags["admins"]), 2)
+	assert.Equal(t, len(d.configs["a"].Tags["editors"]), 1)
 }
 
 func TestReloadPolicies(t *testing.T) {
-	doorman, err := New([]string{"../sample.yaml"}, "")
-	assert.Nil(t, err)
-	loaded, _ := doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
+	doorman := sampleDoorman()
+	loaded, _ := doorman.configs["https://sample.yaml"].ladon.Manager.GetAll(0, maxInt)
 	assert.Equal(t, 6, len(loaded))
 
 	// Second load.
-	doorman.loadPolicies()
-	loaded, _ = doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
+	doorman.LoadPolicies()
+	loaded, _ = doorman.configs["https://sample.yaml"].ladon.Manager.GetAll(0, maxInt)
 	assert.Equal(t, 6, len(loaded))
+
+	// Load bad policies, does not affect existing.
+	doorman.policiesSources = []string{"/tmp/unknown.yaml"}
+	doorman.LoadPolicies()
+	_, ok := doorman.configs["https://sample.yaml"]
+	assert.True(t, ok)
 }
 
 func TestIsAllowed(t *testing.T) {
-	doorman, err := New([]string{"../sample.yaml"}, "")
-	assert.Nil(t, err)
+	doorman := sampleDoorman()
 
 	// Policy #1
 	request := &Request{
@@ -166,8 +175,7 @@ func TestIsAllowed(t *testing.T) {
 }
 
 func TestExpandPrincipals(t *testing.T) {
-	doorman, err := New([]string{"../sample.yaml"}, "")
-	assert.Nil(t, err)
+	doorman := sampleDoorman()
 
 	// Expand principals from tags
 	principals := doorman.ExpandPrincipals("https://sample.yaml", Principals{"userid:maria"})
@@ -175,7 +183,7 @@ func TestExpandPrincipals(t *testing.T) {
 }
 
 func TestDoormanAllowed(t *testing.T) {
-	doorman, _ := New([]string{"../sample.yaml"}, "")
+	doorman := sampleDoorman()
 
 	for _, request := range []*Request{
 		// Policy #1
@@ -226,7 +234,7 @@ func TestDoormanAllowed(t *testing.T) {
 }
 
 func TestDoormanNotAllowed(t *testing.T) {
-	doorman, _ := New([]string{"../sample.yaml"}, "")
+	doorman := sampleDoorman()
 
 	for _, request := range []*Request{
 		// Policy #1
@@ -279,7 +287,7 @@ func TestDoormanNotAllowed(t *testing.T) {
 }
 
 func TestDoormanAuditLogger(t *testing.T) {
-	doorman, _ := New([]string{"../sample.yaml"}, "")
+	doorman := sampleDoorman()
 
 	var buf bytes.Buffer
 	doorman.auditLogger().logger.Out = &buf
