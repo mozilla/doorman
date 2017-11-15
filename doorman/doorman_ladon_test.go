@@ -135,20 +135,26 @@ policies:
     effect: allow
 `)
 	assert.Nil(t, err)
-	assert.Equal(t, len(d.tags["a"]), 2)
-	assert.Equal(t, len(d.tags["a"]["admins"]), 2)
-	assert.Equal(t, len(d.tags["a"]["editors"]), 1)
+	assert.Equal(t, len(d.configs["a"].Tags), 2)
+	assert.Equal(t, len(d.configs["a"].Tags["admins"]), 2)
+	assert.Equal(t, len(d.configs["a"].Tags["editors"]), 1)
 }
 
 func TestReloadPolicies(t *testing.T) {
 	doorman := sampleDoorman()
-	loaded, _ := doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
+	loaded, _ := doorman.configs["https://sample.yaml"].ladon.Manager.GetAll(0, maxInt)
 	assert.Equal(t, 6, len(loaded))
 
 	// Second load.
 	doorman.LoadPolicies()
-	loaded, _ = doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
+	loaded, _ = doorman.configs["https://sample.yaml"].ladon.Manager.GetAll(0, maxInt)
 	assert.Equal(t, 6, len(loaded))
+
+	// Load bad policies, does not affect existing.
+	doorman.policiesSources = []string{"/tmp/unknown.yaml"}
+	doorman.LoadPolicies()
+	_, ok := doorman.configs["https://sample.yaml"]
+	assert.True(t, ok)
 }
 
 func TestIsAllowed(t *testing.T) {
