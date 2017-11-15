@@ -29,6 +29,22 @@ type Configuration struct {
 	ladon    *ladon.Ladon
 }
 
+// GetTags returns the tags principals for the ones specified.
+func (c *Configuration) GetTags(principals Principals) Principals {
+	result := Principals{}
+	for tag, members := range c.Tags {
+		for _, member := range members {
+			for _, principal := range principals {
+				if principal == member {
+					prefixed := fmt.Sprintf("tag:%s", tag)
+					result = append(result, prefixed)
+				}
+			}
+		}
+	}
+	return result
+}
+
 // New instantiates a new doorman.
 func New(policies []string) *LadonDoorman {
 	w := &LadonDoorman{
@@ -48,32 +64,33 @@ func (doorman *LadonDoorman) auditLogger() *auditLogger {
 // LoadPolicies (re)loads configuration and policies from the YAML files.
 func (doorman *LadonDoorman) LoadPolicies() error {
 	// First, load each configuration file.
-	configs := map[string]*Configuration{}
-	for _, filename := range doorman.policiesSources {
-		log.Info("Load configuration ", filename)
-		config, err := loadConfiguration(filename)
+	newConfigs := map[string]*Configuration{}
+	for _, source := range doorman.policiesSources {
+		configs, err := loadSource(source)
 		if err != nil {
 			return err
 		}
-		config.ladon = &ladon.Ladon{
-			Manager:     manager.NewMemoryManager(),
-			AuditLogger: doorman.auditLogger(),
-		}
-		for _, pol := range config.Policies {
-			log.Info("Load policy ", pol.GetID()+": ", pol.GetDescription())
-			err := config.ladon.Manager.Create(pol)
-			if err != nil {
-				return err
+		for _, config := range configs {
+			_, exists := newConfigs[config.Audience]
+			if exists {
+				return fmt.Errorf("duplicated audience %q (source %q)", config.Audience, source)
 			}
+			config.ladon = &ladon.Ladon{
+				Manager:     manager.NewMemoryManager(),
+				AuditLogger: doorman.auditLogger(),
+			}
+			for _, pol := range config.Policies {
+				log.Debugf("Load policy %q: %s", pol.GetID(), pol.GetDescription())
+				err := config.ladon.Manager.Create(pol)
+				if err != nil {
+					return err
+				}
+			}
+			newConfigs[config.Audience] = config
 		}
-		_, exists := configs[config.Audience]
-		if exists {
-			return fmt.Errorf("duplicated audience %q (filename %q)", config.Audience, filename)
-		}
-		configs[config.Audience] = config
 	}
 	// Only if everything went well, replace existing configs with new ones.
-	doorman.configs = configs
+	doorman.configs = newConfigs
 	return nil
 }
 
@@ -111,22 +128,10 @@ func (doorman *LadonDoorman) IsAllowed(audience string, request *Request) bool {
 // ExpandPrincipals will match the tags defined in the configuration for this audience
 // against each of the specified principals.
 func (doorman *LadonDoorman) ExpandPrincipals(audience string, principals Principals) Principals {
-	result := principals[:]
-
 	c, ok := doorman.configs[audience]
 	if !ok {
-		return result
+		return principals
 	}
 
-	for tag, members := range c.Tags {
-		for _, member := range members {
-			for _, principal := range principals {
-				if principal == member {
-					prefixed := fmt.Sprintf("tag:%s", tag)
-					result = append(result, prefixed)
-				}
-			}
-		}
-	}
-	return result
+	return append(principals, c.GetTags(principals)...)
 }
