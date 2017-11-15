@@ -18,7 +18,8 @@ func TestMain(m *testing.M) {
 }
 
 func sampleDoorman() *LadonDoorman {
-    doorman, _ := New([]string{"../sample.yaml"}, "")
+    doorman := New([]string{"../sample.yaml"}, "")
+    doorman.LoadPolicies()
     return doorman
 }
 
@@ -31,16 +32,20 @@ func loadTempFiles(contents ...string) (*LadonDoorman, error) {
 		tmpfile.Close()
 		filenames = append(filenames, tmpfile.Name())
 	}
-	return New(filenames, "")
+	w := New(filenames, "")
+    err := w.LoadPolicies()
+    return w, err
 }
 
 func TestLoadBadPolicies(t *testing.T) {
 	// Loads policies.yaml in current folder by default.
-	_, err := New([]string{}, "")
+	w := New([]string{}, "")
+    err := w.LoadPolicies()
 	assert.NotNil(t, err) // doorman/policies.yaml does not exists.
 
 	// Missing file
-	_, err = New([]string{"/tmp/unknown.yaml"}, "")
+	w = New([]string{"/tmp/unknown.yaml"}, "")
+    err = w.LoadPolicies()
 	assert.NotNil(t, err)
 
 	// Empty file

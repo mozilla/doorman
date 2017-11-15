@@ -20,8 +20,8 @@ func setupRouter() (*gin.Engine, error) {
 	r.Use(HTTPLoggerMiddleware())
 
 	// Setup doorman and load configuration files.
-	w, err := doorman.New(policies(), os.Getenv("JWT_ISSUER"))
-	if err != nil {
+	w := doorman.New(policies(), os.Getenv("JWT_ISSUER"))
+	if err := w.LoadPolicies(); err != nil {
 		return nil, err
 	}
 

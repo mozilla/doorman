@@ -40,7 +40,7 @@ type Configuration struct {
 }
 
 // New instantiates a new doorman.
-func New(policies []string, issuer string) (*LadonDoorman, error) {
+func New(policies []string, issuer string) *LadonDoorman {
 	// If not specified, read default file in current directory `./policies.yaml`
 	if len(policies) == 0 {
 		here, _ := os.Getwd()
@@ -54,10 +54,7 @@ func New(policies []string, issuer string) (*LadonDoorman, error) {
 		ladons:          map[string]ladon.Ladon{},
 		tags:            map[string]Tags{},
 	}
-	if err := w.LoadPolicies(); err != nil {
-		return nil, err
-	}
-	return w, nil
+	return w
 }
 
 func (doorman *LadonDoorman) auditLogger() *auditLogger {

@@ -49,7 +49,8 @@ func TestDoormanGet(t *testing.T) {
 
 func TestDoormanVerifiesJWT(t *testing.T) {
 	r := gin.New()
-	doorman, _ := New([]string{"../sample.yaml"}, "https://auth.mozilla.auth0.com/")
+	doorman := New([]string{"../sample.yaml"}, "https://auth.mozilla.auth0.com/")
+	doorman.LoadPolicies()
 	SetupRoutes(r, doorman)
 
 	// Policy #1 will match.
