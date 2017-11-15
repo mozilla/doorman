@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
-	"path/filepath"
 
 	"github.com/ory/ladon"
 	manager "github.com/ory/ladon/manager/memory"
@@ -14,9 +12,6 @@ import (
 
 	"github.com/leplatrem/iam/utilities"
 )
-
-// DefaultPoliciesFilename is the default policies filename.
-const DefaultPoliciesFilename string = "policies.yaml"
 
 const maxInt int64 = 1<<63 - 1
 
@@ -41,13 +36,6 @@ type Configuration struct {
 
 // New instantiates a new doorman.
 func New(policies []string, issuer string) *LadonDoorman {
-	// If not specified, read default file in current directory `./policies.yaml`
-	if len(policies) == 0 {
-		here, _ := os.Getwd()
-		filename := filepath.Join(here, DefaultPoliciesFilename)
-		policies = []string{filename}
-	}
-
 	w := &LadonDoorman{
 		policiesSources: policies,
 		jwtIssuer:       issuer,

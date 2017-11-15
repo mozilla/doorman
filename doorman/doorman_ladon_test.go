@@ -18,9 +18,9 @@ func TestMain(m *testing.M) {
 }
 
 func sampleDoorman() *LadonDoorman {
-    doorman := New([]string{"../sample.yaml"}, "")
-    doorman.LoadPolicies()
-    return doorman
+	doorman := New([]string{"../sample.yaml"}, "")
+	doorman.LoadPolicies()
+	return doorman
 }
 
 func loadTempFiles(contents ...string) (*LadonDoorman, error) {
@@ -33,19 +33,14 @@ func loadTempFiles(contents ...string) (*LadonDoorman, error) {
 		filenames = append(filenames, tmpfile.Name())
 	}
 	w := New(filenames, "")
-    err := w.LoadPolicies()
-    return w, err
+	err := w.LoadPolicies()
+	return w, err
 }
 
 func TestLoadBadPolicies(t *testing.T) {
-	// Loads policies.yaml in current folder by default.
-	w := New([]string{}, "")
-    err := w.LoadPolicies()
-	assert.NotNil(t, err) // doorman/policies.yaml does not exists.
-
 	// Missing file
-	w = New([]string{"/tmp/unknown.yaml"}, "")
-    err = w.LoadPolicies()
+	w := New([]string{"/tmp/unknown.yaml"}, "")
+	err := w.LoadPolicies()
 	assert.NotNil(t, err)
 
 	// Empty file
@@ -147,7 +142,7 @@ policies:
 
 func TestReloadPolicies(t *testing.T) {
 	doorman := sampleDoorman()
-    loaded, _ := doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
+	loaded, _ := doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
 	assert.Equal(t, 6, len(loaded))
 
 	// Second load.

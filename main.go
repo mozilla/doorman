@@ -11,6 +11,9 @@ import (
 	"github.com/leplatrem/iam/utilities"
 )
 
+// DefaultPoliciesFilename is the default policies filename.
+const DefaultPoliciesFilename string = "policies.yaml"
+
 func setupRouter() (*gin.Engine, error) {
 	r := gin.New()
 	// Crash free (turns errors into 5XX).
@@ -33,7 +36,12 @@ func setupRouter() (*gin.Engine, error) {
 }
 
 func policies() []string {
-	policies := strings.Split(os.Getenv("POLICIES"), " ")
+	// If POLICIES not specified, read ./policies.yaml
+	env := os.Getenv("POLICIES")
+	if env == "" {
+		env = DefaultPoliciesFilename
+	}
+	policies := strings.Split(env, " ")
 	// Filter empty strings
 	var r []string
 	for _, v := range policies {
