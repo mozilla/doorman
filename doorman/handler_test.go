@@ -40,7 +40,7 @@ func performAllowed(t *testing.T, r *gin.Engine, body io.Reader, expected int, r
 
 func TestDoormanGet(t *testing.T) {
 	r := gin.New()
-	doorman, _ := New([]string{"../sample.yaml"}, "")
+	doorman := sampleDoorman()
 	SetupRoutes(r, doorman)
 
 	w := performRequest(r, "GET", "/allowed", nil)
@@ -101,10 +101,11 @@ func TestAllowedHandlerBadRequest(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &errResp)
 	assert.Contains(t, errResp.Message, "missing principals")
 
+	doorman := sampleDoorman()
+
 	// Posted principals with JWT middleware enabled.
 	w = httptest.NewRecorder()
 	c, _ = gin.CreateTestContext(w)
-	doorman, _ := New([]string{"../sample.yaml"}, "")
 	c.Set(DoormanContextKey, doorman)
 	c.Set(PrincipalsContextKey, Principals{"userid:maria"}) // Simulate JWT middleware.
 	authzRequest := Request{
@@ -125,7 +126,7 @@ func TestAllowedHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 
-	doorman, _ := New([]string{"../sample.yaml"}, "")
+	doorman := sampleDoorman()
 	c.Set(DoormanContextKey, doorman)
 
 	// Using principals from context (JWT middleware)

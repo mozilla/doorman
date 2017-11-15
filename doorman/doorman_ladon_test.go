@@ -17,6 +17,11 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func sampleDoorman() *LadonDoorman {
+    doorman, _ := New([]string{"../sample.yaml"}, "")
+    return doorman
+}
+
 func loadTempFiles(contents ...string) (*LadonDoorman, error) {
 	var filenames []string
 	for _, content := range contents {
@@ -136,9 +141,8 @@ policies:
 }
 
 func TestReloadPolicies(t *testing.T) {
-	doorman, err := New([]string{"../sample.yaml"}, "")
-	assert.Nil(t, err)
-	loaded, _ := doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
+	doorman := sampleDoorman()
+    loaded, _ := doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
 	assert.Equal(t, 6, len(loaded))
 
 	// Second load.
@@ -148,8 +152,7 @@ func TestReloadPolicies(t *testing.T) {
 }
 
 func TestIsAllowed(t *testing.T) {
-	doorman, err := New([]string{"../sample.yaml"}, "")
-	assert.Nil(t, err)
+	doorman := sampleDoorman()
 
 	// Policy #1
 	request := &Request{
@@ -166,8 +169,7 @@ func TestIsAllowed(t *testing.T) {
 }
 
 func TestExpandPrincipals(t *testing.T) {
-	doorman, err := New([]string{"../sample.yaml"}, "")
-	assert.Nil(t, err)
+	doorman := sampleDoorman()
 
 	// Expand principals from tags
 	principals := doorman.ExpandPrincipals("https://sample.yaml", Principals{"userid:maria"})
@@ -175,7 +177,7 @@ func TestExpandPrincipals(t *testing.T) {
 }
 
 func TestDoormanAllowed(t *testing.T) {
-	doorman, _ := New([]string{"../sample.yaml"}, "")
+	doorman := sampleDoorman()
 
 	for _, request := range []*Request{
 		// Policy #1
@@ -226,7 +228,7 @@ func TestDoormanAllowed(t *testing.T) {
 }
 
 func TestDoormanNotAllowed(t *testing.T) {
-	doorman, _ := New([]string{"../sample.yaml"}, "")
+	doorman := sampleDoorman()
 
 	for _, request := range []*Request{
 		// Policy #1
@@ -279,7 +281,7 @@ func TestDoormanNotAllowed(t *testing.T) {
 }
 
 func TestDoormanAuditLogger(t *testing.T) {
-	doorman, _ := New([]string{"../sample.yaml"}, "")
+	doorman := sampleDoorman()
 
 	var buf bytes.Buffer
 	doorman.auditLogger().logger.Out = &buf
