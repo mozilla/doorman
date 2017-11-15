@@ -142,7 +142,7 @@ func TestReloadPolicies(t *testing.T) {
 	assert.Equal(t, 6, len(loaded))
 
 	// Second load.
-	doorman.loadPolicies()
+	doorman.LoadPolicies()
 	loaded, _ = doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
 	assert.Equal(t, 6, len(loaded))
 }

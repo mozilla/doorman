@@ -54,7 +54,7 @@ func New(policies []string, issuer string) (*LadonDoorman, error) {
 		ladons:          map[string]ladon.Ladon{},
 		tags:            map[string]Tags{},
 	}
-	if err := w.loadPolicies(); err != nil {
+	if err := w.LoadPolicies(); err != nil {
 		return nil, err
 	}
 	return w, nil
@@ -65,6 +65,42 @@ func (doorman *LadonDoorman) auditLogger() *auditLogger {
 		doorman._auditLogger = newAuditLogger()
 	}
 	return doorman._auditLogger
+}
+
+// LoadPolicies (re)loads configuration and policies from the YAML files.
+func (doorman *LadonDoorman) LoadPolicies() error {
+	// Clear every existing policy, and load new ones.
+	for audience := range doorman.ladons {
+		delete(doorman.ladons, audience)
+	}
+
+	// Load each configuration file.
+	for _, filename := range doorman.policiesSources {
+		log.Info("Load configuration ", filename)
+		config, err := loadConfiguration(filename)
+		if err != nil {
+			return err
+		}
+
+		l := ladon.Ladon{
+			Manager:     manager.NewMemoryManager(),
+			AuditLogger: doorman.auditLogger(),
+		}
+		for _, pol := range config.Policies {
+			log.Info("Load policy ", pol.GetID()+": ", pol.GetDescription())
+			err := l.Manager.Create(pol)
+			if err != nil {
+				return err
+			}
+		}
+		_, exists := doorman.ladons[config.Audience]
+		if exists {
+			return fmt.Errorf("duplicated audience %q (filename %q)", config.Audience, filename)
+		}
+		doorman.ladons[config.Audience] = l
+		doorman.tags[config.Audience] = config.Tags
+	}
+	return nil
 }
 
 // JWTIssuer returns the URL of the JWT issuer (if configured)
@@ -124,42 +160,6 @@ func (doorman *LadonDoorman) ExpandPrincipals(audience string, principals Princi
 		}
 	}
 	return result
-}
-
-// LoadPolicies (re)loads configuration and policies from the YAML files.
-func (doorman *LadonDoorman) loadPolicies() error {
-	// Clear every existing policy, and load new ones.
-	for audience := range doorman.ladons {
-		delete(doorman.ladons, audience)
-	}
-
-	// Load each configuration file.
-	for _, filename := range doorman.policiesSources {
-		log.Info("Load configuration ", filename)
-		config, err := loadConfiguration(filename)
-		if err != nil {
-			return err
-		}
-
-		l := ladon.Ladon{
-			Manager:     manager.NewMemoryManager(),
-			AuditLogger: doorman.auditLogger(),
-		}
-		for _, pol := range config.Policies {
-			log.Info("Load policy ", pol.GetID()+": ", pol.GetDescription())
-			err := l.Manager.Create(pol)
-			if err != nil {
-				return err
-			}
-		}
-		_, exists := doorman.ladons[config.Audience]
-		if exists {
-			return fmt.Errorf("duplicated audience %q (filename %q)", config.Audience, filename)
-		}
-		doorman.ladons[config.Audience] = l
-		doorman.tags[config.Audience] = config.Tags
-	}
-	return nil
 }
 
 func loadConfiguration(filename string) (*Configuration, error) {
