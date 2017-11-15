@@ -168,6 +168,35 @@ Content-Type: application/json
 }
 ```
 
+### POST /__reload__
+
+Reload the policies (synchronously). This endpoint is meant to be used as a Web hook when policies files were changed.
+
+> Notes:
+>
+> * It would be wise to limit the access to this endpoint (e.g. by IP on reverse proxy)
+
+**Request**:
+
+```HTTP
+POST /__reload__ HTTP/1.1
+Content-Length: 0
+```
+
+**Response**:
+
+```HTTP
+HTTP/1.1 200 OK
+Content-Length: 16
+Content-Type: application/json; charset=utf-8
+Date: Wed, 15 Nov 2017 12:00:41 GMT
+
+{
+    "success": true,
+    "message": ""
+}
+```
+
 
 ### More
 

@@ -132,3 +132,27 @@ paths:
                   type: string
       tags:
       - Doorman
+
+  /__reload__:
+    post:
+      summary: "Reload the policies"
+      operationId: "reload"
+      produces:
+      - "application/json"
+    responses:
+      "200":
+        description: "Reloaded successfully."
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+      "500":
+        description: "Reload failed."
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+    tags:
+    - Doorman
