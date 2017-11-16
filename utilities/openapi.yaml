@@ -1,7 +1,11 @@
-openapi: 3.0.0
+openapi: 2.0.0
 info:
   title: "Mozilla IAM"
-  description: IAM is a service to match authorization requests against predefined policies.
+  description: |
+    IAM is an **authorization micro-service** that allows to checks if an arbitrary subject is allowed to perform an action on a resource, based on a set of rules (policies).
+
+    It is inspired by [AWS IAM Policies](http://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html).
+
   version: "0.1"
   contact:
     url: "irc://irc.mozilla.org:6696/#product-delivery"
@@ -10,10 +14,154 @@ info:
     url: "http://www.apache.org/licenses/LICENSE-2.0.html"
 
 tags:
-- name: Utilities
 - name: Doorman
+  description: Main API endpoints.
+- name: Utilities
+  description: Operational and metadata endpoints.
 
 paths:
+
+  /allowed:
+    post:
+      summary: Check authorization request
+      description: |
+        Are those `principals` allowed to perform this `action` on this `resource` in this `context`?
+
+        **Optional authentication**
+
+        When the service runs with the `JWT_ISSUER` environment variable, the authentication is mandatory.
+
+        With the `JWT_ISSUER` configured, the principals cannot be specified in the authorization request. They are taken from the JWT payload (`userid:{Subject}`, `email:{Email}`, `group:{Groups..}`, etc.)
+
+      operationId: "allowed"
+      consumes:
+        - application/json
+      produces:
+      - "application/json"
+      parameters:
+        - in: header
+          name: Origin
+          type: string
+          description: |
+            The JWT claimed audience will be checked against this `Origin` request header (eg. `https://api.service.org`).
+
+            The specified value must also match one of the known audience from the policies files.
+
+        - in: header
+          name: Authorization
+          type: string
+          description: |
+            With the `JWT_ISSUER` configured, a valid JSON Web Token (JWT) must be provided in the `Authorization` request header.
+            (eg. `Bearer eyJ0eXAiOiJKV1QiLCJhbG...9USXpOalEzUXpV`)
+
+        - in: body
+          description:
+            Authorization request in JSON. Note that none of the authorization request fields is mandatory.
+          required: true
+          schema:
+            type: object
+            properties:
+              principals:
+                description:
+                  Arbitrary list of strings (eg. `userid:alice`). **Only if the server runs without authentication**
+                type: array
+                items:
+                  type: string
+              action:
+                description: Any action (eg. `read`, `delete`, `signoff`)
+                type: string
+              resource:
+                description: Any resource (eg. `blocklist`, `/update/rules/35`)
+                type: string
+              context:
+                description: |
+                  Any extra information to be matched in policies conditions.
+
+                  The fields `remoteIP` and `audience` will be forced by the server.
+
+                  The values provided in the `roles` field will expand the principals with extra `role:{}` values.
+
+                type: object
+                properties:
+                  roles:
+                    type: array
+                    items:
+                      type: string
+          example:
+            principals: ["userid:ldap|ada", "email:ada@lau.co"]
+            action: create
+            resource: comment
+            context:
+              env:
+                - stage
+              roles:
+                - changer
+      responses:
+        "400":
+          description: "Missing headers or invalid posted data."
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+          example:
+            message: Missing `Origin` request header
+        "401":
+          description: "JWT token is invalid."
+        "403":
+          description: "JWT claimed audience is invalid (authorization failed)."
+        "200":
+          description: "Return whether it is allowed or not."
+          schema:
+            type: object
+            properties:
+              allowed:
+                type: boolean
+              principals:
+                type: array
+                items:
+                  type: string
+          example:
+            allowed: true
+            principals: ["userid:ldap|ada", "email:ada@lau.co", "tag:mayor", "role:changer"]
+      tags:
+      - Doorman
+
+  /__reload__:
+    post:
+      summary: "Reload the policies"
+      description: |
+        Reload the policies (synchronously). This endpoint is meant to be used as a Web hook when policies files were changed.
+
+        > It would be wise to limit the access to this endpoint (e.g. by IP on reverse proxy)
+
+      operationId: "reload"
+      produces:
+      - "application/json"
+      responses:
+        "200":
+          description: "Reloaded successfully."
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+          example:
+            success: true
+
+        "500":
+          description: "Reload failed."
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+          example:
+            success: false
+            message: could not parse YAML in "https://github.com/ops/conf/policies.yaml"
+      tags:
+      - Doorman
+
   /__heartbeat__:
     get:
       summary: "Is the server working properly? What is failing?"
@@ -25,10 +173,12 @@ paths:
           description: "Server working properly"
           schema:
             type: "object"
+          example:
         "503":
           description: "One or more subsystems failing."
           schema:
             type: "object"
+          example:
       tags:
       - Utilities
 
@@ -43,6 +193,11 @@ paths:
           description: "Server reachable"
           schema:
             type: "object"
+            properties:
+              ok:
+                type: boolean
+          example:
+            ok: true
       tags:
       - Utilities
 
@@ -57,6 +212,20 @@ paths:
           description: "Return the running instance version information"
           schema:
             type: "object"
+            properties:
+              source:
+                type: string
+              version:
+                type: string
+              commit:
+                type: string
+              build:
+                type: string
+          example:
+            source: https://github.com/leplatrem/iam
+            version: "1.0"
+            commit: 490ed70efff482d17a
+            build: "20171102"
       tags:
       - Utilities
 
@@ -87,72 +256,3 @@ paths:
             type: "object"
       tags:
       - Utilities
-
-  /allowed:
-    post:
-      summary: "Check if the specified request is allowed"
-      operationId: "allowed"
-      produces:
-      - "application/json"
-      requestBody:
-        description: Authorization request
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                principals:
-                  type: array
-                  items:
-                    type: string
-                action:
-                  type: string
-                resource:
-                  type: string
-                context:
-                  type: object
-      responses:
-        "400":
-          description: "Invalid posted data."
-        "401":
-          description: "Authentication failed."
-        "403":
-          description: "JWT token is invalid (authorization failed)."
-        "200":
-          description: "Return whether it is allowed or not."
-          schema:
-            type: object
-            properties:
-              allowed:
-                type: boolean
-              principals:
-                type: array
-                items:
-                  type: string
-      tags:
-      - Doorman
-
-  /__reload__:
-    post:
-      summary: "Reload the policies"
-      operationId: "reload"
-      produces:
-      - "application/json"
-    responses:
-      "200":
-        description: "Reloaded successfully."
-        schema:
-          type: object
-          properties:
-            success:
-              type: boolean
-      "500":
-        description: "Reload failed."
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-    tags:
-    - Doorman

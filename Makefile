@@ -53,3 +53,11 @@ docker-build: main
 
 docker-run:
 	docker run --name iam --rm mozilla/iam
+
+api-docs: utilities/openapi.yaml
+	# https://github.com/sourcey/spectacle
+	spectacle --target-dir api-docs utilities/openapi.yaml
+
+api-docs-publish: api-docs
+	# https://github.com/tschaub/gh-pages
+	gh-pages -d api-docs
