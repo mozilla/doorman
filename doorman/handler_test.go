@@ -48,7 +48,7 @@ func performAllowed(t *testing.T, r *gin.Engine, body io.Reader, expected int, r
 func TestAllowedGet(t *testing.T) {
 	r := gin.New()
 	doorman := sampleDoorman()
-	SetupRoutes(r, doorman)
+	SetupRoutes(r, doorman, "")
 
 	w := performRequest(r, "GET", "/allowed", nil)
 	assert.Equal(t, w.Code, http.StatusNotFound)
@@ -56,9 +56,9 @@ func TestAllowedGet(t *testing.T) {
 
 func TestAllowedVerifiesJWT(t *testing.T) {
 	r := gin.New()
-	doorman := New([]string{"../sample.yaml"}, "https://auth.mozilla.auth0.com/")
+	doorman := New([]string{"../sample.yaml"})
 	doorman.LoadPolicies()
-	SetupRoutes(r, doorman)
+	SetupRoutes(r, doorman, "https://auth.mozilla.auth0.com/")
 
 	// Policy #1 will match.
 	authzRequest := Request{
@@ -198,7 +198,7 @@ policies:
 
 	var resp ReloadResponse
 
-	doorman := New([]string{tmpfile.Name()}, "")
+	doorman := New([]string{tmpfile.Name()})
 
 	// Reload same file.
 	w := httptest.NewRecorder()

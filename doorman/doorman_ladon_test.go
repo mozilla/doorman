@@ -18,7 +18,7 @@ func TestMain(m *testing.M) {
 }
 
 func sampleDoorman() *LadonDoorman {
-	doorman := New([]string{"../sample.yaml"}, "")
+	doorman := New([]string{"../sample.yaml"})
 	doorman.LoadPolicies()
 	return doorman
 }
@@ -32,14 +32,14 @@ func loadTempFiles(contents ...string) (*LadonDoorman, error) {
 		tmpfile.Close()
 		filenames = append(filenames, tmpfile.Name())
 	}
-	w := New(filenames, "")
+	w := New(filenames)
 	err := w.LoadPolicies()
 	return w, err
 }
 
 func TestLoadBadPolicies(t *testing.T) {
 	// Missing file
-	w := New([]string{"/tmp/unknown.yaml"}, "")
+	w := New([]string{"/tmp/unknown.yaml"})
 	err := w.LoadPolicies()
 	assert.NotNil(t, err)
 
