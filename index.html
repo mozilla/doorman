@@ -1,0 +1,675 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mozilla IAM | API Reference</title>
+    <link rel="stylesheet" href="stylesheets/foundation.min.css" />
+    <link rel="stylesheet" href="stylesheets/spectacle.min.css" />
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <!-- <script src="javascripts/foundation.js"></script> -->
+    <script src="javascripts/spectacle.min.js"></script>
+  </head>
+  <body id="spectacle">
+    <div id="page" class="drawer-layout drawer-slide-right-large">
+      <div id="sidebar">
+        <button class="close-button" aria-label="Close menu" type="button" data-drawer-close>
+          <span aria-hidden="true">×</span>
+        </button>
+        <nav id="nav" role="navigation">
+          <h5>API Reference</h5>
+          <a href="#introduction">Introduction</a>
+          <h5>Operations</h5>
+          <section>
+            <a href="#tag-Doorman">Doorman</a>
+            <ul>
+              <li>
+                <a href="#operation--allowed-post"> Check authorization request </a>
+              </li>
+              <li>
+                <a href="#operation--__reload__-post"> Reload the policies </a>
+              </li>
+            </ul>
+          </section>
+          <section>
+            <a href="#tag-Utilities">Utilities</a>
+            <ul>
+              <li>
+                <a href="#operation--__heartbeat__-get"> Is the server working properly? What is failing? </a>
+              </li>
+              <li>
+                <a href="#operation--__lbheartbeat__-get"> Is the server reachable? </a>
+              </li>
+              <li>
+                <a href="#operation--__version__-get"> Running instance version information </a>
+              </li>
+              <li>
+                <a href="#operation--__api__-get"> Open API Specification documentation. </a>
+              </li>
+              <li>
+                <a href="#operation--contribute.json-get"> Open source contributing information </a>
+              </li>
+            </ul>
+          </section>
+          <h5>Schema Definitions</h5>
+        </nav>
+      </div>
+      <div id="docs" class="row collapse expanded drawer" data-drawer>
+        <button class="floating-menu-icon" type="button" data-drawer-slide="right">
+          <span class="hamburger"></span>
+        </button>
+        <div class="example-box doc-content"></div>
+        <article>
+          <div id="introduction" data-traverse-target="introduction">
+            <h1 class="doc-title">Mozilla IAM
+              <span>API Reference</span>
+            </h1>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <p>IAM is an
+                  <strong>authorization micro-service</strong> that allows to checks if an arbitrary subject is allowed to perform an action on a resource, based on a set of rules (policies). It is inspired by
+                  <a href="http://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html">AWS IAM Policies</a>.</p>
+              </div>
+              <div class="doc-examples">
+                <section>
+                  <h5>Version:
+                    <span>0.1</span>
+                  </h5>
+                </section>
+              </div>
+            </div>
+          </div>
+          <h1 id="tag-Doorman" class="swagger-summary-tag" data-traverse-target="tag-Doorman">Doorman</h1>
+          <div id="operation--allowed-post" class="operation panel" data-traverse-target="operation--allowed-post">
+            <!-- <section class="operation-tags row"> -->
+            <!-- <div class="doc-copy"> -->
+            <div class="operation-tags">
+              <a class="label" href="#tag-Doorman">Doorman</a>
+              <!---->
+            </div>
+            <!-- </div> -->
+            <!-- </section> -->
+            <h2 class="operation-title">
+              <span class="operation-summary">Check authorization request</span>
+            </h2>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <section class="swagger-operation-path">
+                  <span class="operation-method">POST</span>
+                  <span class="operation-path">/allowed</span>
+                </section>
+              </div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <section class="swagger-operation-description">
+                  <p>Are those <code>principals</code> allowed to perform this <code>action</code> on this <code>resource</code> in this <code>context</code>? When the service runs with the <code>JWT_ISSUER</code> environment variable, the authentication is mandatory. Otherwise the <code>principals</code> can be posted in the authorization request.</p>
+                </section>
+              </div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <section class="swagger-request-body">
+                  <p>Authorization request in JSON. Note that none of the authorization request fields is mandatory.</p>
+                  <section class="json-schema-properties">
+                    <dl>
+                      <dt data-property-name="principals" class="has-description">
+                        <span class="json-property-name">principals:</span>
+                        <span class="json-property-type">string[]</span>
+                        <span class="json-property-range" title="Value limits"></span>
+                      </dt>
+                      <dd>
+                        <p>With the <code>JWT_ISSUER</code> configured, the principals cannot be specified in the authorization request. They are taken from the JWT payload (<code>userid:{Subject}</code>, <code>email:{Email}</code>, <code>group:{Groups..}</code>, etc.)</p>
+                      </dd>
+                      <dt data-property-name="action" class="has-description">
+                        <span class="json-property-name">action:</span>
+                        <span class="json-property-type">string</span>
+                        <span class="json-property-range" title="Value limits"></span>
+                      </dt>
+                      <dd>
+                        <p>Any action (eg. <code>read</code>, <code>delete</code>, <code>signoff</code>)</p>
+                      </dd>
+                      <dt data-property-name="resource" class="has-description">
+                        <span class="json-property-name">resource:</span>
+                        <span class="json-property-type">string</span>
+                        <span class="json-property-range" title="Value limits"></span>
+                      </dt>
+                      <dd>
+                        <p>Any resource (eg. <code>blocklist</code>, <code>/update/rules/35</code>)</p>
+                      </dd>
+                      <dt data-property-name="context" class="has-description">
+                        <span class="json-property-name">context:</span>
+                        <span class="json-property-type">object</span>
+                        <span class="json-property-range" title="Value limits"></span>
+                      </dt>
+                      <dd>
+                        <p>Any extra information to be matched in policies conditions. The fields <code>remoteIP</code> and <code>audience</code> will be forced by the server. The values provided in the <code>roles</code> field will expand the principals with extra <code>role:{}</code> values.</p>
+                      </dd>
+                    </dl>
+                  </section>
+                </section>
+                <section class="swagger-request-params">
+                  <div class="prop-row prop-group">
+                    <div class="prop-name">
+                      <div class="prop-title">Origin</div>
+                    </div>
+                    <div class="prop-value">
+                      <p>The JWT claimed audience will be checked against this <code>Origin</code> request header. The specified value must also match one of the known audience from the policies files. (eg. <code>https://api.service.org</code>)</p>
+                    </div>
+                  </div>
+                  <div class="prop-row prop-inner">
+                    <div class="prop-name param-label">type</div>
+                    <div class="prop-value">
+                      <span class="json-property-type">string</span>
+                      <span class="json-property-range" title="Value limits"></span>
+                    </div>
+                  </div>
+                  <div class="prop-row prop-inner">
+                    <div class="prop-name param-label">in</div>
+                    <div class="prop-value">header</div>
+                  </div>
+                  <div class="prop-row prop-group">
+                    <div class="prop-name">
+                      <div class="prop-title">Authorization</div>
+                    </div>
+                    <div class="prop-value">
+                      <p>With the <code>JWT_ISSUER</code> configured, a valid JSON Web Token (JWT) must be provided in the <code>Authorization</code> request header. (eg. <code>Bearer eyJ0eXAiOiJKV1QiLCJhbG...9USXpOalEzUXpV</code>)</p>
+                    </div>
+                  </div>
+                  <div class="prop-row prop-inner">
+                    <div class="prop-name param-label">type</div>
+                    <div class="prop-value">
+                      <span class="json-property-type">string</span>
+                      <span class="json-property-range" title="Value limits"></span>
+                    </div>
+                  </div>
+                  <div class="prop-row prop-inner">
+                    <div class="prop-name param-label">in</div>
+                    <div class="prop-value">header</div>
+                  </div>
+                </section>
+              </div>
+              <div class="doc-examples">
+                <section>
+                  <h5>Request Content-Types:
+                    <span>application/json</span>
+                  </h5>
+                  <h5>Request Example</h5>
+                  <!-- <div class="hljs"> --><pre><code class="hljs lang-json">{
+  <span class="hljs-attr">&quot;principals&quot;</span>: [
+    <span class="hljs-string">&quot;userid:ldap|ada&quot;</span>,
+    <span class="hljs-string">&quot;email:ada@lau.co&quot;</span>
+  ],
+  <span class="hljs-attr">&quot;action&quot;</span>: <span class="hljs-string">&quot;create&quot;</span>,
+  <span class="hljs-attr">&quot;resource&quot;</span>: <span class="hljs-string">&quot;comment&quot;</span>,
+  <span class="hljs-attr">&quot;context&quot;</span>: {
+    <span class="hljs-attr">&quot;env&quot;</span>: [
+      <span class="hljs-string">&quot;stage&quot;</span>
+    ],
+    <span class="hljs-attr">&quot;roles&quot;</span>: [
+      <span class="hljs-string">&quot;changer&quot;</span>
+    ]
+  }
+}
+</code></pre>
+                  <!-- </div> -->
+                </section>
+              </div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <section class="swagger-responses">
+                  <div class="prop-row prop-group">
+                    <div class="prop-name">
+                      <div class="prop-title">200 OK</div>
+                      <div class="prop-ref"></div>
+                      <!-- <span class="swagger-global"></span> <span class="json-schema-reference"><a href=""></a></span> -->
+                    </div>
+                    <div class="prop-value">
+                      <p>Return whether it is allowed or not.</p>
+                    </div>
+                  </div>
+                  <div class="prop-row prop-group">
+                    <div class="prop-name">
+                      <div class="prop-title">400 Bad Request</div>
+                    </div>
+                    <div class="prop-value">
+                      <p>Invalid posted data.</p>
+                    </div>
+                  </div>
+                  <div class="prop-row prop-group">
+                    <div class="prop-name">
+                      <div class="prop-title">401 Unauthorized</div>
+                    </div>
+                    <div class="prop-value">
+                      <p>Authentication failed.</p>
+                    </div>
+                  </div>
+                  <div class="prop-row prop-group">
+                    <div class="prop-name">
+                      <div class="prop-title">403 Forbidden</div>
+                    </div>
+                    <div class="prop-value">
+                      <p>JWT token is invalid (authorization failed).</p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+              <div class="doc-examples">
+                <h5>Response Content-Types:
+                  <span>application/json</span>
+                </h5>
+                <section>
+                  <h5>Response Example
+                    <span>(200 OK)</span>
+                  </h5>
+                  <!-- <div class="hljs"> --><pre><code class="hljs lang-json">{
+  <span class="hljs-attr">&quot;allowed&quot;</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">&quot;principals&quot;</span>: [
+    <span class="hljs-string">&quot;userid:ldap|ada&quot;</span>,
+    <span class="hljs-string">&quot;email:ada@lau.co&quot;</span>,
+    <span class="hljs-string">&quot;tag:mayor&quot;</span>,
+    <span class="hljs-string">&quot;role:changer&quot;</span>
+  ]
+}
+</code></pre>
+                  <!-- </div> -->
+                </section>
+              </div>
+            </div>
+          </div>
+          <div id="operation--__reload__-post" class="operation panel" data-traverse-target="operation--__reload__-post">
+            <!-- <section class="operation-tags row"> -->
+            <!-- <div class="doc-copy"> -->
+            <div class="operation-tags">
+              <a class="label" href="#tag-Doorman">Doorman</a>
+              <!---->
+            </div>
+            <!-- </div> -->
+            <!-- </section> -->
+            <h2 class="operation-title">
+              <span class="operation-summary">Reload the policies</span>
+            </h2>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <section class="swagger-operation-path">
+                  <span class="operation-method">POST</span>
+                  <span class="operation-path">/__reload__</span>
+                </section>
+              </div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <section class="swagger-operation-description">
+                  <p>Reload the policies (synchronously). This endpoint is meant to be used as a Web hook when policies files were changed.</p>
+                  <blockquote>
+                    <p>It would be wise to limit the access to this endpoint (e.g. by IP on reverse proxy)</p>
+                  </blockquote>
+                </section>
+              </div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-copy"> </div>
+              <div class="doc-examples"></div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <section class="swagger-responses">
+                  <div class="prop-row prop-group">
+                    <div class="prop-name">
+                      <div class="prop-title">200 OK</div>
+                      <div class="prop-ref"></div>
+                      <!-- <span class="swagger-global"></span> <span class="json-schema-reference"><a href=""></a></span> -->
+                    </div>
+                    <div class="prop-value">
+                      <p>Reloaded successfully.</p>
+                    </div>
+                  </div>
+                  <div class="prop-row prop-group">
+                    <div class="prop-name">
+                      <div class="prop-title">500 Internal Server Error</div>
+                      <div class="prop-ref"></div>
+                      <!-- <span class="swagger-global"></span> <span class="json-schema-reference"><a href=""></a></span> -->
+                    </div>
+                    <div class="prop-value">
+                      <p>Reload failed.</p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+              <div class="doc-examples">
+                <h5>Response Content-Types:
+                  <span>application/json</span>
+                </h5>
+                <section>
+                  <h5>Response Example
+                    <span>(200 OK)</span>
+                  </h5>
+                  <!-- <div class="hljs"> --><pre><code class="hljs lang-json">{
+  <span class="hljs-attr">&quot;success&quot;</span>: <span class="hljs-literal">true</span>
+}
+</code></pre>
+                  <!-- </div> -->
+                </section>
+                <section>
+                  <h5>Response Example
+                    <span>(500 Internal Server Error)</span>
+                  </h5>
+                  <!-- <div class="hljs"> --><pre><code class="hljs lang-json">{
+  <span class="hljs-attr">&quot;success&quot;</span>: <span class="hljs-literal">false</span>,
+  <span class="hljs-attr">&quot;message&quot;</span>: <span class="hljs-string">&quot;could not parse YAML in \&quot;https://github.com/ops/conf/policies.yaml\&quot;&quot;</span>
+}
+</code></pre>
+                  <!-- </div> -->
+                </section>
+              </div>
+            </div>
+          </div>
+          <h1 id="tag-Utilities" class="swagger-summary-tag" data-traverse-target="tag-Utilities">Utilities</h1>
+          <div id="operation--__heartbeat__-get" class="operation panel" data-traverse-target="operation--__heartbeat__-get">
+            <!-- <section class="operation-tags row"> -->
+            <!-- <div class="doc-copy"> -->
+            <div class="operation-tags">
+              <a class="label" href="#tag-Utilities">Utilities</a>
+              <!---->
+            </div>
+            <!-- </div> -->
+            <!-- </section> -->
+            <h2 class="operation-title">
+              <span class="operation-summary">Is the server working properly? What is failing?</span>
+            </h2>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <section class="swagger-operation-path">
+                  <span class="operation-method">GET</span>
+                  <span class="operation-path">/__heartbeat__</span>
+                </section>
+              </div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-copy"> </div>
+              <div class="doc-examples"></div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <section class="swagger-responses">
+                  <div class="prop-row prop-group">
+                    <div class="prop-name">
+                      <div class="prop-title">200 OK</div>
+                      <div class="prop-ref"></div>
+                      <!-- <span class="swagger-global"></span> <span class="json-schema-reference"><a href=""></a></span> -->
+                    </div>
+                    <div class="prop-value">
+                      <p>Server working properly</p>
+                    </div>
+                  </div>
+                  <div class="prop-row prop-group">
+                    <div class="prop-name">
+                      <div class="prop-title">503 Service Unavailable</div>
+                      <div class="prop-ref"></div>
+                      <!-- <span class="swagger-global"></span> <span class="json-schema-reference"><a href=""></a></span> -->
+                    </div>
+                    <div class="prop-value">
+                      <p>One or more subsystems failing.</p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+              <div class="doc-examples">
+                <h5>Response Content-Types:
+                  <span>application/json</span>
+                </h5>
+                <section>
+                  <h5>Response Example
+                    <span>(200 OK)</span>
+                  </h5>
+                  <!-- <div class="hljs"> --><pre><code class="hljs lang-json"><span class="hljs-string">&quot;object&quot;</span>
+</code></pre>
+                  <!-- </div> -->
+                </section>
+                <section>
+                  <h5>Response Example
+                    <span>(503 Service Unavailable)</span>
+                  </h5>
+                  <!-- <div class="hljs"> --><pre><code class="hljs lang-json"><span class="hljs-string">&quot;object&quot;</span>
+</code></pre>
+                  <!-- </div> -->
+                </section>
+              </div>
+            </div>
+          </div>
+          <div id="operation--__lbheartbeat__-get" class="operation panel" data-traverse-target="operation--__lbheartbeat__-get">
+            <!-- <section class="operation-tags row"> -->
+            <!-- <div class="doc-copy"> -->
+            <div class="operation-tags">
+              <a class="label" href="#tag-Utilities">Utilities</a>
+              <!---->
+            </div>
+            <!-- </div> -->
+            <!-- </section> -->
+            <h2 class="operation-title">
+              <span class="operation-summary">Is the server reachable?</span>
+            </h2>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <section class="swagger-operation-path">
+                  <span class="operation-method">GET</span>
+                  <span class="operation-path">/__lbheartbeat__</span>
+                </section>
+              </div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-copy"> </div>
+              <div class="doc-examples"></div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <section class="swagger-responses">
+                  <div class="prop-row prop-group">
+                    <div class="prop-name">
+                      <div class="prop-title">200 OK</div>
+                      <div class="prop-ref"></div>
+                      <!-- <span class="swagger-global"></span> <span class="json-schema-reference"><a href=""></a></span> -->
+                    </div>
+                    <div class="prop-value">
+                      <p>Server reachable</p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+              <div class="doc-examples">
+                <h5>Response Content-Types:
+                  <span>application/json</span>
+                </h5>
+                <section>
+                  <h5>Response Example
+                    <span>(200 OK)</span>
+                  </h5>
+                  <!-- <div class="hljs"> --><pre><code class="hljs lang-json">{
+  <span class="hljs-attr">&quot;ok&quot;</span>: <span class="hljs-literal">true</span>
+}
+</code></pre>
+                  <!-- </div> -->
+                </section>
+              </div>
+            </div>
+          </div>
+          <div id="operation--__version__-get" class="operation panel" data-traverse-target="operation--__version__-get">
+            <!-- <section class="operation-tags row"> -->
+            <!-- <div class="doc-copy"> -->
+            <div class="operation-tags">
+              <a class="label" href="#tag-Utilities">Utilities</a>
+              <!---->
+            </div>
+            <!-- </div> -->
+            <!-- </section> -->
+            <h2 class="operation-title">
+              <span class="operation-summary">Running instance version information</span>
+            </h2>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <section class="swagger-operation-path">
+                  <span class="operation-method">GET</span>
+                  <span class="operation-path">/__version__</span>
+                </section>
+              </div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-copy"> </div>
+              <div class="doc-examples"></div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <section class="swagger-responses">
+                  <div class="prop-row prop-group">
+                    <div class="prop-name">
+                      <div class="prop-title">200 OK</div>
+                      <div class="prop-ref"></div>
+                      <!-- <span class="swagger-global"></span> <span class="json-schema-reference"><a href=""></a></span> -->
+                    </div>
+                    <div class="prop-value">
+                      <p>Return the running instance version information</p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+              <div class="doc-examples">
+                <h5>Response Content-Types:
+                  <span>application/json</span>
+                </h5>
+                <section>
+                  <h5>Response Example
+                    <span>(200 OK)</span>
+                  </h5>
+                  <!-- <div class="hljs"> --><pre><code class="hljs lang-json">{
+  <span class="hljs-attr">&quot;source&quot;</span>: <span class="hljs-string">&quot;https://github.com/leplatrem/iam&quot;</span>,
+  <span class="hljs-attr">&quot;version&quot;</span>: <span class="hljs-string">&quot;1.0&quot;</span>,
+  <span class="hljs-attr">&quot;commit&quot;</span>: <span class="hljs-string">&quot;490ed70efff482d17a&quot;</span>,
+  <span class="hljs-attr">&quot;build&quot;</span>: <span class="hljs-string">&quot;20171102&quot;</span>
+}
+</code></pre>
+                  <!-- </div> -->
+                </section>
+              </div>
+            </div>
+          </div>
+          <div id="operation--__api__-get" class="operation panel" data-traverse-target="operation--__api__-get">
+            <!-- <section class="operation-tags row"> -->
+            <!-- <div class="doc-copy"> -->
+            <div class="operation-tags">
+              <a class="label" href="#tag-Utilities">Utilities</a>
+              <!---->
+            </div>
+            <!-- </div> -->
+            <!-- </section> -->
+            <h2 class="operation-title">
+              <span class="operation-summary">Open API Specification documentation.</span>
+            </h2>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <section class="swagger-operation-path">
+                  <span class="operation-method">GET</span>
+                  <span class="operation-path">/__api__</span>
+                </section>
+              </div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-copy"> </div>
+              <div class="doc-examples"></div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <section class="swagger-responses">
+                  <div class="prop-row prop-group">
+                    <div class="prop-name">
+                      <div class="prop-title">200 OK</div>
+                      <div class="prop-ref"></div>
+                      <!-- <span class="swagger-global"></span> <span class="json-schema-reference"><a href=""></a></span> -->
+                    </div>
+                    <div class="prop-value">
+                      <p>Return the Open Api Specification.</p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+              <div class="doc-examples">
+                <h5>Response Content-Types:
+                  <span>application/json</span>
+                </h5>
+                <section>
+                  <h5>Response Example
+                    <span>(200 OK)</span>
+                  </h5>
+                  <!-- <div class="hljs"> --><pre><code class="hljs lang-json"><span class="hljs-string">&quot;object&quot;</span>
+</code></pre>
+                  <!-- </div> -->
+                </section>
+              </div>
+            </div>
+          </div>
+          <div id="operation--contribute.json-get" class="operation panel" data-traverse-target="operation--contribute.json-get">
+            <!-- <section class="operation-tags row"> -->
+            <!-- <div class="doc-copy"> -->
+            <div class="operation-tags">
+              <a class="label" href="#tag-Utilities">Utilities</a>
+              <!---->
+            </div>
+            <!-- </div> -->
+            <!-- </section> -->
+            <h2 class="operation-title">
+              <span class="operation-summary">Open source contributing information</span>
+            </h2>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <section class="swagger-operation-path">
+                  <span class="operation-method">GET</span>
+                  <span class="operation-path">/contribute.json</span>
+                </section>
+              </div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-copy"> </div>
+              <div class="doc-examples"></div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-copy">
+                <section class="swagger-responses">
+                  <div class="prop-row prop-group">
+                    <div class="prop-name">
+                      <div class="prop-title">200 OK</div>
+                      <div class="prop-ref"></div>
+                      <!-- <span class="swagger-global"></span> <span class="json-schema-reference"><a href=""></a></span> -->
+                    </div>
+                    <div class="prop-value">
+                      <p>Return open source contributing information.</p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+              <div class="doc-examples">
+                <h5>Response Content-Types:
+                  <span>application/json</span>
+                </h5>
+                <section>
+                  <h5>Response Example
+                    <span>(200 OK)</span>
+                  </h5>
+                  <!-- <div class="hljs"> --><pre><code class="hljs lang-json"><span class="hljs-string">&quot;object&quot;</span>
+</code></pre>
+                  <!-- </div> -->
+                </section>
+              </div>
+            </div>
+          </div>
+          <div class="doc-row no-margin">
+            <div class="doc-copy doc-separator">
+              <a class="powered-by" href="https://sourcey.com/spectacle">Documentation by
+                <span>Spectacle</span>
+              </a>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </body>
+</html>
