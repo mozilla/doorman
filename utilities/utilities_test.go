@@ -84,7 +84,7 @@ func TestOpenAPI(t *testing.T) {
 	var response Response
 	testJSONResponse(t, "/__api__", &response)
 
-	assert.Equal(t, response.Openapi, "3.0.0")
+	assert.Equal(t, response.Openapi, "2.0.0")
 }
 
 func TestContribute(t *testing.T) {
