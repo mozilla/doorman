@@ -9,7 +9,7 @@ IAM is an **authorization micro-service** that allows to checks if an arbitrary 
 
 ## Policies
 
-Policies are defined in YAML file (default ``./policies.yaml``) as follow:
+Policies are defined in YAML files (default ``./policies.yaml``) as follow:
 
 ```yaml
   audience: https://service.stage.net
@@ -52,6 +52,73 @@ Supported prefixes:
 * ``role:``: provided in context of authorization request (see below)
 * ``email:``: provided by IdP
 * ``group:``: provided by IdP/LDAP
+
+## API
+
+[See full API docs](https://leplatrem.github.io/iam/)
+
+Basically, **POST /allowed** to check an authorization request:
+
+**Request**:
+
+```HTTP
+POST /allowed HTTP/1.1
+Origin: https://api.service.org
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbG...9USXpOalEzUXpV
+
+{
+  "action" : "delete",
+  "resource": "resource:articles:ladon-introduction",
+  "context": {
+    "clientIP": "192.168.0.5",
+    "roles": ["editor"]
+  }
+}
+```
+
+**Response**:
+
+```HTTP
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "allowed": true,
+  "principals": [
+    "userid:google-auth|2664978978",
+    "email:alex@skynet.corp",
+    "role:editor",
+    "group:admins"
+  ]
+}
+```
+
+## Configuration
+
+Via environment variables:
+
+* ``POLICIES``: space separated locations of YAML files with policies. They can be single files, folders or Github URLs (default: ``./policies.yaml``)
+* ``JWT_ISSUER``:  issuer of the JWT tokens to match. For JWTs issued by Auth0, use the domain with a `https://` prefix and a trailing `/` (eg. `https://auth.mozilla.auth0.com/`)
+* ``GITHUB_TOKEN``: Github API token to be used when fetching policies from private repositories
+
+Advanced:
+
+* ``PORT``: listen (default: ``8080``)
+* ``GIN_MODE``: server mode (``release`` or default ``debug``)
+* ``LOG_LEVEL``: logging level (``fatal|error|warn|info|debug``, default: ``info`` with ``GIN_MODE=release`` else ``debug``)
+* ``VERSION_FILE``: location of JSON file with version information (default: ``./version.json``)
+
+> Note: the ``Dockerfile`` contains different default values, suited for production.
+
+## Run locally
+
+    make serve
+
+Or with JWT verification enabled:
+
+    make serve -e JWT_ISSUER=https://minimal-demo-iam.auth0.com/
+
+## Advanced policies rules
 
 ### Conditions
 
@@ -113,43 +180,17 @@ conditions:
       cidr: 192.168.0.1/16
 ```
 
-## API
-
-* [See API docs](https://leplatrem.github.io/iam/)
-* [See API spec sources](./utilities/openapi.yaml)
-
-
-## Configuration
-
-Via environment variables:
-
-* ``POLICIES``: space separated locations of YAML files with policies. They can be single files, folders or Github URLs (default: ``./policies.yaml``)
-* ``JWT_ISSUER``:  issuer of the JWT tokens to match. For JWTs issued by Auth0, use the domain with a `https://` prefix and a trailing `/` (eg. `https://auth.mozilla.auth0.com/`)
-* ``GITHUB_TOKEN``: Github API token to be used when fetching policies from private repositories
-
-Advanced:
-
-* ``PORT``: listen (default: ``8080``)
-* ``GIN_MODE``: server mode (``release`` or default ``debug``)
-* ``LOG_LEVEL``: logging level (``fatal|error|warn|info|debug``, default: ``info`` with ``GIN_MODE=release`` else ``debug``)
-* ``VERSION_FILE``: location of JSON file with version information (default: ``./version.json``)
-
-> Note: the ``Dockerfile`` contains different default values, suited for production.
-
-
-## Run locally
-
-    make serve
-
-Or with JWT verification enabled:
-
-    make serve -e JWT_ISSUER=https://minimal-demo-iam.auth0.com/
-
-
 ## Run tests
 
     make test
 
+## Generate API docs
+
+    make api-docs
+
+## Build docker container
+
+    make docker-build
 
 ## License
 
