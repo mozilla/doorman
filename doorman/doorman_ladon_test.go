@@ -122,13 +122,14 @@ policies:
 }
 
 func TestLoadFolder(t *testing.T) {
-	tmpfile, _ := ioutil.TempFile("", "")
-	defer os.Remove(tmpfile.Name()) // clean up
-
 	// Create temp dir
 	dir, err := ioutil.TempDir("", "example")
 	assert.Nil(t, err)
 	defer os.RemoveAll(dir)
+	// Create subdir (to be skipped)
+	subdir, err := ioutil.TempDir(dir, "ignored")
+	assert.Nil(t, err)
+	defer os.RemoveAll(subdir)
 
 	// Create sample file
 	testfile := filepath.Join(dir, "test.yaml")
@@ -142,7 +143,7 @@ policies:
     effect: allow
 `), 0666)
 
-	w := New([]string{testfile})
+	w := New([]string{dir})
 	err = w.LoadPolicies()
 	assert.Nil(t, err)
 	assert.Equal(t, len(w.configs["a"].Policies), 1)
@@ -162,7 +163,7 @@ func TestLoadGithub(t *testing.T) {
 	assert.Contains(t, err.Error(), "not supported")
 
 	// Bad URL
-	w = New([]string{"https://github.com/moz/ops/config.yaml"})
+	w = New([]string{"ftp://github.com/moz/ops/config.yaml"})
 	err = w.LoadPolicies()
 	assert.NotNil(t, err)
 
