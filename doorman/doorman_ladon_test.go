@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -120,7 +121,66 @@ policies:
 	assert.NotNil(t, err)
 }
 
-func TestLoadGroups(t *testing.T) {
+func TestLoadFolder(t *testing.T) {
+	// Create temp dir
+	dir, err := ioutil.TempDir("", "example")
+	assert.Nil(t, err)
+	defer os.RemoveAll(dir)
+	// Create subdir (to be skipped)
+	subdir, err := ioutil.TempDir(dir, "ignored")
+	assert.Nil(t, err)
+	defer os.RemoveAll(subdir)
+
+	// Create sample file
+	testfile := filepath.Join(dir, "test.yaml")
+	defer os.Remove(testfile)
+	err = ioutil.WriteFile(testfile, []byte(`
+audience: a
+policies:
+  -
+    id: "1"
+    action: read
+    effect: allow
+`), 0666)
+
+	w := New([]string{dir})
+	err = w.LoadPolicies()
+	assert.Nil(t, err)
+	assert.Equal(t, len(w.configs["a"].Policies), 1)
+}
+
+func TestLoadGithub(t *testing.T) {
+	// Unsupported URL
+	w := New([]string{"https://bitbucket.org/test.yaml"})
+	err := w.LoadPolicies()
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "no appropriate loader found")
+
+	// Unsupported folder.
+	w = New([]string{"https://github.com/moz/ops/configs/"})
+	err = w.LoadPolicies()
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "not supported")
+
+	// Bad URL
+	w = New([]string{"ftp://github.com/moz/ops/config.yaml"})
+	err = w.LoadPolicies()
+	assert.NotNil(t, err)
+
+	// Bad file
+	w = New([]string{"https://github.com/leplatrem/iam/raw/06a2531/main.go"})
+	err = w.LoadPolicies()
+	assert.NotNil(t, err)
+
+	// Good URL
+	w = New([]string{"https://github.com/leplatrem/iam/raw/06a2531/sample.yaml"})
+	err = w.LoadPolicies()
+	assert.Nil(t, err)
+	assert.Equal(t, len(w.configs["https://sample.yaml"].Tags), 1)
+	assert.Equal(t, len(w.configs["https://sample.yaml"].Policies), 6)
+}
+
+func TestLoadTags(t *testing.T) {
 	d, err := loadTempFiles(`
 audience: a
 tags:

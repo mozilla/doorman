@@ -23,7 +23,7 @@ func setupRouter() (*gin.Engine, error) {
 	r.Use(HTTPLoggerMiddleware())
 
 	// Setup doorman and load configuration files.
-	w := doorman.New(policies())
+	w := doorman.New(sources())
 	if err := w.LoadPolicies(); err != nil {
 		return nil, err
 	}
@@ -35,16 +35,16 @@ func setupRouter() (*gin.Engine, error) {
 	return r, nil
 }
 
-func policies() []string {
+func sources() []string {
 	// If POLICIES not specified, read ./policies.yaml
 	env := os.Getenv("POLICIES")
 	if env == "" {
 		env = DefaultPoliciesFilename
 	}
-	policies := strings.Split(env, " ")
+	sources := strings.Split(env, " ")
 	// Filter empty strings
 	var r []string
-	for _, v := range policies {
+	for _, v := range sources {
 		s := strings.TrimSpace(v)
 		if s != "" {
 			r = append(r, s)
