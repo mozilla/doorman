@@ -19,9 +19,9 @@ func ContextMiddleware(doorman Doorman) gin.HandlerFunc {
 }
 
 // SetupRoutes adds doorman views to query the policies.
-func SetupRoutes(r *gin.Engine, doorman Doorman) {
+func SetupRoutes(r *gin.Engine, doorman Doorman, jwtIssuer string) {
 	r.Use(ContextMiddleware(doorman))
-	if jwtIssuer := doorman.JWTIssuer(); jwtIssuer != "" {
+	if jwtIssuer != "" {
 		// XXX: currently only Auth0 is supported.
 		validator := &Auth0Validator{
 			Issuer: jwtIssuer,

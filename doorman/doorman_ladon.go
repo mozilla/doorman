@@ -35,10 +35,9 @@ type Configuration struct {
 }
 
 // New instantiates a new doorman.
-func New(policies []string, issuer string) *LadonDoorman {
+func New(policies []string) *LadonDoorman {
 	w := &LadonDoorman{
 		policiesSources: policies,
-		jwtIssuer:       issuer,
 		configs:         map[string]*Configuration{},
 	}
 	return w
@@ -81,11 +80,6 @@ func (doorman *LadonDoorman) LoadPolicies() error {
 	// Only if everything went well, replace existing configs with new ones.
 	doorman.configs = configs
 	return nil
-}
-
-// JWTIssuer returns the URL of the JWT issuer (if configured)
-func (doorman *LadonDoorman) JWTIssuer() string {
-	return doorman.jwtIssuer
 }
 
 // IsAllowed is responsible for deciding if subject can perform action on a resource with a context.
