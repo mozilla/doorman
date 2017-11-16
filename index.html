@@ -121,7 +121,9 @@
             <div class="doc-row">
               <div class="doc-copy">
                 <section class="swagger-request-body">
-                  <p>Authorization request in JSON. Note that none of the authorization request fields is mandatory.</p>
+                  <p>Authorization request in JSON.</p>
+                  <p>Note that
+                    <strong>every field is optional</strong>.</p>
                   <section class="json-schema-properties">
                     <dl>
                       <dt data-property-name="principals" class="has-description">
@@ -156,9 +158,7 @@
                         <span class="json-property-range" title="Value limits"></span>
                       </dt>
                       <dd>
-                        <p>Any extra information to be matched in policies conditions.</p>
-                        <p>The fields <code>remoteIP</code> and <code>audience</code> will be forced by the server.</p>
-                        <p>The values provided in the <code>roles</code> field will expand the principals with extra <code>role:{}</code> values.</p>
+                        <p>Any extra information to be matched in policies conditions. The context fields <code>remoteIP</code> and <code>audience</code> will be forced by the server. The values provided in the <code>roles</code> context field will expand the principals with extra <code>role:{}</code> values.</p>
                       </dd>
                     </dl>
                   </section>
