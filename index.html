@@ -67,7 +67,8 @@
             <div class="doc-row">
               <div class="doc-copy">
                 <p>IAM is an
-                  <strong>authorization micro-service</strong> that allows to checks if an arbitrary subject is allowed to perform an action on a resource, based on a set of rules (policies). It is inspired by
+                  <strong>authorization micro-service</strong> that allows to checks if an arbitrary subject is allowed to perform an action on a resource, based on a set of rules (policies).</p>
+                <p>It is inspired by
                   <a href="http://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html">AWS IAM Policies</a>.</p>
               </div>
               <div class="doc-examples">
@@ -80,6 +81,11 @@
             </div>
           </div>
           <h1 id="tag-Doorman" class="swagger-summary-tag" data-traverse-target="tag-Doorman">Doorman</h1>
+          <div class="tag-description doc-row">
+            <div class="doc-copy">
+              <p>Main API endpoints.</p>
+            </div>
+          </div>
           <div id="operation--allowed-post" class="operation panel" data-traverse-target="operation--allowed-post">
             <!-- <section class="operation-tags row"> -->
             <!-- <div class="doc-copy"> -->
@@ -103,7 +109,12 @@
             <div class="doc-row">
               <div class="doc-copy">
                 <section class="swagger-operation-description">
-                  <p>Are those <code>principals</code> allowed to perform this <code>action</code> on this <code>resource</code> in this <code>context</code>? When the service runs with the <code>JWT_ISSUER</code> environment variable, the authentication is mandatory. Otherwise the <code>principals</code> can be posted in the authorization request.</p>
+                  <p>Are those <code>principals</code> allowed to perform this <code>action</code> on this <code>resource</code> in this <code>context</code>?</p>
+                  <p>
+                    <strong>Optional authentication</strong>
+                  </p>
+                  <p>When the service runs with the <code>JWT_ISSUER</code> environment variable, the authentication is mandatory.</p>
+                  <p>With the <code>JWT_ISSUER</code> configured, the principals cannot be specified in the authorization request. They are taken from the JWT payload (<code>userid:{Subject}</code>, <code>email:{Email}</code>, <code>group:{Groups..}</code>, etc.)</p>
                 </section>
               </div>
             </div>
@@ -119,7 +130,9 @@
                         <span class="json-property-range" title="Value limits"></span>
                       </dt>
                       <dd>
-                        <p>With the <code>JWT_ISSUER</code> configured, the principals cannot be specified in the authorization request. They are taken from the JWT payload (<code>userid:{Subject}</code>, <code>email:{Email}</code>, <code>group:{Groups..}</code>, etc.)</p>
+                        <p>Arbitrary list of strings (eg. <code>userid:alice</code>).
+                          <strong>Only if the server runs without authentication</strong>
+                        </p>
                       </dd>
                       <dt data-property-name="action" class="has-description">
                         <span class="json-property-name">action:</span>
@@ -143,7 +156,9 @@
                         <span class="json-property-range" title="Value limits"></span>
                       </dt>
                       <dd>
-                        <p>Any extra information to be matched in policies conditions. The fields <code>remoteIP</code> and <code>audience</code> will be forced by the server. The values provided in the <code>roles</code> field will expand the principals with extra <code>role:{}</code> values.</p>
+                        <p>Any extra information to be matched in policies conditions.</p>
+                        <p>The fields <code>remoteIP</code> and <code>audience</code> will be forced by the server.</p>
+                        <p>The values provided in the <code>roles</code> field will expand the principals with extra <code>role:{}</code> values.</p>
                       </dd>
                     </dl>
                   </section>
@@ -154,7 +169,8 @@
                       <div class="prop-title">Origin</div>
                     </div>
                     <div class="prop-value">
-                      <p>The JWT claimed audience will be checked against this <code>Origin</code> request header. The specified value must also match one of the known audience from the policies files. (eg. <code>https://api.service.org</code>)</p>
+                      <p>The JWT claimed audience will be checked against this <code>Origin</code> request header (eg. <code>https://api.service.org</code>).</p>
+                      <p>The specified value must also match one of the known audience from the policies files.</p>
                     </div>
                   </div>
                   <div class="prop-row prop-inner">
@@ -232,9 +248,11 @@
                   <div class="prop-row prop-group">
                     <div class="prop-name">
                       <div class="prop-title">400 Bad Request</div>
+                      <div class="prop-ref"></div>
+                      <!-- <span class="swagger-global"></span> <span class="json-schema-reference"><a href=""></a></span> -->
                     </div>
                     <div class="prop-value">
-                      <p>Invalid posted data.</p>
+                      <p>Missing headers or invalid posted data.</p>
                     </div>
                   </div>
                   <div class="prop-row prop-group">
@@ -242,7 +260,7 @@
                       <div class="prop-title">401 Unauthorized</div>
                     </div>
                     <div class="prop-value">
-                      <p>Authentication failed.</p>
+                      <p>JWT token is invalid.</p>
                     </div>
                   </div>
                   <div class="prop-row prop-group">
@@ -250,7 +268,7 @@
                       <div class="prop-title">403 Forbidden</div>
                     </div>
                     <div class="prop-value">
-                      <p>JWT token is invalid (authorization failed).</p>
+                      <p>JWT claimed audience is invalid (authorization failed).</p>
                     </div>
                   </div>
                 </section>
@@ -271,6 +289,16 @@
     <span class="hljs-string">&quot;tag:mayor&quot;</span>,
     <span class="hljs-string">&quot;role:changer&quot;</span>
   ]
+}
+</code></pre>
+                  <!-- </div> -->
+                </section>
+                <section>
+                  <h5>Response Example
+                    <span>(400 Bad Request)</span>
+                  </h5>
+                  <!-- <div class="hljs"> --><pre><code class="hljs lang-json">{
+  <span class="hljs-attr">&quot;message&quot;</span>: <span class="hljs-string">&quot;Missing `Origin` request header&quot;</span>
 }
 </code></pre>
                   <!-- </div> -->
@@ -366,6 +394,11 @@
             </div>
           </div>
           <h1 id="tag-Utilities" class="swagger-summary-tag" data-traverse-target="tag-Utilities">Utilities</h1>
+          <div class="tag-description doc-row">
+            <div class="doc-copy">
+              <p>Operational and metadata endpoints.</p>
+            </div>
+          </div>
           <div id="operation--__heartbeat__-get" class="operation panel" data-traverse-target="operation--__heartbeat__-get">
             <!-- <section class="operation-tags row"> -->
             <!-- <div class="doc-copy"> -->
