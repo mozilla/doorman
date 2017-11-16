@@ -161,7 +161,17 @@ func TestLoadGithub(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "not supported")
 
-	// URL
+	// Bad URL
+	w = New([]string{"https://github.com/moz/ops/config.yaml"})
+	err = w.LoadPolicies()
+	assert.NotNil(t, err)
+
+	// Bad file
+	w = New([]string{"https://github.com/leplatrem/iam/raw/06a2531/main.go"})
+	err = w.LoadPolicies()
+	assert.NotNil(t, err)
+
+	// Good URL
 	w = New([]string{"https://github.com/leplatrem/iam/raw/06a2531/sample.yaml"})
 	err = w.LoadPolicies()
 	assert.Nil(t, err)
