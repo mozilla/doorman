@@ -23,10 +23,9 @@ func (f *fileLoader) CanLoad(path string) bool {
 func (f *fileLoader) Load(path string) ([]*Configuration, error) {
 	log.Infof("Load %q locally", path)
 
-	fileInfo, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		return nil, err
-	}
+	// File always exists because CanLoad() returned true.
+	fileInfo, _ := os.Stat(path)
+
 	// If path is a folder, list files.
 	filenames := []string{path}
 	if fileInfo.IsDir() {
