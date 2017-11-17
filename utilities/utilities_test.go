@@ -94,5 +94,5 @@ func TestContribute(t *testing.T) {
 	var response Response
 	testJSONResponse(t, "/contribute.json", &response)
 
-	assert.Equal(t, response.Name, "IAM")
+	assert.Equal(t, response.Name, "Doorman")
 }
