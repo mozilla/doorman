@@ -19,7 +19,7 @@ Policies are defined in YAML file (default ``./policies.yaml``) as follow:
   policies:
     -
       description: One policy to rule them all.
-      subjects:
+      principals:
         - userid:<[peter|ken]>
         - tag:admins
         - group:europe
