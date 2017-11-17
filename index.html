@@ -75,9 +75,7 @@
                   <li>it facilitates permissions management across services (eg. makes revocation easier)</li>
                   <li>it allows authorizations monitoring, metrics, anomaly detection</li>
                 </ul>
-                <p>
-                  <strong>Workflow</strong>
-                </p>
+                <h3 id="workflow">Workflow</h3>
                 <ol>
                   <li>Users obtain JWT from an Identity Provider (eg. Auth0)</li>
                   <li>They use it to call a service API endpoint</li>
@@ -88,21 +86,49 @@
                   <li>
                     <em>Doorman</em> builds a list of strings (principals) for this user, and matches the policies</li>
                 </ol>
-                <p>
-                  <strong>Optional JWT verification</strong>
-                </p>
+                <h3 id="optional-jwt-verification">Optional JWT verification</h3>
                 <p>With the <code>JWT_ISSUER</code> configured,
                   <em>Doorman</em> will verify that the specified JSON Web Token (JWT) is valid. The claimed audience (<code>&quot;aud&quot;</code>) will be checked against the <code>Origin</code> request header.</p>
                 <p>The authorization request
                   <em>principals</em> will be built from the JWT payload:</p>
                 <ul>
                   <li><code>&quot;sub&quot;</code>: <code>userid:{}</code></li>
-                  <li><code>&quot;email&quot;:</code>email:{}` (
+                  <li><code>&quot;email&quot;</code>: <code>email:{}</code> (
                     <em>optional</em>)</li>
                   <li><code>&quot;groups&quot;</code>: <code>group:{}, group:{}, ...</code> (
                     <em>optional</em>)</li>
                 </ul>
-              </div>
+                <h3 id="api-summary">API Summary</h3>
+                <p>Basically, use
+                  <strong>POST /allowed</strong> to check authorization requests.</p>
+                <p>
+                  <strong>Request</strong>:</p> <pre><code class="hljs lang-HTTP">
+          <span class="hljs-keyword">POST</span> <span class="hljs-string">/allowed</span> HTTP/1.1
+          <span class="hljs-attribute">Origin</span>: https://api.service.org
+          
+          <span class="json">{
+            <span class="hljs-attr">"principals"</span>: [<span class="hljs-string">"userid:myself"</span>]
+            <span class="hljs-string">"action"</span> : <span class="hljs-string">"delete"</span>,
+            <span class="hljs-attr">"resource"</span>: <span class="hljs-string">"articles/doorman-introduce"</span>,
+            <span class="hljs-attr">"context"</span>: {
+              <span class="hljs-attr">"env"</span>: <span class="hljs-string">"stage"</span>,
+              <span class="hljs-attr">"roles"</span>: [<span class="hljs-string">"editor"</span>]
+            }
+          }</span>
+          </code></pre>
+                <p>
+                  <strong>Response</strong>:</p> <pre><code class="hljs lang-HTTP">
+          HTTP/1.1 <span class="hljs-number">200</span> OK
+          <span class="hljs-attribute">Content-Type</span>: application/json
+          
+          <span class="json">{
+            <span class="hljs-attr">"allowed"</span>: <span class="hljs-literal">true</span>,
+            <span class="hljs-attr">"principals"</span>: [
+              <span class="hljs-string">"role:editor"</span>,
+              <span class="hljs-string">"userid:myself"</span>
+            ]
+          }</span>
+          </code></pre> </div>
               <div class="doc-examples">
                 <section>
                   <h5>Version:
