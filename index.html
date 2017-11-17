@@ -83,7 +83,25 @@
                   <li>They use it to call a service API endpoint</li>
                   <li>The service posts an authorization request on
                     <em>Doorman</em> to check if the user is allowed</li>
+                  <li>
+                    <em>Doorman</em> uses the <code>Origin</code> request header to select the set of policies</li>
+                  <li>
+                    <em>Doorman</em> builds a list of strings (principals) for this user, and matches the policies</li>
                 </ol>
+                <p>
+                  <strong>Optional JWT verification</strong>
+                </p>
+                <p>With the <code>JWT_ISSUER</code> configured,
+                  <em>Doorman</em> will verify that the specified JSON Web Token (JWT) is valid. The claimed audience (<code>&quot;aud&quot;</code>) will be checked against the <code>Origin</code> request header.</p>
+                <p>The authorization request
+                  <em>principals</em> will be built from the JWT payload:</p>
+                <ul>
+                  <li><code>&quot;sub&quot;</code>: <code>userid:{}</code></li>
+                  <li><code>&quot;email&quot;:</code>email:{}` (
+                    <em>optional</em>)</li>
+                  <li><code>&quot;groups&quot;</code>: <code>group:{}, group:{}, ...</code> (
+                    <em>optional</em>)</li>
+                </ul>
               </div>
               <div class="doc-examples">
                 <section>
@@ -124,17 +142,14 @@
               <div class="doc-copy">
                 <section class="swagger-operation-description">
                   <p>Are those <code>principals</code> allowed to perform this <code>action</code> on this <code>resource</code> in this <code>context</code>?</p>
-                  <p>
-                    <strong>Optional authentication</strong>
-                  </p>
-                  <p>When the service runs with the <code>JWT_ISSUER</code> environment variable, the authentication is mandatory, and the principals cannot be specified in the authorization request. They are read from the JWT payload (<code>userid:{Subject}</code>, <code>email:{Email}</code>, <code>group:{Groups..}</code>, etc.)</p>
+                  <p>With JWT verification enabled, the principals are read from the JWT payload.</p>
                 </section>
               </div>
             </div>
             <div class="doc-row">
               <div class="doc-copy">
                 <section class="swagger-request-body">
-                  <p>Authorization request in JSON.</p>
+                  <p>Authorization request as JSON.</p>
                   <p>Note that
                     <strong>every field is optional</strong>.</p>
                   <section class="json-schema-properties">
@@ -146,9 +161,9 @@
                       </dt>
                       <dd>
                         <p>
-                          <strong>Only if the server runs without authentication</strong>
+                          <strong>Only with JWT verification disabled</strong>
                         </p>
-                        <p>Arbitrary list of strings (eg. <code>userid:alice</code>).</p>
+                        <p>Arbitrary list of strings (eg. <code>userid:alice</code>, <code>group:editors</code>).</p>
                       </dd>
                       <dt data-property-name="action" class="has-description">
                         <span class="json-property-name">action:</span>
@@ -184,7 +199,7 @@
                     </div>
                     <div class="prop-value">
                       <p>The service identifier (eg. <code>https://api.service.org</code>). It must match one of the known audience from the policies files.</p>
-                      <p>With the <code>JWT_ISSUER</code> configured, the claimed audience in the JWT will be checked against this header.</p>
+                      <p>With JWT verification enabled, the claimed audience in the JWT will be checked against this header.</p>
                     </div>
                   </div>
                   <div class="prop-row prop-inner">
@@ -203,7 +218,7 @@
                       <div class="prop-title">Authorization</div>
                     </div>
                     <div class="prop-value">
-                      <p>With the <code>JWT_ISSUER</code> configured, a valid JSON Web Token (JWT) must be provided in the <code>Authorization</code> request header. (eg. <code>Bearer eyJ0eXAiOiJKV1QiLCJhbG...9USXpOalEzUXpV</code>)</p>
+                      <p>With JWT verification enabled, a valid JSON Web Token (JWT) must be provided in the <code>Authorization</code> request header. (eg. <code>Bearer eyJ0eXAiOiJKV1QiLCJhbG...9USXpOalEzUXpV</code>)</p>
                     </div>
                   </div>
                   <div class="prop-row prop-inner">
