@@ -15,7 +15,7 @@ type auditLogger struct {
 func newAuditLogger() *auditLogger {
 	authzLog := &logrus.Logger{
 		Out:       os.Stdout,
-		Formatter: &mozlogrus.MozLogFormatter{LoggerName: "iam", Type: "request.authorization"},
+		Formatter: &mozlogrus.MozLogFormatter{LoggerName: "doorman", Type: "request.authorization"},
 		Hooks:     make(logrus.LevelHooks),
 		Level:     logrus.InfoLevel,
 	}

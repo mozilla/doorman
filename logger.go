@@ -24,7 +24,7 @@ func init() {
 
 	summaryLog = logrus.Logger{
 		Out:       os.Stdout,
-		Formatter: &mozlogrus.MozLogFormatter{LoggerName: "iam", Type: "request.summary"},
+		Formatter: &mozlogrus.MozLogFormatter{LoggerName: "doorman", Type: "request.summary"},
 		Hooks:     make(logrus.LevelHooks),
 		Level:     logrus.InfoLevel,
 	}
@@ -57,7 +57,7 @@ func HTTPLoggerMiddleware() gin.HandlerFunc {
 		// Default Gin debug log.
 		return gin.Logger()
 	}
-	mozlogrus.EnableFormatter(&mozlogrus.MozLogFormatter{LoggerName: "iam", Type: "app.log"})
+	mozlogrus.EnableFormatter(&mozlogrus.MozLogFormatter{LoggerName: "doorman", Type: "app.log"})
 	return MozLogger()
 }
 

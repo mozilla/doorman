@@ -1,5 +1,5 @@
-name: IAM
-description: IAM
+name: Doorman
+description: Doorman is an authorization micro-service
 repository:
   license: Mozilla Public Licence 2.0
   url: https://github.com/leplatrem/iam

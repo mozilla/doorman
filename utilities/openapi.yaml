@@ -1,10 +1,72 @@
 openapi: 2.0.0
 info:
-  title: "Mozilla IAM"
+  title: "Mozilla Doorman"
   description: |
-    IAM is an **authorization micro-service** that allows to checks if an arbitrary subject is allowed to perform an action on a resource, based on a set of rules (policies).
+    Doorman is an **authorization micro-service** that allows to checks if an arbitrary subject is allowed to perform an action on a resource, based on a set of rules (policies).
 
-    It is inspired by [AWS IAM Policies](http://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html).
+    Having a centralized access control service has several advantages:
+
+    - it clearly dissociates authentication from authorization
+    - it provides a standard and generic permissions system to services developers
+    - it facilitates permissions management across services (eg. makes revocation easier)
+    - it allows authorizations monitoring, metrics, anomaly detection
+
+    ### Workflow
+
+    1. Users obtain JWT from an Identity Provider (eg. Auth0)
+    1. They use it to call a service API endpoint
+    1. The service posts an authorization request on *Doorman* to check if the user is allowed
+    1. *Doorman* uses the `Origin` request header to select the set of policies
+    1. *Doorman* builds a list of strings (principals) for this user, and matches the policies
+
+    ### Optional JWT verification
+
+    With the `JWT_ISSUER` configured, *Doorman* will verify that the specified JSON Web Token (JWT) is valid.
+    The claimed audience (`"aud"`) will be checked against the `Origin` request header.
+
+    The authorization request *principals* will be built from the JWT payload:
+
+    * `"sub"`: `userid:{}`
+    * `"email"`: `email:{}` (*optional*)
+    * `"groups"`: `group:{}, group:{}, ...` (*optional*)
+
+    ### API Summary
+
+    Basically, use **POST /allowed** to check authorization requests.
+
+    **Request**:
+
+    ```HTTP
+
+    POST /allowed HTTP/1.1
+    Origin: https://api.service.org
+
+    {
+      "principals": ["userid:myself"]
+      "action" : "delete",
+      "resource": "articles/doorman-introduce",
+      "context": {
+        "env": "stage",
+        "roles": ["editor"]
+      }
+    }
+    ```
+
+    **Response**:
+
+    ```HTTP
+
+    HTTP/1.1 200 OK
+    Content-Type: application/json
+
+    {
+      "allowed": true,
+      "principals": [
+        "role:editor",
+        "userid:myself"
+      ]
+    }
+    ```
 
   version: "0.1"
   contact:
@@ -27,11 +89,7 @@ paths:
       description: |
         Are those `principals` allowed to perform this `action` on this `resource` in this `context`?
 
-        **Optional authentication**
-
-        When the service runs with the `JWT_ISSUER` environment variable, the authentication is mandatory.
-
-        With the `JWT_ISSUER` configured, the principals cannot be specified in the authorization request. They are taken from the JWT payload (`userid:{Subject}`, `email:{Email}`, `group:{Groups..}`, etc.)
+        With JWT verification enabled, the principals are read from the JWT payload.
 
       operationId: "allowed"
       consumes:
@@ -43,43 +101,47 @@ paths:
           name: Origin
           type: string
           description: |
-            The JWT claimed audience will be checked against this `Origin` request header (eg. `https://api.service.org`).
+            The service identifier (eg. `https://api.service.org`). It must match one of the known audience from the policies files.
 
-            The specified value must also match one of the known audience from the policies files.
+            With JWT verification enabled, the claimed audience in the JWT will be checked against this header.
 
         - in: header
           name: Authorization
           type: string
           description: |
-            With the `JWT_ISSUER` configured, a valid JSON Web Token (JWT) must be provided in the `Authorization` request header.
+            With JWT verification enabled, a valid JSON Web Token (JWT) must be provided in the `Authorization` request header.
             (eg. `Bearer eyJ0eXAiOiJKV1QiLCJhbG...9USXpOalEzUXpV`)
 
         - in: body
-          description:
-            Authorization request in JSON. Note that none of the authorization request fields is mandatory.
+          description: |
+            Authorization request as JSON.
+
+            Note that **every field is optional**.
+
           required: true
           schema:
             type: object
             properties:
               principals:
-                description:
-                  Arbitrary list of strings (eg. `userid:alice`). **Only if the server runs without authentication**
+                description: |
+                  **Only with JWT verification disabled**
+
+                  Arbitrary list of strings (eg. `userid:alice`, `group:editors`).
+
                 type: array
                 items:
                   type: string
               action:
-                description: Any action (eg. `read`, `delete`, `signoff`)
+                description: Any domain specific action (eg. `read`, `delete`, `signoff`)
                 type: string
               resource:
                 description: Any resource (eg. `blocklist`, `/update/rules/35`)
                 type: string
               context:
                 description: |
-                  Any extra information to be matched in policies conditions.
-
-                  The fields `remoteIP` and `audience` will be forced by the server.
-
-                  The values provided in the `roles` field will expand the principals with extra `role:{}` values.
+                  The context can contain any extra information to be matched in policies conditions.
+                  The context fields `remoteIP` and `audience` will be forced by the server.
+                  The values provided in the `roles` context field will expand the principals with extra `role:{}` values.
 
                 type: object
                 properties:

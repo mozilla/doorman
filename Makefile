@@ -49,10 +49,10 @@ test-coverage: vendor policies.yaml utilities/bindata.go
 	sed -i '/bindata.go/d' coverage.txt
 
 docker-build: main
-	docker build -t mozilla/iam .
+	docker build -t mozilla/doorman .
 
 docker-run:
-	docker run --name iam --rm mozilla/iam
+	docker run --name doorman --rm mozilla/doorman
 
 api-docs: utilities/openapi.yaml
 	# https://github.com/sourcey/spectacle
