@@ -1,6 +1,7 @@
 package doorman
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -59,17 +60,20 @@ func (f *fileLoader) Load(path string) ([]*Configuration, error) {
 
 func loadFile(filename string) (*Configuration, error) {
 	log.Debugf("Parse file %q", filename)
-	yamlFile, err := ioutil.ReadFile(filename)
+	fileContent, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
-	if len(yamlFile) == 0 {
+	if len(fileContent) == 0 {
 		return nil, fmt.Errorf("empty file %q", filename)
 	}
+	// Replace "principals" in config by "subjects" (ladon vocabulary)
+	adjusted := bytes.Replace(fileContent, []byte("principals:"), []byte("subjects:"), -1)
+
 	// Ladon does not support un/marshaling YAML.
 	// https://github.com/ory/ladon/issues/83
 	var generic interface{}
-	if err := yaml.Unmarshal(yamlFile, &generic); err != nil {
+	if err := yaml.Unmarshal(adjusted, &generic); err != nil {
 		return nil, err
 	}
 	asJSON := utilities.Yaml2JSON(generic)

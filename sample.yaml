@@ -6,7 +6,7 @@ policies:
   -
     id: "1"
     description: This policy allows 'userid:foo' to update any resource
-    subjects:
+    principals:
       - userid:foo
       - tag:admins
     actions:
@@ -17,7 +17,7 @@ policies:
   -
     id: "2"
     description: This policy rejects everything from planet mars
-    subjects:
+    principals:
       - <.*>
     actions:
       - <.*>
@@ -32,7 +32,7 @@ policies:
   -
     id: "3"
     description: This policy allow read from localhost
-    subjects:
+    principals:
       - <.*>
     actions:
       - read
@@ -47,7 +47,7 @@ policies:
   -
     id: "4"
     description: Only owner
-    subjects:
+    principals:
       - <.*>
     actions:
       - <.*>
@@ -55,12 +55,12 @@ policies:
       - <.*>
     conditions:
       owner:
-        type: EqualsSubjectCondition
+        type: InPrincipalsCondition
     effect: allow
   -
     id: "5"
     description: Admins on Mozilla domain
-    subjects:
+    principals:
       - group:admins
     actions:
       - create
@@ -75,7 +75,7 @@ policies:
   -
     id: "6"
     description: Editors can update PTO
-    subjects:
+    principals:
       - role:editor
     actions:
       - update
