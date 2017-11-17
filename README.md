@@ -19,6 +19,7 @@ Policies are defined in YAML files for each service, locally or in remote Github
 
 ```yaml
 audience: https://service.stage.net
+jwtIssuer: https://auth.mozilla.auth0.com/
 tags:
   superusers:
     - userid:maria
@@ -55,7 +56,6 @@ Supported prefixes:
 Via environment variables:
 
 * ``POLICIES``: space separated locations of YAML files with policies. They can be single files, folders or Github URLs (default: ``./policies.yaml``)
-* ``JWT_ISSUER``:  issuer of the JWT tokens to match. For JWTs issued by Auth0, use the domain with a `https://` prefix and a trailing `/` (eg. `https://auth.mozilla.auth0.com/`)
 * ``GITHUB_TOKEN``: Github API token to be used when fetching policies files from private repositories
 
 Advanced:
@@ -161,10 +161,6 @@ conditions:
 ## Run from source
 
     make serve
-
-Or with JWT verification enabled:
-
-    make serve -e JWT_ISSUER=https://minimal-demo-iam.auth0.com/
 
 ## Run tests
 

@@ -1,15 +1,10 @@
 package doorman
 
 import (
-	"fmt"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	jwt "gopkg.in/square/go-jose.v2/jwt"
 )
-
-// PrincipalsContextKey is the Gin context key to obtain the current user principals.
-const PrincipalsContextKey string = "principals"
 
 // Claims is the set of information we extract from the JWT payload.
 type Claims struct {
@@ -25,57 +20,25 @@ type JWTValidator interface {
 	ExtractClaims(*http.Request) (*Claims, error)
 }
 
-// VerifyJWTMiddleware makes sure a valid JWT is provided.
-func VerifyJWTMiddleware(validator JWTValidator) gin.HandlerFunc {
-	validator.Initialize()
+var jwtValidators map[string]JWTValidator
 
-	return func(c *gin.Context) {
-		claims, err := validator.ExtractClaims(c.Request)
+func init() {
+	jwtValidators = map[string]JWTValidator{}
+}
 
+// NewJWTValidator instantiates a JWT validator for the specified issuer.
+func NewJWTValidator(issuer string) (JWTValidator, error) {
+	// Reuse JWT validators instances among configs if they are for the same issuer.
+	v, ok := jwtValidators[issuer]
+	if !ok {
+		// XXX: currently only Auth0 is supported.
+		v = &Auth0Validator{
+			Issuer: issuer,
+		}
+		err := v.Initialize()
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"message": err.Error(),
-			})
-			return
+			return nil, err
 		}
-
-		// The service requesting must send its location. It will be compared
-		// with the audiences defined in policies files.
-		// XXX: The Origin request header might not be the best choice.
-		origin := c.Request.Header.Get("Origin")
-		if origin == "" {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-				"message": "Missing `Origin` request header",
-			})
-			return
-		}
-		// Check that origin matches audiences from JWT token .
-		if !claims.Audience.Contains(origin) {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"message": "Invalid audience claim",
-			})
-			return
-		}
-
-		// Extract principals from JWT
-		var principals Principals
-		userid := fmt.Sprintf("userid:%s", claims.Subject)
-		principals = append(principals, userid)
-
-		// Main email (no alias)
-		if claims.Email != "" {
-			email := fmt.Sprintf("email:%s", claims.Email)
-			principals = append(principals, email)
-		}
-
-		// Groups
-		for _, group := range claims.Groups {
-			prefixed := fmt.Sprintf("group:%s", group)
-			principals = append(principals, prefixed)
-		}
-
-		c.Set(PrincipalsContextKey, principals)
-
-		c.Next()
 	}
+	return v, nil
 }

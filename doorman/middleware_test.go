@@ -29,24 +29,28 @@ func (v *TestValidator) ExtractClaims(request *http.Request) (*Claims, error) {
 }
 
 func TestJWTMiddleware(t *testing.T) {
-	v := &TestValidator{}
-	v.On("Initialize").Return(nil)
-	handler := VerifyJWTMiddleware(v)
+	doorman := New([]string{})
+	handler := VerifyJWTMiddleware(doorman)
 
-	// Initialize() is called on server startup.
-	v.AssertCalled(t, "Initialize")
+	audience := "https://some.api.com"
+
+	// Associate a fake JWT validator to this issuer.
+	v := &TestValidator{}
+	doorman.configs[audience] = &Configuration{
+		jwtValidator: v,
+	}
 
 	// Extract claims is ran on every request.
 	claims := &Claims{
 		Subject:  "ldap|user",
-		Audience: []string{"https://some.domain.com"},
+		Audience: []string{audience},
 		Email:    "user@corp.com",
 		Groups:   []string{"Employee", "Admins"},
 	}
 	v.On("ExtractClaims", mock.Anything).Return(claims, nil)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request, _ = http.NewRequest("GET", "/get", nil)
-	c.Request.Header.Set("Origin", "https://some.domain.com")
+	c.Request.Header.Set("Origin", audience)
 
 	handler(c)
 
@@ -77,19 +81,43 @@ func TestJWTMiddleware(t *testing.T) {
 	_, ok = c.Get(PrincipalsContextKey)
 	assert.False(t, ok)
 
-	// Missing attributes in Payload
+	// JWT not configured for this origin.
+	doorman.configs["https://open"] = &Configuration{
+		jwtValidator: nil,
+	}
+	c.Request, _ = http.NewRequest("GET", "/get", nil)
+	c.Request.Header.Set("Origin", "https://open")
+	handler(c)
+	_, ok = c.Get(PrincipalsContextKey)
+	assert.False(t, ok)
+
+	// Missing attributes in JWT Payload
 	claims = &Claims{
 		Subject:  "ldap|user",
-		Audience: []string{"https://some.domain.com"},
+		Audience: []string{audience},
 	}
 	v = &TestValidator{}
-	v.On("Initialize").Return(nil)
 	v.On("ExtractClaims", mock.Anything).Return(claims, nil)
+	doorman.configs[audience].jwtValidator = v
 	c, _ = gin.CreateTestContext(httptest.NewRecorder())
 	c.Request, _ = http.NewRequest("GET", "/get", nil)
-	c.Request.Header.Set("Origin", "https://some.domain.com")
-	handler = VerifyJWTMiddleware(v)
+	c.Request.Header.Set("Origin", audience)
 	handler(c)
 	principals, _ = c.Get(PrincipalsContextKey)
 	assert.Equal(t, Principals{"userid:ldap|user"}, principals)
+
+	// Audience mismatch origin
+	claims = &Claims{
+		Subject:  "ldap|user",
+		Audience: []string{"http://some.other.api"},
+	}
+	v = &TestValidator{}
+	v.On("ExtractClaims", mock.Anything).Return(claims, nil)
+	doorman.configs[audience].jwtValidator = v
+	c, _ = gin.CreateTestContext(httptest.NewRecorder())
+	c.Request, _ = http.NewRequest("GET", "/get", nil)
+	c.Request.Header.Set("Origin", audience)
+	handler(c)
+	_, ok = c.Get(PrincipalsContextKey)
+	assert.False(t, ok)
 }

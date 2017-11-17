@@ -48,24 +48,33 @@ func performAllowed(t *testing.T, r *gin.Engine, body io.Reader, expected int, r
 func TestAllowedGet(t *testing.T) {
 	r := gin.New()
 	doorman := sampleDoorman()
-	SetupRoutes(r, doorman, "")
+	SetupRoutes(r, doorman)
 
 	w := performRequest(r, "GET", "/allowed", nil)
 	assert.Equal(t, w.Code, http.StatusNotFound)
 }
 
 func TestAllowedVerifiesJWT(t *testing.T) {
-	r := gin.New()
-	doorman := New([]string{"../sample.yaml"})
-	doorman.LoadPolicies()
-	SetupRoutes(r, doorman, "https://auth.mozilla.auth0.com/")
+	// Create config with jwtIssuer
+	tmpfile, _ := ioutil.TempFile("", "")
+	defer os.Remove(tmpfile.Name()) // clean up
+	tmpfile.Write([]byte(`
+audience: https://sample.yaml
+jwtIssuer: https://auth.mozilla.auth0.com/
+policies:
+  -
+    id: "1"
+    action: update
+`))
 
-	// Policy #1 will match.
-	authzRequest := Request{
-		Principals: []string{"userid:foo"},
-		Action:     "delete",
-		Resource:   "server.org/blocklist:onecrl",
-	}
+	doorman := New([]string{tmpfile.Name()})
+	// Will initialize JWT validator (ie. download public keys)
+	doorman.LoadPolicies()
+
+	r := gin.New()
+	SetupRoutes(r, doorman)
+
+	authzRequest := Request{}
 	token, _ := json.Marshal(authzRequest)
 	body := bytes.NewBuffer(token)
 	var response ErrorResponse

@@ -42,6 +42,8 @@ func (r *Request) Roles() Principals {
 type Doorman interface {
 	// LoadPolicies is responsible for reading and loading the policies files.
 	LoadPolicies() error
+	// JWTValidator
+	JWTValidator(audience string) JWTValidator
 	// ExpandPrincipals looks up and add extra principals to the ones specified.
 	ExpandPrincipals(audience string, principals Principals) Principals
 	// IsAllowed is responsible for deciding if subject can perform action on a resource with a context.
