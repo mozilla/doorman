@@ -127,8 +127,7 @@
                   <p>
                     <strong>Optional authentication</strong>
                   </p>
-                  <p>When the service runs with the <code>JWT_ISSUER</code> environment variable, the authentication is mandatory.</p>
-                  <p>With the <code>JWT_ISSUER</code> configured, the principals cannot be specified in the authorization request. They are taken from the JWT payload (<code>userid:{Subject}</code>, <code>email:{Email}</code>, <code>group:{Groups..}</code>, etc.)</p>
+                  <p>When the service runs with the <code>JWT_ISSUER</code> environment variable, the authentication is mandatory, and the principals cannot be specified in the authorization request. They are read from the JWT payload (<code>userid:{Subject}</code>, <code>email:{Email}</code>, <code>group:{Groups..}</code>, etc.)</p>
                 </section>
               </div>
             </div>
@@ -146,9 +145,10 @@
                         <span class="json-property-range" title="Value limits"></span>
                       </dt>
                       <dd>
-                        <p>Arbitrary list of strings (eg. <code>userid:alice</code>).
+                        <p>
                           <strong>Only if the server runs without authentication</strong>
                         </p>
+                        <p>Arbitrary list of strings (eg. <code>userid:alice</code>).</p>
                       </dd>
                       <dt data-property-name="action" class="has-description">
                         <span class="json-property-name">action:</span>
@@ -156,7 +156,7 @@
                         <span class="json-property-range" title="Value limits"></span>
                       </dt>
                       <dd>
-                        <p>Any action (eg. <code>read</code>, <code>delete</code>, <code>signoff</code>)</p>
+                        <p>Any domain specific action (eg. <code>read</code>, <code>delete</code>, <code>signoff</code>)</p>
                       </dd>
                       <dt data-property-name="resource" class="has-description">
                         <span class="json-property-name">resource:</span>
@@ -172,7 +172,7 @@
                         <span class="json-property-range" title="Value limits"></span>
                       </dt>
                       <dd>
-                        <p>Any extra information to be matched in policies conditions. The context fields <code>remoteIP</code> and <code>audience</code> will be forced by the server. The values provided in the <code>roles</code> context field will expand the principals with extra <code>role:{}</code> values.</p>
+                        <p>The context can contain any extra information to be matched in policies conditions. The context fields <code>remoteIP</code> and <code>audience</code> will be forced by the server. The values provided in the <code>roles</code> context field will expand the principals with extra <code>role:{}</code> values.</p>
                       </dd>
                     </dl>
                   </section>
@@ -183,8 +183,8 @@
                       <div class="prop-title">Origin</div>
                     </div>
                     <div class="prop-value">
-                      <p>The JWT claimed audience will be checked against this <code>Origin</code> request header (eg. <code>https://api.service.org</code>).</p>
-                      <p>The specified value must also match one of the known audience from the policies files.</p>
+                      <p>The service identifier (eg. <code>https://api.service.org</code>). It must match one of the known audience from the policies files.</p>
+                      <p>With the <code>JWT_ISSUER</code> configured, the claimed audience in the JWT will be checked against this header.</p>
                     </div>
                   </div>
                   <div class="prop-row prop-inner">
