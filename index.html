@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mozilla IAM | API Reference</title>
+    <title>Mozilla Doorman | API Reference</title>
     <link rel="stylesheet" href="stylesheets/foundation.min.css" />
     <link rel="stylesheet" href="stylesheets/spectacle.min.css" />
     <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
@@ -61,15 +61,29 @@
         <div class="example-box doc-content"></div>
         <article>
           <div id="introduction" data-traverse-target="introduction">
-            <h1 class="doc-title">Mozilla IAM
+            <h1 class="doc-title">Mozilla Doorman
               <span>API Reference</span>
             </h1>
             <div class="doc-row">
               <div class="doc-copy">
-                <p>IAM is an
+                <p>Doorman is an
                   <strong>authorization micro-service</strong> that allows to checks if an arbitrary subject is allowed to perform an action on a resource, based on a set of rules (policies).</p>
-                <p>It is inspired by
-                  <a href="http://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html">AWS IAM Policies</a>.</p>
+                <p>Having a centralized access control service has several advantages:</p>
+                <ul>
+                  <li>it clearly dissociates authentication from authorization</li>
+                  <li>it provides a standard and generic permissions system to services developers</li>
+                  <li>it facilitates permissions management across services (eg. makes revocation easier)</li>
+                  <li>it allows authorizations monitoring, metrics, anomaly detection</li>
+                </ul>
+                <p>
+                  <strong>Workflow</strong>
+                </p>
+                <ol>
+                  <li>Users obtain JWT from an Identity Provider (eg. Auth0)</li>
+                  <li>They use it to call a service API endpoint</li>
+                  <li>The service posts an authorization request on
+                    <em>Doorman</em> to check if the user is allowed</li>
+                </ol>
               </div>
               <div class="doc-examples">
                 <section>
