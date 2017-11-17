@@ -86,16 +86,16 @@ conditions:
       matches: blocklists-.*
 ```
 
-**Subject comparison**
+**In principals**
 
-* type: ``EqualsSubjectCondition``
+* type: ``InPrincipalsCondition``
 
-For example, allow requests where ``request.context["owner"] == request.subject``:
+For example, allow requests where ``request.context["owner"]`` is in principals:
 
 ```yaml
 conditions:
   owner:
-    type: EqualsSubjectCondition
+    type: InPrincipalsCondition
 ```
 
 **IP/Range**

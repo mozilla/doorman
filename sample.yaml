@@ -55,7 +55,7 @@ policies:
       - <.*>
     conditions:
       owner:
-        type: EqualsSubjectCondition
+        type: InPrincipalsCondition
     effect: allow
   -
     id: "5"
