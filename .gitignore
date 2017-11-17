@@ -3,3 +3,5 @@ utilities/bindata.go
 coverage.txt
 policies.yaml
 vendor/
+node_modules/
+api-docs/
