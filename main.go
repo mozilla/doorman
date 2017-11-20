@@ -28,7 +28,7 @@ func setupRouter() (*gin.Engine, error) {
 		return nil, err
 	}
 
-	doorman.SetupRoutes(r, w, os.Getenv("JWT_ISSUER"))
+	doorman.SetupRoutes(r, w)
 
 	utilities.SetupRoutes(r)
 

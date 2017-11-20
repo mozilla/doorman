@@ -16,17 +16,19 @@ type Tags map[string]Principals
 // LadonDoorman is the backend in charge of checking requests against policies.
 type LadonDoorman struct {
 	policiesSources []string
-	jwtIssuer       string
 	configs         map[string]*Configuration
 	_auditLogger    *auditLogger
 }
 
 // Configuration represents the policies file content.
 type Configuration struct {
-	Audience string
-	Tags     Tags
-	Policies []*ladon.DefaultPolicy
-	ladon    *ladon.Ladon
+	Audience  string
+	JWTIssuer string `json:"jwtIssuer"`
+	Tags      Tags
+	Policies  []*ladon.DefaultPolicy
+
+	ladon        *ladon.Ladon
+	jwtValidator JWTValidator
 }
 
 // GetTags returns the tags principals for the ones specified.
@@ -75,6 +77,18 @@ func (doorman *LadonDoorman) LoadPolicies() error {
 			if exists {
 				return fmt.Errorf("duplicated audience %q (source %q)", config.Audience, source)
 			}
+
+			if config.JWTIssuer != "" {
+				log.Infof("Enable JWT validation from %q", config.JWTIssuer)
+				v, err := NewJWTValidator(config.JWTIssuer)
+				if err != nil {
+					return err
+				}
+				config.jwtValidator = v
+			} else {
+				log.Warningf("No JWT verification for %q.", config.Audience)
+			}
+
 			config.ladon = &ladon.Ladon{
 				Manager:     manager.NewMemoryManager(),
 				AuditLogger: doorman.auditLogger(),
@@ -92,6 +106,15 @@ func (doorman *LadonDoorman) LoadPolicies() error {
 	// Only if everything went well, replace existing configs with new ones.
 	doorman.configs = newConfigs
 	return nil
+}
+
+// JWTValidator returns the JWT validator for the specified audience.
+func (doorman *LadonDoorman) JWTValidator(audience string) JWTValidator {
+	c, ok := doorman.configs[audience]
+	if !ok {
+		return nil
+	}
+	return c.jwtValidator
 }
 
 // IsAllowed is responsible for deciding if subject can perform action on a resource with a context.
