@@ -21,7 +21,7 @@ func TestSetupRouter(t *testing.T) {
 	r, err := setupRouter()
 	require.Nil(t, err)
 	assert.Equal(t, 7, len(r.Routes()))
-	assert.Equal(t, 4, len(r.RouterGroup.Handlers))
+	assert.Equal(t, 3, len(r.RouterGroup.Handlers))
 
 	os.Setenv("POLICIES", " \tsample.yaml")
 	_, err = setupRouter()

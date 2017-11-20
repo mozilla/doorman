@@ -9,9 +9,11 @@ import (
 // SetupRoutes adds doorman views to query the policies.
 func SetupRoutes(r *gin.Engine, doorman Doorman) {
 	r.Use(ContextMiddleware(doorman))
-	r.Use(VerifyJWTMiddleware(doorman))
 
-	r.POST("/allowed", allowedHandler)
+	a := r.Group("")
+	a.Use(VerifyJWTMiddleware(doorman))
+	a.POST("/allowed", allowedHandler)
+
 	r.POST("/__reload__", reloadHandler)
 }
 

@@ -81,6 +81,10 @@ policies:
 	// Missing Authorization header.
 	performAllowed(t, r, body, http.StatusUnauthorized, &response)
 	assert.Equal(t, "Token not found", response.Message)
+
+	// Other routes do not require JWT.
+	w := performRequest(r, "POST", "/__reload__", nil)
+	require.Equal(t, http.StatusOK, w.Code)
 }
 
 func TestAllowedHandlerBadRequest(t *testing.T) {
