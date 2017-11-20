@@ -1,4 +1,5 @@
 service: https://sample.yaml
+jwtIssuer:
 tags:
   admins:
     - userid:maria
@@ -55,7 +56,7 @@ policies:
       - <.*>
     conditions:
       owner:
-        type: InPrincipalsCondition
+        type: MatchPrincipalsCondition
     effect: allow
   -
     id: "5"

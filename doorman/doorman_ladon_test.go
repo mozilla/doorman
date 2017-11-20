@@ -290,6 +290,15 @@ func TestDoormanAllowed(t *testing.T) {
 				"owner": "userid:bilbo",
 			},
 		},
+		// Policy #4 (list of principals)
+		{
+			Principals: []string{"userid:bilbo"},
+			Action:     "wear",
+			Resource:   "ring",
+			Context: Context{
+				"owner": []string{"userid:alice", "userid:bilbo"},
+			},
+		},
 		// Policy #5
 		{
 			Principals: []string{"group:admins"},
