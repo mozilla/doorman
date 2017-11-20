@@ -75,10 +75,11 @@
                   <li>it facilitates permissions management across services (eg. makes revocation easier)</li>
                   <li>it allows authorizations monitoring, metrics, anomaly detection</li>
                 </ul>
-                <h3 id="workflow">Workflow</h3>
+                <h3 id="workflow-with-jwt">Workflow with JWT</h3>
+                <p>When the JWT issuer is configured for a service, a typical workflow is:</p>
                 <ol>
                   <li>Users obtain JWT from an Identity Provider (eg. Auth0)</li>
-                  <li>They use it to call a service API endpoint</li>
+                  <li>They use it to call the service API endpoint</li>
                   <li>The service posts an authorization request on
                     <em>Doorman</em> to check if the user is allowed</li>
                   <li>
@@ -86,9 +87,8 @@
                   <li>
                     <em>Doorman</em> builds a list of strings (principals) for this user, and matches the policies</li>
                 </ol>
-                <h3 id="optional-jwt-verification">Optional JWT verification</h3>
-                <p>With the <code>JWT_ISSUER</code> configured,
-                  <em>Doorman</em> will verify that the specified JSON Web Token (JWT) is valid. The claimed audience (<code>&quot;aud&quot;</code>) will be checked against the <code>Origin</code> request header.</p>
+                <p>
+                  <em>Doorman</em> will verify that the specified JSON Web Token (JWT) is valid. The claimed audience in the token (<code>&quot;aud&quot;</code>) will be checked against the <code>Origin</code> request header.</p>
                 <p>The authorization request
                   <em>principals</em> will be built from the JWT payload:</p>
                 <ul>
@@ -98,6 +98,15 @@
                   <li><code>&quot;groups&quot;</code>: <code>group:{}, group:{}, ...</code> (
                     <em>optional</em>)</li>
                 </ul>
+                <h3 id="without-jwt">Without JWT</h3>
+                <p>If the JWT issuer is not configured for a service, no authentication is required and the principals are posted in the authorization body.</p>
+                <p>A typical workflow in this case would be:</p>
+                <ol>
+                  <li>Users call the service API endpoint</li>
+                  <li>The service authenticates the user and builds the list of principals</li>
+                  <li>The service posts an authorization request on
+                    <em>Doorman</em> containing the list of principals to check if the user is allowed</li>
+                </ol>
                 <h3 id="api-summary">API Summary</h3>
                 <p>Basically, use
                   <strong>POST /allowed</strong> to check authorization requests.</p>
