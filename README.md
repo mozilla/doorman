@@ -11,7 +11,16 @@ Doorman
 
 ## Run
 
-    docker run mozilla/doorman
+```
+    docker run \
+      -e POLICIES=/config/policies.yaml \
+      -v ./config/:/config \
+      -p 8000:8000 \
+      --name doorman \
+      mozilla/doorman
+```
+
+*Doorman* is now ready to respond authorization requests on `http://localhost:8000`. See [API docs](https://leplatrem.github.io/iam/).
 
 ## Policies
 
@@ -37,11 +46,16 @@ policies:
     effect: allow
 ```
 
-* ``audience``: the unique identifier of the service
-* ``tags``: Local «groups» of principals in addition to the ones provided by the Identity Provider
-* ``effect``: Use `effect: deny` to deny explicitly. Otherwise, requests that don't match any rule are denied.
+* **audience**: the unique identifier of the service
+* **jwtIssuer** (*optional*): when the issuer is set, *Doorman* will verify the JSON Web Token provided in the authorization request and extract the Identity Provider information from its payload
+* **tags**: Local «groups» of principals in addition to the ones provided by the Identity Provider
+* **actions**: a domain-specific string representing an action that will be defined as allowed by a principal (eg. `publish`, `signoff`, …)
+* **resources**: a domain-specific string representing a resource. Preferably not a full URL to decouple from service API design (eg. `print:blackwhite:A4`, `category:homepage`, …).
+* **effect**: Use `effect: deny` to deny explicitly. Otherwise, default is `allow` and requests that don't match any rule are denied.
 
-### Subjects
+### Principals
+
+The principals is a list of prefixed strings to refer to the «user» as the combination of ids, emails, groups, roles…
 
 Supported prefixes:
 
@@ -50,6 +64,8 @@ Supported prefixes:
 * ``role:``: provided in context of authorization request (see below)
 * ``email:``: provided by IdP
 * ``group:``: provided by IdP
+
+Example: `["userid:ldap|user", "email:user@corp.com", "group:Employee", "group:Admins", "role:editor"]`
 
 ## Settings
 
@@ -160,7 +176,7 @@ conditions:
 
 ## Run from source
 
-    make serve
+    make serve -e POLICIES=sample.yaml
 
 ## Run tests
 

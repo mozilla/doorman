@@ -11,24 +11,35 @@ info:
     - it facilitates permissions management across services (eg. makes revocation easier)
     - it allows authorizations monitoring, metrics, anomaly detection
 
-    ### Workflow
+    ### Workflow with JWT
+
+    When the JWT issuer is configured for a service, a typical workflow is:
 
     1. Users obtain JWT from an Identity Provider (eg. Auth0)
-    1. They use it to call a service API endpoint
+    1. They use it to call the service API endpoint
     1. The service posts an authorization request on *Doorman* to check if the user is allowed
     1. *Doorman* uses the `Origin` request header to select the set of policies
     1. *Doorman* builds a list of strings (principals) for this user, and matches the policies
 
-    ### Optional JWT verification
-
-    With the `JWT_ISSUER` configured, *Doorman* will verify that the specified JSON Web Token (JWT) is valid.
-    The claimed audience (`"aud"`) will be checked against the `Origin` request header.
+    *Doorman* will verify that the specified JSON Web Token (JWT) is valid.
+    The claimed audience in the token (`"aud"`) will be checked against the `Origin` request header.
 
     The authorization request *principals* will be built from the JWT payload:
 
     * `"sub"`: `userid:{}`
     * `"email"`: `email:{}` (*optional*)
     * `"groups"`: `group:{}, group:{}, ...` (*optional*)
+
+    ### Without JWT
+
+    If the JWT issuer is not configured for a service, no authentication is required and the principals
+    are posted in the authorization body.
+
+    A typical workflow in this case would be:
+
+    1. Users call the service API endpoint
+    1. The service authenticates the user and builds the list of principals
+    1. The service posts an authorization request on *Doorman* containing the list of principals to check if the user is allowed
 
     ### API Summary
 
