@@ -36,7 +36,15 @@ func VerifyJWTMiddleware(doorman Doorman) gin.HandlerFunc {
 		}
 
 		// Check if JWT verification was configured for this service.
-		validator := doorman.JWTValidator(origin)
+		validator, err := doorman.JWTValidator(origin)
+		if err != nil {
+			// Unknown service
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"message": "Unknown service specified in `Origin`",
+			})
+			return
+		}
+		// No JWT validator configured for this service.
 		if validator == nil {
 			// Do nothing.
 			c.Next()

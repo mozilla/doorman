@@ -51,7 +51,7 @@ policies:
 * **tags**: Local «groups» of principals in addition to the ones provided by the Identity Provider
 * **actions**: a domain-specific string representing an action that will be defined as allowed by a principal (eg. `publish`, `signoff`, …)
 * **resources**: a domain-specific string representing a resource. Preferably not a full URL to decouple from service API design (eg. `print:blackwhite:A4`, `category:homepage`, …).
-* **effect**: Use `effect: deny` to deny explicitly. Otherwise, default is `allow` and requests that don't match any rule are denied.
+* **effect**: Use `effect: deny` to deny explicitly. Requests that don't match any rule are denied.
 
 ### Principals
 
