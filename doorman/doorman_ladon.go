@@ -109,12 +109,12 @@ func (doorman *LadonDoorman) LoadPolicies() error {
 }
 
 // JWTValidator returns the JWT validator for the specified audience.
-func (doorman *LadonDoorman) JWTValidator(audience string) JWTValidator {
+func (doorman *LadonDoorman) JWTValidator(audience string) (JWTValidator, error) {
 	c, ok := doorman.configs[audience]
 	if !ok {
-		return nil
+		return nil, fmt.Errorf("unknown audience %q", audience)
 	}
-	return c.jwtValidator
+	return c.jwtValidator, nil
 }
 
 // IsAllowed is responsible for deciding if subject can perform action on a resource with a context.

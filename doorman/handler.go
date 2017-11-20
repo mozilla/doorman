@@ -64,9 +64,7 @@ func allowedHandler(c *gin.Context) {
 	r.Context["remoteIP"] = c.Request.RemoteAddr
 
 	// Expand principals with local ones.
-	// Will do nothing if audience is unknown.
 	r.Principals = doorman.ExpandPrincipals(audience, r.Principals)
-
 	// Expand principals with specified roles.
 	r.Principals = append(r.Principals, r.Roles()...)
 
