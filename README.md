@@ -15,12 +15,12 @@ Doorman
     docker run \
       -e POLICIES=/config/policies.yaml \
       -v ./config/:/config \
-      -p 8000:8000 \
+      -p 8000:8080 \
       --name doorman \
       mozilla/doorman
 ```
 
-*Doorman* is now ready to respond authorization requests on `http://localhost:8000`. See [API docs](https://leplatrem.github.io/iam/).
+*Doorman* is now ready to respond authorization requests on `http://localhost:8080`. See [API docs](https://leplatrem.github.io/iam/).
 
 ## Policies
 
