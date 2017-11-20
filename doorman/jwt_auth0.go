@@ -18,7 +18,7 @@ type Auth0Validator struct {
 
 // Initialize will fetch Auth0 public keys and instantiate a validator.
 func (v *Auth0Validator) Initialize() error {
-	if !strings.HasSuffix(v.Issuer, "auth0.com/") {
+	if !strings.HasPrefix(v.Issuer, "https://") || !strings.HasSuffix(v.Issuer, "auth0.com/") {
 		return fmt.Errorf("issuer %q not supported or has bad format", v.Issuer)
 	}
 	jwksURI := fmt.Sprintf("%s.well-known/jwks.json", v.Issuer)

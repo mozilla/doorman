@@ -119,6 +119,17 @@ policies:
     effect: allow
 `)
 	assert.NotNil(t, err)
+
+	// Bad JWT issuer
+	_, err = loadTempFiles(`
+audience: a
+jwtIssuer: https://perlin-pinpin
+policies:
+  -
+    id: "1"
+    effect: allow
+`)
+	assert.NotNil(t, err)
 }
 
 func TestLoadFolder(t *testing.T) {

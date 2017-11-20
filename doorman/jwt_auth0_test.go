@@ -9,8 +9,12 @@ import (
 )
 
 func TestAuth0Initialize(t *testing.T) {
-	validator := Auth0Validator{"demo.oath-zero.com/", nil}
+	validator := Auth0Validator{"https://demo.oath-zero.com/", nil}
 	err := validator.Initialize()
+	assert.NotNil(t, err)
+
+	validator = Auth0Validator{"http://demo.oauth0.com/", nil}
+	err = validator.Initialize()
 	assert.NotNil(t, err)
 }
 
