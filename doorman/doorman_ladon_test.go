@@ -313,6 +313,7 @@ func TestDoormanNotAllowed(t *testing.T) {
 			Principals: []string{"userid:foo"},
 			Action:     "delete",
 			Resource:   "server.org/blocklist:onecrl",
+			Context:    Context{},
 		},
 		// Policy #2
 		{
@@ -351,8 +352,12 @@ func TestDoormanNotAllowed(t *testing.T) {
 			},
 		},
 		// Default
-		{},
+		{
+			Context: Context{},
+		},
 	} {
+		// Force context value like in handler.
+		request.Context["principals"] = request.Principals
 		assert.Equal(t, false, doorman.IsAllowed("https://sample.yaml", request))
 	}
 }
@@ -375,11 +380,12 @@ func TestDoormanAuditLogger(t *testing.T) {
 	// Logs policies.
 	buf.Reset()
 	doorman.IsAllowed(audience, &Request{
-		Principals: []string{"userid:any"},
+		Principals: Principals{"userid:any"},
 		Action:     "any",
 		Resource:   "any",
 		Context: Context{
-			"planet": "mars",
+			"planet":     "mars",
+			"principals": Principals{"userid:any"},
 		},
 	})
 	assert.Contains(t, buf.String(), "\"allowed\":false")
@@ -387,7 +393,7 @@ func TestDoormanAuditLogger(t *testing.T) {
 
 	buf.Reset()
 	doorman.IsAllowed(audience, &Request{
-		Principals: []string{"userid:foo"},
+		Principals: Principals{"userid:foo"},
 		Action:     "update",
 		Resource:   "server.org/blocklist:onecrl",
 	})

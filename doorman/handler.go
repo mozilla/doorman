@@ -56,19 +56,21 @@ func allowedHandler(c *gin.Context) {
 	doorman := c.MustGet(DoormanContextKey).(Doorman)
 	audience := c.Request.Header.Get("Origin")
 
-	// Force some context values.
-	if r.Context == nil {
-		r.Context = Context{}
-	}
-	r.Context["audience"] = audience
-	r.Context["remoteIP"] = c.Request.RemoteAddr
-
 	// Expand principals with local ones.
 	r.Principals = doorman.ExpandPrincipals(audience, r.Principals)
 	// Expand principals with specified roles.
 	r.Principals = append(r.Principals, r.Roles()...)
 
-	// Will deny if audience is unknown.
+	// Force some context values (for Audit logger mainly)
+	// XXX: using the context field to pass custom values on *ladon.Request
+	// for audit logging is not very elegant.
+	if r.Context == nil {
+		r.Context = Context{}
+	}
+	r.Context["audience"] = audience
+	r.Context["remoteIP"] = c.Request.RemoteAddr
+	r.Context["principals"] = r.Principals
+
 	allowed := doorman.IsAllowed(audience, &r)
 
 	c.JSON(http.StatusOK, gin.H{
