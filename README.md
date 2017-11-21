@@ -147,17 +147,19 @@ conditions:
       matches: blocklists-.*
 ```
 
-**In principals**
+**Match principals**
 
-* type: ``InPrincipalsCondition``
+* type: ``MatchPrincipalsCondition``
 
 For example, allow requests where ``request.context["owner"]`` is in principals:
 
 ```yaml
 conditions:
   owner:
-    type: InPrincipalsCondition
+    type: MatchPrincipalsCondition
 ```
+
+> Note: This also works when a the context field is list (e.g. list of collaborators).
 
 **IP/Range**
 

@@ -184,7 +184,7 @@ func TestLoadGithub(t *testing.T) {
 	assert.NotNil(t, err)
 
 	// Good URL
-	w = New([]string{"https://github.com/leplatrem/iam/raw/4704cc9/sample.yaml"})
+	w = New([]string{"https://github.com/leplatrem/iam/raw/452ef7a/sample.yaml"})
 	err = w.LoadPolicies()
 	assert.Nil(t, err)
 	assert.Equal(t, len(w.configs["https://sample.yaml"].Tags), 1)
@@ -288,6 +288,15 @@ func TestDoormanAllowed(t *testing.T) {
 			Resource:   "ring",
 			Context: Context{
 				"owner": "userid:bilbo",
+			},
+		},
+		// Policy #4 (list of principals)
+		{
+			Principals: []string{"userid:bilbo"},
+			Action:     "wear",
+			Resource:   "ring",
+			Context: Context{
+				"owner": []string{"userid:alice", "userid:bilbo"},
 			},
 		},
 		// Policy #5
