@@ -7,4 +7,4 @@ node_modules/
 api-docs/
 __pycache__/
 *.pyc
-example/python/records/*.json
+examples/python/records/*.json

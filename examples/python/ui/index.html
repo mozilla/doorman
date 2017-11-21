@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel='stylesheet' href='style.css' />
+    <script src="https://cdn.auth0.com/js/auth0/8.9/auth0.min.js"></script>
+    <script type="text/javascript" src="main.js"></script>
+  </head>
+  <body>
+    <h1>Minimal IAM demo</h1>
+    <button id="login">Login</button>
+    <button id="logout">Logout</button>
+    <div id="view" class="tabs">
+
+      <div class="tab">
+          <input type="radio" id="tab-1" name="tab-group-1" checked>
+          <label for="tab-1">Token payload</label>
+
+          <div class="content">
+              <div id="token-payload" class="pre"></div>
+          </div>
+      </div>
+
+      <div class="tab">
+          <input type="radio" id="tab-2" name="tab-group-1">
+          <label for="tab-2">User Info</label>
+
+          <div class="content">
+              <div id="profile-nickname"></div>
+              <img id="profile-picture" src="" width="100"/>
+              <div id="profile-details" class="pre"></div>
+          </div>
+      </div>
+
+      <div class="tab">
+          <input type="radio" id="tab-3" name="tab-group-1">
+          <label for="tab-3">API call</label>
+
+          <div class="content">
+              <div id="api-result" class="pre"></div>
+          </div>
+      </div>
+    </div>
+  </body>
+</html>
