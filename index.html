@@ -222,7 +222,7 @@
                         <span class="json-property-range" title="Value limits"></span>
                       </dt>
                       <dd>
-                        <p>The context can contain any extra information to be matched in policies conditions. The context fields <code>remoteIP</code> and <code>audience</code> will be forced by the server. The values provided in the <code>roles</code> context field will expand the principals with extra <code>role:{}</code> values.</p>
+                        <p>The context can contain any extra information to be matched in policies conditions. The context field <code>remoteIP</code> will be forced by the server. The values provided in the <code>roles</code> context field will expand the principals with extra <code>role:{}</code> values.</p>
                       </dd>
                     </dl>
                   </section>
@@ -233,8 +233,8 @@
                       <div class="prop-title">Origin</div>
                     </div>
                     <div class="prop-value">
-                      <p>The service identifier (eg. <code>https://api.service.org</code>). It must match one of the known audience from the policies files.</p>
-                      <p>With JWT verification enabled, the claimed audience in the JWT will be checked against this header.</p>
+                      <p>The service identifier (eg. <code>https://api.service.org</code>). It must match one of the known service from the policies files.</p>
+                      <p>With JWT verification enabled, the claimed audience in the JWT will be checked against the value of this header.</p>
                     </div>
                   </div>
                   <div class="prop-row prop-inner">
