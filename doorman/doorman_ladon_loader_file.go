@@ -11,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 
-	"github.com/leplatrem/iam/utilities"
+	"github.com/mozilla/doorman/utilities"
 )
 
 type fileLoader struct{}

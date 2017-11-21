@@ -1,4 +1,4 @@
-package: github.com/leplatrem/iam
+package: github.com/mozilla/doorman
 import:
 - package: github.com/gin-gonic/gin
   version: ^1.2.0

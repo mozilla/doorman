@@ -295,7 +295,7 @@ paths:
               build:
                 type: string
           example:
-            source: https://github.com/leplatrem/iam
+            source: https://github.com/mozilla/doorman
             version: "1.0"
             commit: 490ed70efff482d17a
             build: "20171102"

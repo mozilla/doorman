@@ -1,13 +1,13 @@
 Doorman
 =======
 
-[![Build Status](https://travis-ci.org/leplatrem/iam.svg?branch=master)](https://travis-ci.org/leplatrem/iam)
-[![Coverage Status](https://coveralls.io/repos/github/leplatrem/iam/badge.svg?branch=master)](https://coveralls.io/github/leplatrem/iam?branch=master)
-[![Go Report](https://goreportcard.com/badge/github.com/leplatrem/iam)](https://goreportcard.com/report/github.com/leplatrem/iam)
+[![Build Status](https://travis-ci.org/mozilla/doorman.svg?branch=master)](https://travis-ci.org/mozilla/doorman)
+[![Coverage Status](https://coveralls.io/repos/github/mozilla/doorman/badge.svg?branch=master)](https://coveralls.io/github/mozilla/doorman?branch=master)
+[![Go Report](https://goreportcard.com/badge/github.com/mozilla/doorman)](https://goreportcard.com/report/github.com/mozilla/doorman)
 
 *Doorman* is an **authorization micro-service**.
 
-* [Documentation](https://leplatrem.github.io/iam/)
+* [Documentation](https://mozilla.github.io/doorman/)
 
 ## Run
 
@@ -20,7 +20,7 @@ Doorman
       mozilla/doorman
 ```
 
-*Doorman* is now ready to respond authorization requests on `http://localhost:8080`. See [API docs](https://leplatrem.github.io/iam/).
+*Doorman* is now ready to respond authorization requests on `http://localhost:8080`. See [API docs](https://mozilla.github.io/doorman/).
 
 ## Policies
 

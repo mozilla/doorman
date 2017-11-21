@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/leplatrem/iam/doorman"
-	"github.com/leplatrem/iam/utilities"
+	"github.com/mozilla/doorman/doorman"
+	"github.com/mozilla/doorman/utilities"
 )
 
 // DefaultPoliciesFilename is the default policies filename.

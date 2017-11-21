@@ -2,11 +2,11 @@ name: Doorman
 description: Doorman is an authorization micro-service
 repository:
   license: Mozilla Public Licence 2.0
-  url: https://github.com/leplatrem/iam
-  tests: https://travis-ci.org/leplatrem/iam/
+  url: https://github.com/mozilla/doorman
+  tests: https://travis-ci.org/mozilla/doorman/
 participate:
   irc: irc://irc.mozilla.org/#product-delivery
-  docs: https://github.com/leplatrem/iam
+  docs: https://github.com/mozilla/doorman
   irc-contacts:
   - Natim
   - mostlygeek
