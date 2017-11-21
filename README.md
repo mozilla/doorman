@@ -102,7 +102,7 @@ resources:
 
 The conditions are **optional** on policies and are used to match field values from the authorization request context.
 
-The context values ``remoteIP`` and ``service`` are forced by the server.
+The context value ``remoteIP`` is forced by the server.
 
 For example:
 

@@ -67,9 +67,9 @@ func allowedHandler(c *gin.Context) {
 	if r.Context == nil {
 		r.Context = Context{}
 	}
-	r.Context["service"] = service
 	r.Context["remoteIP"] = c.Request.RemoteAddr
-	r.Context["principals"] = r.Principals
+	r.Context["_service"] = service
+	r.Context["_principals"] = r.Principals
 
 	allowed := doorman.IsAllowed(service, &r)
 

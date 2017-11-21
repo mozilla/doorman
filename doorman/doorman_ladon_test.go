@@ -357,7 +357,7 @@ func TestDoormanNotAllowed(t *testing.T) {
 		},
 	} {
 		// Force context value like in handler.
-		request.Context["principals"] = request.Principals
+		request.Context["_principals"] = request.Principals
 		assert.Equal(t, false, doorman.IsAllowed("https://sample.yaml", request))
 	}
 }
@@ -384,8 +384,8 @@ func TestDoormanAuditLogger(t *testing.T) {
 		Action:     "any",
 		Resource:   "any",
 		Context: Context{
-			"planet":     "mars",
-			"principals": Principals{"userid:any"},
+			"planet":      "mars",
+			"_principals": Principals{"userid:any"},
 		},
 	})
 	assert.Contains(t, buf.String(), "\"allowed\":false")

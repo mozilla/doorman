@@ -34,9 +34,9 @@ func (a *auditLogger) logRequest(allowed bool, r *ladon.Request, policies ladon.
 	var remoteIP string
 	context := map[string]interface{}{}
 	for k, v := range r.Context {
-		if k == "principals" {
+		if k == "_principals" {
 			principals = v.(Principals)
-		} else if k == "service" {
+		} else if k == "_service" {
 			service = v.(string)
 		} else if k == "remoteIP" {
 			remoteIP = v.(string)
@@ -63,7 +63,7 @@ func (a *auditLogger) logRequest(allowed bool, r *ladon.Request, policies ladon.
 func (a *auditLogger) LogRejectedAccessRequest(request *ladon.Request, pool ladon.Policies, deciders ladon.Policies) {
 	// Since we iterate on principals to test individual subjects, when a request is denied
 	// we want to log the last one only, ie. when r.subject == last(principals)
-	principals := request.Context["principals"].(Principals)
+	principals := request.Context["_principals"].(Principals)
 	if request.Subject != principals[len(principals)-1] {
 		return
 	}
