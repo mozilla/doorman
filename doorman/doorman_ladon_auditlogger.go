@@ -30,14 +30,14 @@ func (a *auditLogger) logRequest(allowed bool, r *ladon.Request, policies ladon.
 
 	// Remove custom values out of context for nicer logging (were set in handler)
 	var principals Principals
-	var audience string
+	var service string
 	var remoteIP string
 	context := map[string]interface{}{}
 	for k, v := range r.Context {
 		if k == "principals" {
 			principals = v.(Principals)
-		} else if k == "audience" {
-			audience = v.(string)
+		} else if k == "service" {
+			service = v.(string)
 		} else if k == "remoteIP" {
 			remoteIP = v.(string)
 		} else {
@@ -49,7 +49,7 @@ func (a *auditLogger) logRequest(allowed bool, r *ladon.Request, policies ladon.
 		logrus.Fields{
 			"allowed":    allowed,
 			"principals": principals,
-			"audience":   audience,
+			"service":    service,
 			"remoteIP":   remoteIP,
 			"policies":   policiesNames,
 			"action":     r.Action,

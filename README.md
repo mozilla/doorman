@@ -27,7 +27,7 @@ Doorman
 Policies are defined in YAML files for each service, locally or in remote Github repos, as follow:
 
 ```yaml
-audience: https://service.stage.net
+service: https://service.stage.net
 jwtIssuer: https://auth.mozilla.auth0.com/
 tags:
   superusers:
@@ -46,7 +46,7 @@ policies:
     effect: allow
 ```
 
-* **audience**: the unique identifier of the service
+* **service**: the unique identifier of the service
 * **jwtIssuer** (*optional*): when the issuer is set, *Doorman* will verify the JSON Web Token provided in the authorization request and extract the Identity Provider information from its payload
 * **tags**: Local «groups» of principals in addition to the ones provided by the Identity Provider
 * **actions**: a domain-specific string representing an action that will be defined as allowed by a principal (eg. `publish`, `signoff`, …)
@@ -102,7 +102,7 @@ resources:
 
 The conditions are **optional** on policies and are used to match field values from the authorization request context.
 
-The context values ``remoteIP`` and ``audience`` are forced by the server.
+The context values ``remoteIP`` and ``service`` are forced by the server.
 
 For example:
 

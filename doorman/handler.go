@@ -33,7 +33,7 @@ func allowedHandler(c *gin.Context) {
 		return
 	}
 
-	// Is JWT verification enable for this audience?
+	// Is JWT verification enable for this service?
 	// If disabled (like in tests), principals can be posted in JSON.
 	jwtPrincipals, ok := c.Get(PrincipalsContextKey)
 	if ok {
@@ -54,10 +54,10 @@ func allowedHandler(c *gin.Context) {
 	}
 
 	doorman := c.MustGet(DoormanContextKey).(Doorman)
-	audience := c.Request.Header.Get("Origin")
+	service := c.Request.Header.Get("Origin")
 
 	// Expand principals with local ones.
-	r.Principals = doorman.ExpandPrincipals(audience, r.Principals)
+	r.Principals = doorman.ExpandPrincipals(service, r.Principals)
 	// Expand principals with specified roles.
 	r.Principals = append(r.Principals, r.Roles()...)
 
@@ -67,11 +67,11 @@ func allowedHandler(c *gin.Context) {
 	if r.Context == nil {
 		r.Context = Context{}
 	}
-	r.Context["audience"] = audience
+	r.Context["service"] = service
 	r.Context["remoteIP"] = c.Request.RemoteAddr
 	r.Context["principals"] = r.Principals
 
-	allowed := doorman.IsAllowed(audience, &r)
+	allowed := doorman.IsAllowed(service, &r)
 
 	c.JSON(http.StatusOK, gin.H{
 		"allowed":    allowed,

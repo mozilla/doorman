@@ -1,4 +1,4 @@
-audience: https://sample.yaml
+service: https://sample.yaml
 tags:
   admins:
     - userid:maria
