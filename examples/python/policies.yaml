@@ -1,0 +1,34 @@
+service: SLocf7Sa1ibd5GNJMMqO539g7cKvWBOI
+jwtIssuer: https://auth.mozilla.auth0.com/
+policies:
+  - id: "1"
+    description: Allow everyone to read on hello
+    principals:
+      - <.*>
+    actions:
+      - read
+    resources:
+      - hello
+    effect: allow
+  - id: "2"
+    description: Allow everyone to read and create
+    principals:
+      - <.*>
+    actions:
+      - read
+      - create
+    resources:
+      - record
+    effect: allow
+  - id: "3"
+    description: Allow author to update their own record
+    principals:
+      - <.*>
+    actions:
+      - update
+    resources:
+      - record
+    conditions:
+      author:
+        type: MatchPrincipalsCondition
+    effect: allow

@@ -9,29 +9,31 @@ import os
 from flask import Flask, request, jsonify, _app_ctx_stack
 from flask_cors import cross_origin
 
-from doorman import allowed, AuthZError
+import doorman
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
-IAM_SERVER = os.getenv("IAM_SERVER", "http://localhost:8080")
+DOORMAN_SERVER = os.getenv("DOORMAN_SERVER", "http://doorman.local:8080")
 API_AUDIENCE = os.getenv("API_AUDIENCE")
 
 app = Flask(__name__)
 
+allowed = functools.partial(doorman.allowed, DOORMAN_SERVER, API_AUDIENCE)
 
-@app.errorhandler(AuthZError)
+
+@app.errorhandler(doorman.AuthZError)
 def handle_auth_error(ex):
     response = jsonify(ex.error)
     response.status_code = ex.status_code
     return response
 
 
-def authorized(resource, action):
+def authorized(**allowed_kw):
     def wrapped(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             jwt = request.headers.get("Authorization", None)
-            payload = allowed(IAM_SERVER, API_AUDIENCE, resource=resource, action=action, jwt=jwt)
+            payload = allowed(jwt=jwt, **allowed_kw)
             _app_ctx_stack.top.current_user = payload
             return f(*args, **kwargs)
         return wrapper
@@ -41,7 +43,7 @@ def authorized(resource, action):
 @app.route("/")
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
-@authorized(resource="demo:hello", action="read")
+@authorized(resource="hello", action="read")
 def hello():
     """A valid access token is required to access this route
     """
@@ -53,38 +55,34 @@ def hello():
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 def record(record_id):
-    jwt = request.headers.get("Authorization", b'')
+    jwt = request.headers.get("Authorization", None)
     filename = os.path.join(HERE, "records", "{record_id}.json".format(
         record_id=os.path.basename(record_id)))
-    new = True
+    record = None
     if os.path.exists(filename):
-        new = False
         with open(filename, 'r') as f:
             record = json.load(f)
             author = record["author"]
     if request.method == "GET":
         # READ
-        allowed(server=IAM_SERVER, audience=API_AUDIENCE,
-                resource="record", action="read", jwt=jwt, context={"author": author})
+        allowed(resource="record", action="read", jwt=jwt, context={"author": author})
         return jsonify(record['body'])
 
     elif request.method == "PUT":
-        if new:
-            payload = allowed(server=IAM_SERVER, audience=API_AUDIENCE,
-                              resource="record", action="create", jwt=jwt)
+        if record is not None:
+            payload = allowed(resource="record", action="create", jwt=jwt)
         else:
-            payload = allowed(server=IAM_SERVER, audience=API_AUDIENCE,
-                              resource="record", action="update", jwt=jwt,
+            payload = allowed(resource="record", action="update", jwt=jwt,
                               context={"author": author})
 
         with open(filename, 'w') as f:
-            body = {'body': request.get_json(), 'author': payload["principals"][1]}
-            print(body)
+            email_principal = payload["principals"][1]
+            body = {'body': request.get_json(), 'author': email_principal}
             json.dump(body, f)
         return jsonify(body)
 
 
 if __name__ == "__main__":
-    print("IAM_SERVER", IAM_SERVER)
+    print("DOORMAN_SERVER", DOORMAN_SERVER)
     print("API_AUDIENCE", API_AUDIENCE)
     app.run(host="0.0.0.0", port=os.getenv("PORT", 8000))

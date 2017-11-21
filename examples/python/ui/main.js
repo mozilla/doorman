@@ -1,4 +1,4 @@
-const SERVICE_URL = 'http://iam.local:8000'
+const SERVICE_URL = 'http://doorman.local:8000'
 
 const AUTH0_CLIENT_ID = 'SLocf7Sa1ibd5GNJMMqO539g7cKvWBOI';
 const AUTH0_DOMAIN = 'auth.mozilla.auth0.com';

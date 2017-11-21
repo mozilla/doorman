@@ -15,7 +15,7 @@ class AuthZError(Exception):
 
 def allowed(server, audience, *,
             resource=None, action=None, jwt=None, principals=None, context=None):
-    iam_url = server + "/allowed"
+    doorman_url = server + "/allowed"
     payload = {
         "resource": resource,
         "action": action,
@@ -24,10 +24,10 @@ def allowed(server, audience, *,
     }
     body = json_dumps_ignore_none(payload)
     headers = {
-        "Authorization": jwt,
+        "Authorization": jwt or '',
         "Origin": audience,
     }
-    r = urllib.request.Request(iam_url, data=body.encode("utf-8"), headers=headers)
+    r = urllib.request.Request(doorman_url, data=body.encode("utf-8"), headers=headers)
     try:
         resp = urllib.request.urlopen(r)
     except urllib.error.HTTPError as e:
