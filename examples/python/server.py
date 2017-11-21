@@ -13,7 +13,7 @@ from doorman import allowed, AuthZError
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
-IAM_SERVER = os.getenv("IAM_SERVER")
+IAM_SERVER = os.getenv("IAM_SERVER", "http://localhost:8080")
 API_AUDIENCE = os.getenv("API_AUDIENCE")
 
 app = Flask(__name__)
