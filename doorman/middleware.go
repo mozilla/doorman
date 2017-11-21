@@ -25,7 +25,7 @@ func ContextMiddleware(doorman Doorman) gin.HandlerFunc {
 func VerifyJWTMiddleware(doorman Doorman) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// The service requesting must send its location. It will be compared
-		// with the audiences defined in policies files.
+		// with the services defined in policies files.
 		// XXX: The Origin request header might not be the best choice.
 		origin := c.Request.Header.Get("Origin")
 		if origin == "" {

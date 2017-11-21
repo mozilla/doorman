@@ -52,9 +52,9 @@ func TestLoadBadPolicies(t *testing.T) {
 	_, err = loadTempFiles("$\\--xx")
 	assert.NotNil(t, err)
 
-	// Empty audience
+	// Empty service
 	_, err = loadTempFiles(`
-audience:
+service:
 policies:
   -
     id: "1"
@@ -64,14 +64,14 @@ policies:
 
 	// Empty policies
 	_, err = loadTempFiles(`
-audience: a
+service: a
 policies:
 `)
 	assert.Nil(t, err)
 
-	// Bad audience
+	// Bad service
 	_, err = loadTempFiles(`
-audience: 1
+service: 1
 policies:
   -
     id: "1"
@@ -81,7 +81,7 @@ policies:
 
 	// Bad policies conditions
 	_, err = loadTempFiles(`
-audience: a
+service: a
 policies:
   -
     id: "1"
@@ -93,7 +93,7 @@ policies:
 
 	// Duplicated policy ID
 	_, err = loadTempFiles(`
-audience: a
+service: a
 policies:
   -
     id: "1"
@@ -104,15 +104,15 @@ policies:
 `)
 	assert.NotNil(t, err)
 
-	// Duplicated audience
+	// Duplicated service
 	_, err = loadTempFiles(`
-audience: a
+service: a
 policies:
   -
     id: "1"
     effect: allow
 `, `
-audience: a
+service: a
 policies:
   -
     id: "1"
@@ -122,7 +122,7 @@ policies:
 
 	// Bad JWT issuer
 	_, err = loadTempFiles(`
-audience: a
+service: a
 jwtIssuer: https://perlin-pinpin
 policies:
   -
@@ -146,7 +146,7 @@ func TestLoadFolder(t *testing.T) {
 	testfile := filepath.Join(dir, "test.yaml")
 	defer os.Remove(testfile)
 	err = ioutil.WriteFile(testfile, []byte(`
-audience: a
+service: a
 policies:
   -
     id: "1"
@@ -184,7 +184,7 @@ func TestLoadGithub(t *testing.T) {
 	assert.NotNil(t, err)
 
 	// Good URL
-	w = New([]string{"https://github.com/leplatrem/iam/raw/f83dd7e/sample.yaml"})
+	w = New([]string{"https://github.com/leplatrem/iam/raw/4704cc9/sample.yaml"})
 	err = w.LoadPolicies()
 	assert.Nil(t, err)
 	assert.Equal(t, len(w.configs["https://sample.yaml"].Tags), 1)
@@ -193,7 +193,7 @@ func TestLoadGithub(t *testing.T) {
 
 func TestLoadTags(t *testing.T) {
 	d, err := loadTempFiles(`
-audience: a
+service: a
 tags:
   admins:
     - alice@mit.edu
@@ -238,10 +238,10 @@ func TestIsAllowed(t *testing.T) {
 		Resource:   "server.org/blocklist:onecrl",
 	}
 
-	// Check audience
+	// Check service
 	allowed := doorman.IsAllowed("https://sample.yaml", request)
 	assert.True(t, allowed)
-	allowed = doorman.IsAllowed("https://bad.audience", request)
+	allowed = doorman.IsAllowed("https://bad.service", request)
 	assert.False(t, allowed)
 }
 
@@ -357,7 +357,7 @@ func TestDoormanNotAllowed(t *testing.T) {
 		},
 	} {
 		// Force context value like in handler.
-		request.Context["principals"] = request.Principals
+		request.Context["_principals"] = request.Principals
 		assert.Equal(t, false, doorman.IsAllowed("https://sample.yaml", request))
 	}
 }
@@ -371,28 +371,28 @@ func TestDoormanAuditLogger(t *testing.T) {
 		doorman.auditLogger().logger.Out = os.Stdout
 	}()
 
-	// Logs when audience is bad.
-	doorman.IsAllowed("bad audience", &Request{})
+	// Logs when service is bad.
+	doorman.IsAllowed("bad service", &Request{})
 	assert.Contains(t, buf.String(), "\"allowed\":false")
 
-	audience := "https://sample.yaml"
+	service := "https://sample.yaml"
 
 	// Logs policies.
 	buf.Reset()
-	doorman.IsAllowed(audience, &Request{
+	doorman.IsAllowed(service, &Request{
 		Principals: Principals{"userid:any"},
 		Action:     "any",
 		Resource:   "any",
 		Context: Context{
-			"planet":     "mars",
-			"principals": Principals{"userid:any"},
+			"planet":      "mars",
+			"_principals": Principals{"userid:any"},
 		},
 	})
 	assert.Contains(t, buf.String(), "\"allowed\":false")
 	assert.Contains(t, buf.String(), "\"policies\":[\"2\"]")
 
 	buf.Reset()
-	doorman.IsAllowed(audience, &Request{
+	doorman.IsAllowed(service, &Request{
 		Principals: Principals{"userid:foo"},
 		Action:     "update",
 		Resource:   "server.org/blocklist:onecrl",

@@ -112,9 +112,9 @@ paths:
           name: Origin
           type: string
           description: |
-            The service identifier (eg. `https://api.service.org`). It must match one of the known audience from the policies files.
+            The service identifier (eg. `https://api.service.org`). It must match one of the known service from the policies files.
 
-            With JWT verification enabled, the claimed audience in the JWT will be checked against this header.
+            With JWT verification enabled, the claimed audience in the JWT will be checked against the value of this header.
 
         - in: header
           name: Authorization
@@ -151,7 +151,7 @@ paths:
               context:
                 description: |
                   The context can contain any extra information to be matched in policies conditions.
-                  The context fields `remoteIP` and `audience` will be forced by the server.
+                  The context field `remoteIP` will be forced by the server.
                   The values provided in the `roles` context field will expand the principals with extra `role:{}` values.
 
                 type: object

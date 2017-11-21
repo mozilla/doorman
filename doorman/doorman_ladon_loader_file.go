@@ -87,15 +87,15 @@ func loadFile(filename string) (*Configuration, error) {
 		return nil, err
 	}
 
-	if config.Audience == "" {
-		return nil, fmt.Errorf("empty audience in %q", filename)
+	if config.Service == "" {
+		return nil, fmt.Errorf("empty service in %q", filename)
 	}
 
 	if len(config.Policies) == 0 {
 		log.Warningf("No policies found in %q", filename)
 	}
 
-	log.Infof("Found audience %q", config.Audience)
+	log.Infof("Found service %q", config.Service)
 	log.Infof("Found %d tags", len(config.Tags))
 	log.Infof("Found %d policies", len(config.Policies))
 

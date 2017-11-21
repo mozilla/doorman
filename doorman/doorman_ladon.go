@@ -22,7 +22,7 @@ type LadonDoorman struct {
 
 // Configuration represents the policies file content.
 type Configuration struct {
-	Audience  string
+	Service   string
 	JWTIssuer string `json:"jwtIssuer"`
 	Tags      Tags
 	Policies  []*ladon.DefaultPolicy
@@ -73,9 +73,9 @@ func (doorman *LadonDoorman) LoadPolicies() error {
 			return err
 		}
 		for _, config := range configs {
-			_, exists := newConfigs[config.Audience]
+			_, exists := newConfigs[config.Service]
 			if exists {
-				return fmt.Errorf("duplicated audience %q (source %q)", config.Audience, source)
+				return fmt.Errorf("duplicated service %q (source %q)", config.Service, source)
 			}
 
 			if config.JWTIssuer != "" {
@@ -86,7 +86,7 @@ func (doorman *LadonDoorman) LoadPolicies() error {
 				}
 				config.jwtValidator = v
 			} else {
-				log.Warningf("No JWT verification for %q.", config.Audience)
+				log.Warningf("No JWT verification for %q.", config.Service)
 			}
 
 			config.ladon = &ladon.Ladon{
@@ -100,7 +100,7 @@ func (doorman *LadonDoorman) LoadPolicies() error {
 					return err
 				}
 			}
-			newConfigs[config.Audience] = config
+			newConfigs[config.Service] = config
 		}
 	}
 	// Only if everything went well, replace existing configs with new ones.
@@ -108,17 +108,17 @@ func (doorman *LadonDoorman) LoadPolicies() error {
 	return nil
 }
 
-// JWTValidator returns the JWT validator for the specified audience.
-func (doorman *LadonDoorman) JWTValidator(audience string) (JWTValidator, error) {
-	c, ok := doorman.configs[audience]
+// JWTValidator returns the JWT validator for the specified service.
+func (doorman *LadonDoorman) JWTValidator(service string) (JWTValidator, error) {
+	c, ok := doorman.configs[service]
 	if !ok {
-		return nil, fmt.Errorf("unknown audience %q", audience)
+		return nil, fmt.Errorf("unknown service %q", service)
 	}
 	return c.jwtValidator, nil
 }
 
 // IsAllowed is responsible for deciding if subject can perform action on a resource with a context.
-func (doorman *LadonDoorman) IsAllowed(audience string, request *Request) bool {
+func (doorman *LadonDoorman) IsAllowed(service string, request *Request) bool {
 	// Instantiate objects from the ladon API.
 	context := ladon.Context{}
 	for key, value := range request.Context {
@@ -131,7 +131,7 @@ func (doorman *LadonDoorman) IsAllowed(audience string, request *Request) bool {
 		Context:  context,
 	}
 
-	c, ok := doorman.configs[audience]
+	c, ok := doorman.configs[service]
 	if !ok {
 		// Explicitly log denied request using audit logger.
 		doorman.auditLogger().logRequest(false, r, ladon.Policies{})
@@ -148,10 +148,10 @@ func (doorman *LadonDoorman) IsAllowed(audience string, request *Request) bool {
 	return false
 }
 
-// ExpandPrincipals will match the tags defined in the configuration for this audience
+// ExpandPrincipals will match the tags defined in the configuration for this service
 // against each of the specified principals.
-func (doorman *LadonDoorman) ExpandPrincipals(audience string, principals Principals) Principals {
-	c, ok := doorman.configs[audience]
+func (doorman *LadonDoorman) ExpandPrincipals(service string, principals Principals) Principals {
+	c, ok := doorman.configs[service]
 	if !ok {
 		return principals
 	}

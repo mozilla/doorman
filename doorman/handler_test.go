@@ -59,7 +59,7 @@ func TestAllowedVerifiesJWT(t *testing.T) {
 	tmpfile, _ := ioutil.TempFile("", "")
 	defer os.Remove(tmpfile.Name()) // clean up
 	tmpfile.Write([]byte(`
-audience: https://sample.yaml
+service: https://sample.yaml
 jwtIssuer: https://auth.mozilla.auth0.com/
 policies:
   -
@@ -202,7 +202,7 @@ func TestReloadHandler(t *testing.T) {
 	defer os.Remove(tmpfile.Name()) // clean up
 
 	tmpfile.Write([]byte(`
-audience: a
+service: a
 policies:
   -
     id: "1"

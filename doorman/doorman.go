@@ -43,9 +43,9 @@ type Doorman interface {
 	// LoadPolicies is responsible for reading and loading the policies files.
 	LoadPolicies() error
 	// JWTValidator
-	JWTValidator(audience string) (JWTValidator, error)
+	JWTValidator(service string) (JWTValidator, error)
 	// ExpandPrincipals looks up and add extra principals to the ones specified.
-	ExpandPrincipals(audience string, principals Principals) Principals
+	ExpandPrincipals(service string, principals Principals) Principals
 	// IsAllowed is responsible for deciding if subject can perform action on a resource with a context.
-	IsAllowed(audience string, request *Request) bool
+	IsAllowed(service string, request *Request) bool
 }
