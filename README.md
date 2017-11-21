@@ -197,3 +197,5 @@ conditions:
 ## License
 
 * MPLv2.0
+* The logo was made by Mathieu Leplatre with [Inkscape](https://inkscape.org/)
+  and released under [CC0](https://creativecommons.org/share-your-work/public-domain/cc0/)
