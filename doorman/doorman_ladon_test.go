@@ -184,7 +184,7 @@ func TestLoadGithub(t *testing.T) {
 	assert.NotNil(t, err)
 
 	// Good URL
-	w = New([]string{"https://github.com/leplatrem/iam/raw/f83dd7e/sample.yaml"})
+	w = New([]string{"https://github.com/leplatrem/iam/raw/4704cc9/sample.yaml"})
 	err = w.LoadPolicies()
 	assert.Nil(t, err)
 	assert.Equal(t, len(w.configs["https://sample.yaml"].Tags), 1)
