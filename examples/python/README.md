@@ -1,9 +1,8 @@
-# Python / Flask example
+# Doorman, Python / Flask example with a Web UI
 
 ## How to run doorman?
 
-- Copy the policies.yaml file in the doorman repository.
-- Run `make serve`
+- Run `make serve -e POLICIES=examples/python/policies.yaml`
 
 
 ## How to run the server
@@ -21,7 +20,7 @@
 
 - Update your `/etc/hosts` so that you can resolve `doorman.local`:
 
-    127.0.0.1 doorman.local
+	127.0.0.1 iam.local
 
-- Access http://doorman.local:3000/
+- Access http://iam.local:3000/
 - Click **Login**

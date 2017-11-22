@@ -13,7 +13,7 @@ import doorman
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
-DOORMAN_SERVER = os.getenv("DOORMAN_SERVER", "http://doorman.local:8080")
+DOORMAN_SERVER = os.getenv("DOORMAN_SERVER", "http://localhost:8080")
 API_AUDIENCE = os.getenv("API_AUDIENCE")
 
 app = Flask(__name__)
@@ -58,13 +58,13 @@ def record(record_id):
     jwt = request.headers.get("Authorization", None)
     filename = os.path.join(HERE, "records", "{record_id}.json".format(
         record_id=os.path.basename(record_id)))
+    author = None
     record = None
     if os.path.exists(filename):
         with open(filename, 'r') as f:
             record = json.load(f)
             author = record["author"]
     if request.method == "GET":
-        # READ
         allowed(resource="record", action="read", jwt=jwt, context={"author": author})
         return jsonify(record['body'])
 

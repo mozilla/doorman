@@ -1,10 +1,9 @@
-const SERVICE_URL = 'http://doorman.local:8000'
+const SERVICE_URL = 'http://localhost:8000'
 
 const AUTH0_CLIENT_ID = 'SLocf7Sa1ibd5GNJMMqO539g7cKvWBOI';
 const AUTH0_DOMAIN = 'auth.mozilla.auth0.com';
 const AUTH0_CALLBACK_URL = window.location.href;
-const API_AUDIENCE = AUTH0_CLIENT_ID;
-const SCOPES = 'openid groups email';
+const SCOPES = 'profile openid groups email';
 
 
 document.addEventListener('DOMContentLoaded', main);
