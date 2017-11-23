@@ -25,14 +25,13 @@ We use [Pipenv](https://docs.pipenv.org) to ease packages installation.
 
 Because of Auth0 configuration, we must access the Web UI on http://iam.local:3000/
 
-- Add this line to your `/etc/hosts`:
+Add this line to your `/etc/hosts`:
 
     127.0.0.1 iam.local
 
-- Serve the UI static files:
+Serve the UI static files:
 
     cd examples/python/ui/
     python3 -m http.server 3000
 
-- Access http://iam.local:3000/
-- Click **Login**
+Access http://iam.local:3000/

@@ -46,6 +46,6 @@ type Doorman interface {
 	JWTValidator(service string) (JWTValidator, error)
 	// ExpandPrincipals looks up and add extra principals to the ones specified.
 	ExpandPrincipals(service string, principals Principals) Principals
-	// IsAllowed is responsible for deciding if subject can perform action on a resource with a context.
+	// IsAllowed is responsible for deciding if the specified authorization is allowed for the specified service.
 	IsAllowed(service string, request *Request) bool
 }

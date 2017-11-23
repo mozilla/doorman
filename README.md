@@ -38,6 +38,7 @@ tags:
     - group:admins
 policies:
   -
+    id: authors-superusers-delete
     description: Authors and superusers can delete articles
     principals:
       - role:author
