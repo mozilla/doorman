@@ -5,3 +5,6 @@ policies.yaml
 vendor/
 node_modules/
 api-docs/
+__pycache__/
+*.pyc
+examples/python/records/*.json

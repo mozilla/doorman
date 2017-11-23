@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel='stylesheet' href='style.css' />
+    <script src="https://cdn.auth0.com/js/auth0/8.10.1/auth0.min.js"></script>
+    <script type="text/javascript" src="main.js"></script>
+  </head>
+  <body>
+    <h1>Doorman + Python API + Web UI</h1>
+    <button id="login">Login</button>
+    <button id="logout">Logout</button>
+    <div id="view" class="tabs">
+
+      <div class="tab">
+          <input type="radio" id="tab-1" name="tab-group-1">
+          <label for="tab-1">API Hello</label>
+
+          <div class="content">
+              <div id="api-hello" class="pre"></div>
+          </div>
+      </div>
+
+      <div class="tab">
+          <input type="radio" id="tab-2" name="tab-group-1">
+          <label for="tab-2">API Records</label>
+
+          <div class="content">
+              <form id="api-record-form">
+                <input type="text" name="name" placeholder="Name..." />
+                <input type="text" name="data" placeholder="Some data..."></textarea>
+                <input type="submit" value="Save"/>
+              </form>
+              <div id="api-records"></div>
+          </div>
+      </div>
+
+      <div class="tab">
+          <input type="radio" id="tab-3" name="tab-group-1">
+          <label for="tab-3">User Info</label>
+
+          <div class="content">
+              <div id="profile-nickname"></div>
+              <img id="profile-picture" src="" width="100"/>
+              <div id="profile-details" class="pre"></div>
+          </div>
+      </div>
+
+      <div class="tab">
+          <input type="radio" id="tab-4" name="tab-group-1" checked>
+          <label for="tab-4">Token payload</label>
+
+          <div class="content">
+              <div id="token-payload" class="pre"></div>
+          </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,55 @@
+.pre {
+  font-family: monospace;
+  white-space: pre;
+}
+
+/* https://css-tricks.com/functional-css-tabs-revisited/ */
+.tabs {
+  position: relative;
+  min-height: 200px;
+  clear: both;
+  margin: 25px 0;
+}
+.tab {
+  float: left;
+}
+.tab label {
+  background: #eee;
+  padding: 10px;
+  border: 1px solid #ccc;
+  margin-left: -1px;
+  position: relative;
+  left: 1px;
+}
+
+.content {
+  position: absolute;
+  top: 28px;
+  left: 0;
+  background: white;
+  right: 0;
+  /* bottom: 0;*/
+  padding: 20px;
+  border: 1px solid #ccc;
+}
+
+.tab [type=radio] {
+  display: none;
+}
+
+.tab [type=radio] ~ .content {
+  display: none;
+}
+
+.tab [type=radio]:checked ~ .content {
+  display: block;
+}
+
+[type=radio]:checked ~ label {
+  background: white;
+  border-bottom: 1px solid white;
+  z-index: 2;
+}
+[type=radio]:checked ~ label ~ .content {
+  z-index: 1;
+}
