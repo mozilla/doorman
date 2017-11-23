@@ -7,7 +7,7 @@
     <script type="text/javascript" src="main.js"></script>
   </head>
   <body>
-    <h1>Minimal IAM demo</h1>
+    <h1>Doorman + Python API + Frontend</h1>
     <button id="login">Login</button>
     <button id="logout">Logout</button>
     <div id="view" class="tabs">
@@ -34,10 +34,24 @@
 
       <div class="tab">
           <input type="radio" id="tab-3" name="tab-group-1">
-          <label for="tab-3">API call</label>
+          <label for="tab-3">API Hello</label>
 
           <div class="content">
-              <div id="api-result" class="pre"></div>
+              <div id="api-hello" class="pre"></div>
+          </div>
+      </div>
+
+      <div class="tab">
+          <input type="radio" id="tab-4" name="tab-group-1">
+          <label for="tab-4">API Records</label>
+
+          <div class="content">
+              <form id="api-record-form">
+                <input type="text" name="name" placeholder="Name..." />
+                <textarea name="body" placeholder="Some JSON..."></textarea>
+                <input type="submit" value="Save"/>
+              </form>
+              <div id="api-records"></div>
           </div>
       </div>
     </div>

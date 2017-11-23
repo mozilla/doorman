@@ -8,13 +8,15 @@ import os
 
 from flask import Flask, request, jsonify, _app_ctx_stack
 from flask_cors import cross_origin
+import werkzeug
 
 import doorman
 
-HERE = os.path.abspath(os.path.dirname(__file__))
-
 DOORMAN_SERVER = os.getenv("DOORMAN_SERVER", "http://localhost:8080")
 API_AUDIENCE = os.getenv("API_AUDIENCE")
+HERE = os.path.abspath(os.path.dirname(__file__))
+RECORDS_PATH = os.getenv("RECORDS_PATH", os.path.join(HERE, "records"))
+
 
 app = Flask(__name__)
 
@@ -43,7 +45,7 @@ def authorized(**allowed_kw):
 @app.route("/")
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
-@authorized(resource="hello", action="read")
+@authorized(resource="hello")
 def hello():
     """A valid access token is required to access this route
     """
@@ -51,38 +53,76 @@ def hello():
     return jsonify(top.current_user)
 
 
-@app.route("/record/<record_id>", methods=('GET', 'PUT'))
+@app.route("/records")
+@cross_origin(headers=["Content-Type", "Authorization"])
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+def records():
+    jwt = request.headers.get("Authorization", None)
+    # Check if allowed to list.
+    authz = allowed(resource="record", action="list", jwt=jwt)
+
+    email_principal = authz["principals"][1]
+    records = Records.list(email_principal)
+
+    return jsonify(records)
+
+
+@app.route("/records/<record_id>", methods=('GET', 'PUT'))
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 def record(record_id):
     jwt = request.headers.get("Authorization", None)
-    filename = os.path.join(HERE, "records", "{record_id}.json".format(
-        record_id=os.path.basename(record_id)))
-    author = None
-    record = None
-    if os.path.exists(filename):
-        with open(filename, 'r') as f:
-            record = json.load(f)
-            author = record["author"]
+
+    record, author = Records.read(record_id)
+
     if request.method == "GET":
-        allowed(resource="record", action="read", jwt=jwt, context={"author": author})
-        return jsonify(record['body'])
+        action = "read"
+    else:
+        action = "create" if record is None else "update"
 
-    elif request.method == "PUT":
-        if record is not None:
-            payload = allowed(resource="record", action="create", jwt=jwt)
-        else:
-            payload = allowed(resource="record", action="update", jwt=jwt,
-                              context={"author": author})
+    # Check if allowed to perform action.
+    authz = allowed(resource="record", action=action, jwt=jwt, context={"author": author})
 
-        with open(filename, 'w') as f:
-            email_principal = payload["principals"][1]
-            body = {'body': request.get_json(), 'author': email_principal}
+    # Return 404 if allowed to read but missing.
+    if record is None and request.method == "GET":
+        raise werkzeug.exceptions.NotFound()
+
+    # Save content on PUT
+    if request.method == "PUT":
+        record = request.get_json()
+        email_principal = authz["principals"][1]
+        Records.save(record_id, record, email_principal)
+
+    return jsonify(record)
+
+
+class Records:
+    @staticmethod
+    def list(author):
+        all_records = [f for f in os.listdir(RECORDS_PATH) if f.endswith(".json")]
+        all_contents = [(f, json.load(open(os.path.join(RECORDS_PATH, f)))) for f in all_records]
+        return [{'name': f.replace('.json', ''), 'body': content['body']}
+                for f, content in all_contents if content["author"] == author]
+
+    @staticmethod
+    def read(name):
+        path = os.path.join(RECORDS_PATH, "{}.json".format(os.path.basename(name)))
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                content = json.load(f)
+                return content['body'], content['author']
+        return None, None
+
+    @staticmethod
+    def save(name, body, author):
+        path = os.path.join(RECORDS_PATH, "{}.json".format(os.path.basename(name)))
+        with open(path, 'w') as f:
+            body = {'body': body, 'author': author}
             json.dump(body, f)
-        return jsonify(body)
 
 
 if __name__ == "__main__":
+    print("RECORDS_PATH", RECORDS_PATH)
     print("DOORMAN_SERVER", DOORMAN_SERVER)
     print("API_AUDIENCE", API_AUDIENCE)
     app.run(host="0.0.0.0", port=os.getenv("PORT", 8000))

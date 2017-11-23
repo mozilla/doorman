@@ -1,4 +1,4 @@
-# Doorman client example
+# Doorman Integration Examples
 
 Here are some examples of how to integrate Doorman with your service.
 

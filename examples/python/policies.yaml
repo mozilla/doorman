@@ -2,26 +2,27 @@ service: SLocf7Sa1ibd5GNJMMqO539g7cKvWBOI
 jwtIssuer: https://auth.mozilla.auth0.com/
 policies:
   - id: "1"
-    description: Allow everyone to read on hello
+    description: Allow everyone access hello
     principals:
       - <.*>
     actions:
-      - read
+      - <.*>
     resources:
       - hello
     effect: allow
   - id: "2"
-    description: Allow everyone to read and create
+    description: Allow everyone to list, read and create records
     principals:
       - <.*>
     actions:
+      - list
       - read
       - create
     resources:
       - record
     effect: allow
   - id: "3"
-    description: Allow author to update their own record
+    description: Allow authors to update their own record
     principals:
       - <.*>
     actions:
