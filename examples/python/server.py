@@ -13,14 +13,14 @@ import werkzeug
 import doorman
 
 DOORMAN_SERVER = os.getenv("DOORMAN_SERVER", "http://localhost:8080")
-API_AUDIENCE = os.getenv("API_AUDIENCE")
+SERVICE = os.getenv("SERVICE", "SLocf7Sa1ibd5GNJMMqO539g7cKvWBOI")
 HERE = os.path.abspath(os.path.dirname(__file__))
 RECORDS_PATH = os.getenv("RECORDS_PATH", os.path.join(HERE, "records"))
 
 
 app = Flask(__name__)
 
-allowed = functools.partial(doorman.allowed, DOORMAN_SERVER, API_AUDIENCE)
+allowed = functools.partial(doorman.allowed, DOORMAN_SERVER, SERVICE)
 
 
 @app.errorhandler(doorman.AuthZError)
@@ -35,8 +35,8 @@ def authorized(**allowed_kw):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             jwt = request.headers.get("Authorization", None)
-            payload = allowed(jwt=jwt, **allowed_kw)
-            _app_ctx_stack.top.current_user = payload
+            authz = allowed(jwt=jwt, **allowed_kw)
+            _app_ctx_stack.top.authz = authz
             return f(*args, **kwargs)
         return wrapper
     return wrapped
@@ -49,31 +49,28 @@ def authorized(**allowed_kw):
 def hello():
     """A valid access token is required to access this route
     """
-    top = _app_ctx_stack.top
-    return jsonify(top.current_user)
+    authz = _app_ctx_stack.top.authz
+    return jsonify(authz)
 
 
 @app.route("/records")
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@authorized(resource="record", action="list")
 def records():
-    jwt = request.headers.get("Authorization", None)
-    # Check if allowed to list.
-    authz = allowed(resource="record", action="list", jwt=jwt)
-
+    authz = _app_ctx_stack.top.authz
     email_principal = authz["principals"][1]
-    records = Records.list(email_principal)
-
+    records = Records.list(author=email_principal)
     return jsonify(records)
 
 
-@app.route("/records/<record_id>", methods=('GET', 'PUT'))
+@app.route("/records/<name>", methods=('GET', 'PUT'))
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
-def record(record_id):
+def record(name):
     jwt = request.headers.get("Authorization", None)
 
-    record, author = Records.read(record_id)
+    record, author = Records.read(name)
 
     if request.method == "GET":
         action = "read"
@@ -89,9 +86,9 @@ def record(record_id):
 
     # Save content on PUT
     if request.method == "PUT":
-        record = request.get_json()
+        body = request.data.decode("utf-8")
         email_principal = authz["principals"][1]
-        Records.save(record_id, record, email_principal)
+        record = Records.save(name, body, email_principal)
 
     return jsonify(record)
 
@@ -116,13 +113,14 @@ class Records:
     @staticmethod
     def save(name, body, author):
         path = os.path.join(RECORDS_PATH, "{}.json".format(os.path.basename(name)))
+        body = {'body': body, 'author': author}
         with open(path, 'w') as f:
-            body = {'body': body, 'author': author}
             json.dump(body, f)
+        return body
 
 
 if __name__ == "__main__":
     print("RECORDS_PATH", RECORDS_PATH)
     print("DOORMAN_SERVER", DOORMAN_SERVER)
-    print("API_AUDIENCE", API_AUDIENCE)
+    print("SERVICE", SERVICE)
     app.run(host="0.0.0.0", port=os.getenv("PORT", 8000))

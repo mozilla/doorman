@@ -2,20 +2,15 @@ import json
 import urllib
 
 
-def json_dumps_ignore_none(d):
-    return json.dumps({k: v for k, v in d.items() if v is not None})
-
-
-# Format error response and append status code.
 class AuthZError(Exception):
     def __init__(self, error, status_code):
         self.error = error
         self.status_code = status_code
 
 
-def allowed(server, audience, *,
+def allowed(doorman, service, *,
             resource=None, action=None, jwt=None, principals=None, context=None):
-    doorman_url = server + "/allowed"
+    doorman_url = doorman + "/allowed"
     payload = {
         "resource": resource,
         "action": action,
@@ -25,7 +20,7 @@ def allowed(server, audience, *,
     body = json_dumps_ignore_none(payload)
     headers = {
         "Authorization": jwt or '',
-        "Origin": audience,
+        "Origin": service,
     }
     r = urllib.request.Request(doorman_url, data=body.encode("utf-8"), headers=headers)
     try:
@@ -39,3 +34,7 @@ def allowed(server, audience, *,
         raise AuthZError(response_body, 403)
 
     return response_body
+
+
+def json_dumps_ignore_none(d):
+    return json.dumps({k: v for k, v in d.items() if v is not None})

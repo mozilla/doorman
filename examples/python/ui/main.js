@@ -9,10 +9,7 @@ const SCOPES = 'openid profile';
 document.addEventListener('DOMContentLoaded', main);
 
 function main() {
-  const logoutBtn = document.getElementById('logout');
-  logoutBtn.addEventListener('click', logout);
-
-  const webAuth = new auth0.WebAuth({
+  const webAuth0 = new auth0.WebAuth({
     domain: AUTH0_DOMAIN,
     clientID: AUTH0_CLIENT_ID,
     redirectUri: AUTH0_CALLBACK_URL,
@@ -20,57 +17,89 @@ function main() {
     scope: SCOPES
   });
 
-  // Authentication on Login button
+  // Start authentication process on Login button
   const loginBtn = document.getElementById('login');
   loginBtn.addEventListener('click', () => {
-    webAuth.authorize();
+    webAuth0.authorize();
   });
+  // Logout button.
+  const logoutBtn = document.getElementById('logout');
+  logoutBtn.addEventListener('click', logout);
 
-  // New record form.
-  const newRecordForm = document.getElementById('api-record-form');
-  newRecordForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(newRecordForm);
-    await postNewRecords(formData.get('name'), formData.get('body'))
-    // Empty form once submitted.
-    newRecordForm.reset()
-  });
-
-  handleAuthentication(webAuth)
+  handleAuthentication(webAuth0)
 }
 
-function handleAuthentication(webAuth) {
-  webAuth.parseHash((err, authResult) => {
+class APIClient {
+  constructor(auth) {
+    const headers = {
+      'Authorization': `${auth.tokenType} ${auth.idToken}`,
+    };
+    this.options = {headers};
+  }
+
+  async hello() {
+    const resp = await fetch(`${SERVICE_URL}/`, this.options);
+    return await resp.json();
+  }
+
+  async list() {
+    const resp = await fetch(`${SERVICE_URL}/records`, this.options);
+    return await resp.json();
+  }
+
+  async save(name, body) {
+    const resp = await fetch(`${SERVICE_URL}/records/${name}`,
+                             {method: 'PUT', body, ...this.options});
+    return await resp.json();
+  }
+}
+
+function handleAuthentication(webAuth0) {
+  let authenticated = false;
+
+  webAuth0.parseHash((err, authResult) => {
     if (authResult && authResult.accessToken && authResult.idToken) {
+      // Token was passed in location hash by authentication portal.
+      authenticated = true;
       window.location.hash = '';
       setSession(authResult);
     } else if (err) {
+      // Server returned an error.
       console.error(err);
-      alert(
-        'Error: ' + err.error + '. Check the console for further details.'
-      );
+      alert(`Error: ${err.error}. Check the console for further details.`);
     } else {
-      authResult = JSON.parse(sessionStorage.getItem('session'));
+      // Look into session storage for session.
+      const expiresAt = JSON.parse(sessionStorage.getItem('expires_at'));
+      // Check whether the current time is past the access token's expiry time
+      if (new Date().getTime() < expiresAt) {
+        authenticated = true;
+        authResult = JSON.parse(sessionStorage.getItem('session'));
+      }
     }
 
-    displayButtons()
+    // Show/hide menus.
+    displayButtons(authenticated)
 
-    if (isAuthenticated()) {
+    // Interact with API if authenticated.
+    if (authenticated) {
       console.log('AuthResult', authResult);
-      const tokenPayloadDiv = document.getElementById('token-payload');
-      tokenPayloadDiv.innerText = JSON.stringify(authResult.idTokenPayload, null, 2);
+      showTokenPayload(authResult)
+
+      const apiClient = new APIClient(authResult);
+
+      initRecordForm(apiClient)
 
       Promise.all([
-        fetchUserInfo(webAuth),
-        showAPIHello(),
-        showAPIRecords(),
+        fetchUserInfo(webAuth0, authResult),
+        showAPIHello(apiClient),
+        showAPIRecords(apiClient),
       ]);
     }
   });
 }
 
-function displayButtons() {
-  if (isAuthenticated()) {
+function displayButtons(authenticated) {
+  if (authenticated) {
     document.getElementById('login').setAttribute('disabled', 'disabled');
     document.getElementById('logout').removeAttribute('disabled');
     document.getElementById('view').style.display = 'block';
@@ -90,28 +119,18 @@ function setSession(authResult) {
   sessionStorage.setItem('expires_at', expiresAt);
 }
 
-function isAuthenticated() {
-  // Check whether the current time is past the
-  // access token's expiry time
-  const expiresAt = JSON.parse(sessionStorage.getItem('expires_at'));
-  return new Date().getTime() < expiresAt;
-}
-
 function logout() {
   // Remove tokens and expiry time from sessionStorage
   sessionStorage.removeItem('session');
   sessionStorage.removeItem('expires_at');
-  displayButtons();
+  displayButtons(false);
 }
 
-async function fetchUserInfo(webAuth) {
-  const auth = JSON.parse(sessionStorage.getItem('session'));
-  webAuth.client.userInfo(auth.accessToken, (err, profile) => {
+async function fetchUserInfo(webAuth0, auth) {
+  webAuth0.client.userInfo(auth.accessToken, (err, profile) => {
     if (err) {
       console.error(err);
-      alert(
-        'Error: ' + err.error + '. Check the console for further details.'
-      );
+      alert(`Error: ${err.error}. Check the console for further details.`);
     }
     document.getElementById('profile-nickname').innerText = profile.nickname;
     document.getElementById('profile-picture').setAttribute('src', profile.picture);
@@ -119,67 +138,48 @@ async function fetchUserInfo(webAuth) {
   });
 }
 
-class APIClient {
-  constructor() {
-    const auth = JSON.parse(sessionStorage.getItem('session'));
-    this.headers = {
-      'Authorization': `${auth.tokenType} ${auth.idToken}`,
-      'Content-Type': 'application/json'
-    };
-  }
-
-  async hello() {
-    const resp = await fetch(`${SERVICE_URL}/`, {headers: this.headers});
-    return await resp.json();
-  }
-
-  async list() {
-    const resp = await fetch(`${SERVICE_URL}/records`, {headers: this.headers});
-    return await resp.json();
-  }
-
-  async save(name, body) {
-    const resp = await fetch(`${SERVICE_URL}/records/${name}`,
-                             {method: 'PUT', body, headers: this.headers});
-    return await resp.json();
-  }
+function showTokenPayload(auth) {
+  const tokenPayloadDiv = document.getElementById('token-payload');
+  tokenPayloadDiv.innerText = JSON.stringify(auth.idTokenPayload, null, 2);
 }
 
-async function showAPIHello() {
-  const c = new APIClient();
-  const data = await c.hello();
+async function showAPIHello(apiClient) {
+  const data = await apiClient.hello();
 
   const apiHelloDiv = document.getElementById('api-hello');
   apiHelloDiv.innerText = JSON.stringify(data, null, 2);
 }
 
-async function showAPIRecords() {
-  const c = new APIClient();
-  const data = await c.list();
+function initRecordForm(apiClient) {
+  const newRecordForm = document.getElementById('api-record-form');
+  // Submit data.
+  newRecordForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(newRecordForm);
+    await apiClient.save(formData.get('name'), formData.get('data'));
+    // Empty form once submitted.
+    newRecordForm.reset()
+    // Refresh list.
+    await showAPIRecords(apiClient);
+  });
+}
 
+async function showAPIRecords(apiClient) {
   const apiRecordsDiv = document.getElementById('api-records');
+  apiRecordsDiv.innerHTML = '';
 
+  const data = await apiClient.list();
   if (data.length == 0) {
     apiRecordsDiv.innerText = 'No records';
     return
   }
-
-  apiRecordsDiv.innerHTML = '';
   for (const {name, body} of data) {
     const _name = document.createElement('h2');
     _name.innerText = name;
     const _body = document.createElement('p');
     _body.className = 'pre';
-    _body.innerText = JSON.stringify(body, null, 2);
+    _body.innerText = body;
     apiRecordsDiv.appendChild(_name);
     apiRecordsDiv.appendChild(_body);
   }
-}
-
-
-async function postNewRecords(name, body) {
-  const c = new APIClient();
-  await c.save(name, body);
-  // Refresh list.
-  await showAPIRecords();
 }

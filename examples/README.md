@@ -1,5 +1,4 @@
 # Doorman Integration Examples
 
-Here are some examples of how to integrate Doorman with your service.
+- [Python / Flask](python/): A Web UI interacts with Auth0 and a Flask API
 
-- [Python / Flask example](python/)

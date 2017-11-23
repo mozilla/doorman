@@ -1,7 +1,7 @@
 service: SLocf7Sa1ibd5GNJMMqO539g7cKvWBOI
 jwtIssuer: https://auth.mozilla.auth0.com/
 policies:
-  - id: "1"
+  - id: "hello"
     description: Allow everyone access hello
     principals:
       - <.*>
@@ -10,7 +10,7 @@ policies:
     resources:
       - hello
     effect: allow
-  - id: "2"
+  - id: "record-everyone"
     description: Allow everyone to list, read and create records
     principals:
       - <.*>
@@ -21,7 +21,7 @@ policies:
     resources:
       - record
     effect: allow
-  - id: "3"
+  - id: "record-authors"
     description: Allow authors to update their own record
     principals:
       - <.*>

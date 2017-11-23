@@ -5,7 +5,8 @@ Doorman
 
 *Doorman* is an **authorization micro-service**.
 
-[API Documentation](https://mozilla.github.io/doorman/)
+- [API Documentation](https://mozilla.github.io/doorman/)
+- [Examples](examples/)
 
 [![Build Status](https://travis-ci.org/mozilla/doorman.svg?branch=master)](https://travis-ci.org/mozilla/doorman)
 [![Coverage Status](https://coveralls.io/repos/github/mozilla/doorman/badge.svg?branch=master)](https://coveralls.io/github/mozilla/doorman?branch=master)

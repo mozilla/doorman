@@ -1,28 +1,38 @@
-# Doorman, Python / Flask example with a Web UI
+# Doorman + Python API + Web UI
 
-## How to run doorman?
+A Web UI interacts with Auth0 and a Flask API:
+
+* Some views are protected by a Python decorator
+* The update view is protected by imperative code, where authors can only update their own records
+
+## Run locally
+
+Run those three services in separate terminals:
+
+### Doorman
 
     make serve -e POLICIES=examples/python/policies.yaml
 
+### Flask API
 
-## How to run the server
+We use [Pipenv](https://docs.pipenv.org) to ease packages installation.
 
     cd examples/python/
     pipenv install
-    export DOORMAN_SERVER=http://localhost:8080
-    export API_AUDIENCE="SLocf7Sa1ibd5GNJMMqO539g7cKvWBOI"
     pipenv run python server.py
 
-## How to run the web UI
+### Web UI
+
+Because of Auth0 configuration, we must access the Web UI on http://iam.local:3000/
+
+- Add this line to your `/etc/hosts`:
+
+    127.0.0.1 iam.local
 
 - Serve the UI static files:
 
     cd examples/python/ui/
     python3 -m http.server 3000
-
-- Update your `/etc/hosts` so that you can resolve `iam.local`:
-
-	127.0.0.1 iam.local
 
 - Access http://iam.local:3000/
 - Click **Login**
