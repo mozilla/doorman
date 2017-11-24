@@ -5,6 +5,8 @@ A Web UI interacts with Auth0 and a Flask API:
 * Some views are protected by a Python decorator
 * The update view is protected by imperative code, where authors can only update their own records
 
+![](screenshot.png)
+
 ## Run locally
 
 Run those three services in separate terminals:
