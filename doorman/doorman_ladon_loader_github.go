@@ -22,7 +22,7 @@ func (ghl *githubLoader) CanLoad(url string) bool {
 	return regexpRepo.MatchString(url)
 }
 
-func (ghl *githubLoader) Load(url string) ([]*Configuration, error) {
+func (ghl *githubLoader) Load(url string) ([]*ServiceConfig, error) {
 	log.Infof("Load %q from Github", url)
 
 	regexpFile, _ := regexp.Compile("^.*\\.ya?ml$")
@@ -36,7 +36,7 @@ func (ghl *githubLoader) Load(url string) ([]*Configuration, error) {
 		return nil, fmt.Errorf("loading from Github folder is not supported yet")
 	}
 	// Load configurations.
-	configs := []*Configuration{}
+	configs := []*ServiceConfig{}
 	for _, url := range urls {
 		tmpFile, err := download(url, ghl.headers)
 		if err != nil {
@@ -77,11 +77,9 @@ func download(url string, headers headers) (*os.File, error) {
 }
 
 func init() {
-	githubToken := os.Getenv("GITHUB_TOKEN")
-
 	loaders = append(loaders, &githubLoader{
 		headers: headers{
-			"Authorization": fmt.Sprintf("token %s", githubToken),
+			"Authorization": fmt.Sprintf("token %s", Config.GithubToken),
 		},
 	})
 }

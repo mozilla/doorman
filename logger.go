@@ -5,6 +5,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/mozilla/doorman/doorman"
+
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"go.mozilla.org/mozlogrus"
@@ -20,33 +22,13 @@ var errorNumber = map[int]int{
 }
 
 func init() {
-	setLevelFromEnv(logrus.StandardLogger())
+	logrus.StandardLogger().SetLevel(doorman.Config.LogLevel)
 
 	summaryLog = logrus.Logger{
 		Out:       os.Stdout,
 		Formatter: &mozlogrus.MozLogFormatter{LoggerName: "doorman", Type: "request.summary"},
 		Hooks:     make(logrus.LevelHooks),
 		Level:     logrus.InfoLevel,
-	}
-}
-
-func setLevelFromEnv(logger *logrus.Logger) {
-	logLevel := os.Getenv("LOG_LEVEL")
-	switch logLevel {
-	case "fatal":
-		logger.SetLevel(logrus.FatalLevel)
-	case "error":
-		logger.SetLevel(logrus.ErrorLevel)
-	case "warn":
-		logger.SetLevel(logrus.WarnLevel)
-	case "debug":
-		logger.SetLevel(logrus.DebugLevel)
-	default:
-		if gin.Mode() == gin.ReleaseMode {
-			logger.SetLevel(logrus.InfoLevel)
-		} else {
-			logger.SetLevel(logrus.DebugLevel)
-		}
 	}
 }
 

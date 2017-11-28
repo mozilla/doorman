@@ -49,30 +49,6 @@ func TestRequestLogFields(t *testing.T) {
 	assert.Equal(t, "/diff?w=1", fields["path"])
 }
 
-func TestEnvLogLevel(t *testing.T) {
-	logger := logrus.StandardLogger()
-	var cases = []struct {
-		mode  string
-		env   string
-		level logrus.Level
-	}{
-		{gin.DebugMode, "fatal", logrus.FatalLevel},
-		{gin.DebugMode, "error", logrus.ErrorLevel},
-		{gin.DebugMode, "warn", logrus.WarnLevel},
-		{gin.DebugMode, "debug", logrus.DebugLevel},
-		{gin.DebugMode, "info", logrus.DebugLevel},
-		{gin.ReleaseMode, "info", logrus.InfoLevel},
-	}
-	defer gin.SetMode(gin.TestMode)
-	defer os.Unsetenv("LOG_LEVEL")
-	for _, test := range cases {
-		gin.SetMode(test.mode)
-		os.Setenv("LOG_LEVEL", test.env)
-		setLevelFromEnv(logger)
-		assert.Equal(t, test.level, logger.Level)
-	}
-}
-
 func TestSetupRouterRelease(t *testing.T) {
 	// In release mode, we enable MozLogger middleware.
 	gin.SetMode(gin.ReleaseMode)

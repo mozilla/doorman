@@ -16,12 +16,12 @@ type Tags map[string]Principals
 // LadonDoorman is the backend in charge of checking requests against policies.
 type LadonDoorman struct {
 	policiesSources []string
-	configs         map[string]*Configuration
+	services        map[string]*ServiceConfig
 	_auditLogger    *auditLogger
 }
 
-// Configuration represents the policies file content.
-type Configuration struct {
+// ServiceConfig represents the policies file content.
+type ServiceConfig struct {
 	Service   string
 	JWTIssuer string `json:"jwtIssuer"`
 	Tags      Tags
@@ -32,7 +32,7 @@ type Configuration struct {
 }
 
 // GetTags returns the tags principals for the ones specified.
-func (c *Configuration) GetTags(principals Principals) Principals {
+func (c *ServiceConfig) GetTags(principals Principals) Principals {
 	result := Principals{}
 	for tag, members := range c.Tags {
 		for _, member := range members {
@@ -47,11 +47,11 @@ func (c *Configuration) GetTags(principals Principals) Principals {
 	return result
 }
 
-// New instantiates a new doorman.
-func New(policies []string) *LadonDoorman {
+// NewDefaultLadon instantiates a new doorman.
+func NewDefaultLadon() *LadonDoorman {
 	w := &LadonDoorman{
-		policiesSources: policies,
-		configs:         map[string]*Configuration{},
+		policiesSources: Config.Sources,
+		services:        map[string]*ServiceConfig{},
 	}
 	return w
 }
@@ -66,13 +66,13 @@ func (doorman *LadonDoorman) auditLogger() *auditLogger {
 // LoadPolicies (re)loads configuration and policies from the YAML files.
 func (doorman *LadonDoorman) LoadPolicies() error {
 	// First, load each configuration file.
-	newConfigs := map[string]*Configuration{}
+	newConfigs := map[string]*ServiceConfig{}
 	for _, source := range doorman.policiesSources {
-		configs, err := loadSource(source)
+		services, err := loadSource(source)
 		if err != nil {
 			return err
 		}
-		for _, config := range configs {
+		for _, config := range services {
 			_, exists := newConfigs[config.Service]
 			if exists {
 				return fmt.Errorf("duplicated service %q (source %q)", config.Service, source)
@@ -103,14 +103,14 @@ func (doorman *LadonDoorman) LoadPolicies() error {
 			newConfigs[config.Service] = config
 		}
 	}
-	// Only if everything went well, replace existing configs with new ones.
-	doorman.configs = newConfigs
+	// Only if everything went well, replace existing services with new ones.
+	doorman.services = newConfigs
 	return nil
 }
 
 // JWTValidator returns the JWT validator for the specified service.
 func (doorman *LadonDoorman) JWTValidator(service string) (JWTValidator, error) {
-	c, ok := doorman.configs[service]
+	c, ok := doorman.services[service]
 	if !ok {
 		return nil, fmt.Errorf("unknown service %q", service)
 	}
@@ -131,7 +131,7 @@ func (doorman *LadonDoorman) IsAllowed(service string, request *Request) bool {
 		Context:  context,
 	}
 
-	c, ok := doorman.configs[service]
+	c, ok := doorman.services[service]
 	if !ok {
 		// Explicitly log denied request using audit logger.
 		doorman.auditLogger().logRequest(false, r, ladon.Policies{})
@@ -151,7 +151,7 @@ func (doorman *LadonDoorman) IsAllowed(service string, request *Request) bool {
 // ExpandPrincipals will match the tags defined in the configuration for this service
 // against each of the specified principals.
 func (doorman *LadonDoorman) ExpandPrincipals(service string, principals Principals) Principals {
-	c, ok := doorman.configs[service]
+	c, ok := doorman.services[service]
 	if !ok {
 		return principals
 	}

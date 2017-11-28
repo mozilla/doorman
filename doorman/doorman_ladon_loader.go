@@ -7,7 +7,7 @@ import (
 // Loader is responsible for loading the policies from files, URLs, etc.
 type Loader interface {
 	CanLoad(source string) bool
-	Load(source string) ([]*Configuration, error)
+	Load(source string) ([]*ServiceConfig, error)
 }
 
 var loaders []Loader
@@ -16,7 +16,7 @@ func init() {
 	loaders = []Loader{}
 }
 
-func loadSource(source string) ([]*Configuration, error) {
+func loadSource(source string) ([]*ServiceConfig, error) {
 	for _, loader := range loaders {
 		if loader.CanLoad(source) {
 			return loader.Load(source)

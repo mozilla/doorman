@@ -19,7 +19,10 @@ func TestMain(m *testing.M) {
 }
 
 func sampleDoorman() *LadonDoorman {
-	doorman := New([]string{"../sample.yaml"})
+	doorman := &LadonDoorman{
+		policiesSources: []string{"../sample.yaml"},
+		//	services:        map[string]*ServiceConfig{},
+	}
 	doorman.LoadPolicies()
 	return doorman
 }
@@ -33,14 +36,19 @@ func loadTempFiles(contents ...string) (*LadonDoorman, error) {
 		tmpfile.Close()
 		filenames = append(filenames, tmpfile.Name())
 	}
-	w := New(filenames)
+	w := &LadonDoorman{policiesSources: filenames}
 	err := w.LoadPolicies()
 	return w, err
 }
 
+func TestNewDefaultLadon(t *testing.T) {
+	w := NewDefaultLadon();
+	assert.Equal(t, w.policiesSources, Config.Sources);
+}
+
 func TestLoadBadPolicies(t *testing.T) {
 	// Missing file
-	w := New([]string{"/tmp/unknown.yaml"})
+	w := &LadonDoorman{policiesSources: []string{"/tmp/unknown.yaml"}}
 	err := w.LoadPolicies()
 	assert.NotNil(t, err)
 
@@ -154,41 +162,41 @@ policies:
     effect: allow
 `), 0666)
 
-	w := New([]string{dir})
+	w := &LadonDoorman{policiesSources: []string{dir}}
 	err = w.LoadPolicies()
 	assert.Nil(t, err)
-	assert.Equal(t, len(w.configs["a"].Policies), 1)
+	assert.Equal(t, len(w.services["a"].Policies), 1)
 }
 
 func TestLoadGithub(t *testing.T) {
 	// Unsupported URL
-	w := New([]string{"https://bitbucket.org/test.yaml"})
+	w := &LadonDoorman{policiesSources: []string{"https://bitbucket.org/test.yaml"}}
 	err := w.LoadPolicies()
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "no appropriate loader found")
 
 	// Unsupported folder.
-	w = New([]string{"https://github.com/moz/ops/configs/"})
+	w = &LadonDoorman{policiesSources: []string{"https://github.com/moz/ops/configs/"}}
 	err = w.LoadPolicies()
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "not supported")
 
 	// Bad URL
-	w = New([]string{"ftp://github.com/moz/ops/config.yaml"})
+	w = &LadonDoorman{policiesSources: []string{"ftp://github.com/moz/ops/config.yaml"}}
 	err = w.LoadPolicies()
 	assert.NotNil(t, err)
 
 	// Bad file
-	w = New([]string{"https://github.com/mozilla/doorman/raw/06a2531/main.go"})
+	w = &LadonDoorman{policiesSources: []string{"https://github.com/mozilla/doorman/raw/06a2531/main.go"}}
 	err = w.LoadPolicies()
 	assert.NotNil(t, err)
 
 	// Good URL
-	w = New([]string{"https://github.com/mozilla/doorman/raw/452ef7a/sample.yaml"})
+	w = &LadonDoorman{policiesSources: []string{"https://github.com/mozilla/doorman/raw/452ef7a/sample.yaml"}}
 	err = w.LoadPolicies()
 	assert.Nil(t, err)
-	assert.Equal(t, len(w.configs["https://sample.yaml"].Tags), 1)
-	assert.Equal(t, len(w.configs["https://sample.yaml"].Policies), 6)
+	assert.Equal(t, len(w.services["https://sample.yaml"].Tags), 1)
+	assert.Equal(t, len(w.services["https://sample.yaml"].Policies), 6)
 }
 
 func TestLoadTags(t *testing.T) {
@@ -206,25 +214,25 @@ policies:
     effect: allow
 `)
 	assert.Nil(t, err)
-	assert.Equal(t, len(d.configs["a"].Tags), 2)
-	assert.Equal(t, len(d.configs["a"].Tags["admins"]), 2)
-	assert.Equal(t, len(d.configs["a"].Tags["editors"]), 1)
+	assert.Equal(t, len(d.services["a"].Tags), 2)
+	assert.Equal(t, len(d.services["a"].Tags["admins"]), 2)
+	assert.Equal(t, len(d.services["a"].Tags["editors"]), 1)
 }
 
 func TestReloadPolicies(t *testing.T) {
 	doorman := sampleDoorman()
-	loaded, _ := doorman.configs["https://sample.yaml"].ladon.Manager.GetAll(0, maxInt)
+	loaded, _ := doorman.services["https://sample.yaml"].ladon.Manager.GetAll(0, maxInt)
 	assert.Equal(t, 6, len(loaded))
 
 	// Second load.
 	doorman.LoadPolicies()
-	loaded, _ = doorman.configs["https://sample.yaml"].ladon.Manager.GetAll(0, maxInt)
+	loaded, _ = doorman.services["https://sample.yaml"].ladon.Manager.GetAll(0, maxInt)
 	assert.Equal(t, 6, len(loaded))
 
 	// Load bad policies, does not affect existing.
 	doorman.policiesSources = []string{"/tmp/unknown.yaml"}
 	doorman.LoadPolicies()
-	_, ok := doorman.configs["https://sample.yaml"]
+	_, ok := doorman.services["https://sample.yaml"]
 	assert.True(t, ok)
 }
 
