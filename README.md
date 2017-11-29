@@ -12,12 +12,21 @@ Doorman
 [![Coverage Status](https://coveralls.io/repos/github/mozilla/doorman/badge.svg?branch=master)](https://coveralls.io/github/mozilla/doorman?branch=master)
 [![Go Report](https://goreportcard.com/badge/github.com/mozilla/doorman)](https://goreportcard.com/report/github.com/mozilla/doorman)
 
+*Doorman* responds to authorization requests based on a set of rules (policies files).
+
+Having a centralized access control service has several advantages:
+
+- it clearly dissociates authentication from authorization
+- it provides a standard and generic permissions system to services developers
+- it facilitates permissions management across services (eg. makes revocation easier)
+- it allows authorizations monitoring, metrics, anomaly detection
+
 ## Run
 
 ```
     docker run \
-      -e POLICIES=/config/policies.yaml \
-      -v ./config/:/config \
+      -e POLICIES=/config \
+      -v ./examples/python:/config \
       -p 8000:8080 \
       --name doorman \
       mozilla/doorman
@@ -27,7 +36,7 @@ Doorman
 
 ## Policies
 
-Policies are defined in YAML files for each service, locally or in remote Github repos, as follow:
+Policies are defined in YAML files for each consuming service, locally or in remote (private) Github repos, as follow:
 
 ```yaml
 service: https://service.stage.net
@@ -38,6 +47,7 @@ tags:
     - group:admins
 policies:
   -
+    id: authors-superusers-delete
     description: Authors and superusers can delete articles
     principals:
       - role:author
@@ -74,7 +84,7 @@ Example: `["userid:ldap|user", "email:user@corp.com", "group:Employee", "group:A
 
 Via environment variables:
 
-* ``POLICIES``: space separated locations of YAML files with policies. They can be single files, folders or Github URLs (default: ``./policies.yaml``)
+* ``POLICIES``: space separated locations of YAML files with policies. They can be **single files**, **folders** or **Github URLs** (default: ``./policies.yaml``)
 * ``GITHUB_TOKEN``: Github API token to be used when fetching policies files from private repositories
 
 Advanced:
