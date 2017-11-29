@@ -10,6 +10,9 @@
     <h1>Doorman + Python API + Web UI</h1>
     <button id="login">Login</button>
     <button id="logout">Logout</button>
+
+    <div id="error" style="display:none"></div>
+
     <div id="view" class="tabs">
 
       <div class="tab">
@@ -22,7 +25,7 @@
       </div>
 
       <div class="tab">
-          <input type="radio" id="tab-2" name="tab-group-1">
+          <input type="radio" id="tab-2" name="tab-group-1" checked>
           <label for="tab-2">API Records</label>
 
           <div class="content">
@@ -47,7 +50,7 @@
       </div>
 
       <div class="tab">
-          <input type="radio" id="tab-4" name="tab-group-1" checked>
+          <input type="radio" id="tab-4" name="tab-group-1">
           <label for="tab-4">Token payload</label>
 
           <div class="content">

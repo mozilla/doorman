@@ -1,3 +1,10 @@
+#error {
+  margin: 1em;
+  padding: 0.3em;
+  background-color: #fab;
+  border: #b0061e solid 1px;
+  color: #b0061e;
+}
 .pre {
   font-family: monospace;
   white-space: pre;

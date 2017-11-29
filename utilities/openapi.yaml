@@ -4,13 +4,6 @@ info:
   description: |
     Doorman is an **authorization micro-service** that allows to checks if an arbitrary subject is allowed to perform an action on a resource, based on a set of rules (policies).
 
-    Having a centralized access control service has several advantages:
-
-    - it clearly dissociates authentication from authorization
-    - it provides a standard and generic permissions system to services developers
-    - it facilitates permissions management across services (eg. makes revocation easier)
-    - it allows authorizations monitoring, metrics, anomaly detection
-
     ### Workflow with JWT
 
     When the JWT issuer is configured for a service, a typical workflow is:
