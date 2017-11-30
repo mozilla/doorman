@@ -64,9 +64,8 @@ function handleAuthentication(webAuth0) {
       window.location.hash = '';
       setSession(authResult);
     } else if (err) {
-      // Server returned an error.
-      console.error(err);
-      alert(`Error: ${err.error}. Check the console for further details.`);
+      // Authentication returned an error.
+      showError(err.errorDescription);
     } else {
       // Look into session storage for session.
       const expiresAt = JSON.parse(sessionStorage.getItem('expires_at'));
@@ -93,9 +92,17 @@ function handleAuthentication(webAuth0) {
         fetchUserInfo(webAuth0, authResult),
         showAPIHello(apiClient),
         showAPIRecords(apiClient),
-      ]);
+      ])
+      .catch(showError);
     }
   });
+}
+
+function showError(err) {
+  console.error(err);
+  const errorDiv = document.getElementById('error');
+  errorDiv.style.display = 'block';
+  errorDiv.innerText = err;
 }
 
 function displayButtons(authenticated) {
@@ -129,8 +136,7 @@ function logout() {
 async function fetchUserInfo(webAuth0, auth) {
   webAuth0.client.userInfo(auth.accessToken, (err, profile) => {
     if (err) {
-      console.error(err);
-      alert(`Error: ${err.error}. Check the console for further details.`);
+      throw err;
     }
     document.getElementById('profile-nickname').innerText = profile.nickname;
     document.getElementById('profile-picture').setAttribute('src', profile.picture);

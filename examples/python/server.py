@@ -13,6 +13,7 @@ import werkzeug
 import doorman
 
 DOORMAN_SERVER = os.getenv("DOORMAN_SERVER", "http://localhost:8080")
+# This service is the Auth0 API id.
 SERVICE = os.getenv("SERVICE", "SLocf7Sa1ibd5GNJMMqO539g7cKvWBOI")
 HERE = os.path.abspath(os.path.dirname(__file__))
 RECORDS_PATH = os.getenv("RECORDS_PATH", os.path.join(HERE, "records"))
@@ -77,10 +78,10 @@ def record(name):
     else:
         action = "create" if record is None else "update"
 
-    # Check if allowed to perform action.
+    # Check if allowed to perform action (will raise AuthZError if not authorized)
     authz = allowed(resource="record", action=action, jwt=jwt, context={"author": author})
 
-    # Return 404 if allowed to read but missing.
+    # Return 404 if allowed to read but unknown record.
     if record is None and request.method == "GET":
         raise werkzeug.exceptions.NotFound()
 
