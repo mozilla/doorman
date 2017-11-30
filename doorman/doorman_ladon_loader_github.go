@@ -77,9 +77,14 @@ func download(url string, headers headers) (*os.File, error) {
 }
 
 func init() {
+	// XXX: Because we don't have access to doorman Config here,
+	// we still use the env variable (even with the refactor of #67)
+	// Will be sorted out in #68
+	githubToken := os.Getenv("GITHUB_TOKEN")
+
 	loaders = append(loaders, &githubLoader{
 		headers: headers{
-			"Authorization": fmt.Sprintf("token %s", ""), // Config.GithubToken),
+			"Authorization": fmt.Sprintf("token %s", githubToken),
 		},
 	})
 }
