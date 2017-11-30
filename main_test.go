@@ -7,8 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/mozilla/doorman/doorman"
 )
 
 func TestMain(m *testing.M) {
@@ -23,9 +21,9 @@ func TestSetupRouter(t *testing.T) {
 	require.NotNil(t, err)
 	assert.Equal(t, "empty file \"policies.yaml\"", err.Error())
 
-	doorman.Config.Sources = []string{"sample.yaml"}
+	config.Sources = []string{"sample.yaml"}
 	defer func() {
-		doorman.Config.Sources = []string{doorman.DefaultPoliciesFilename}
+		config.Sources = []string{DefaultPoliciesFilename}
 	}()
 
 	r, err := setupRouter()

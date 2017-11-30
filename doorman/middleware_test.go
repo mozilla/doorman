@@ -29,10 +29,9 @@ func (v *TestValidator) ExtractClaims(request *http.Request) (*Claims, error) {
 }
 
 func TestJWTMiddleware(t *testing.T) {
-	doorman := &LadonDoorman{
-		policiesSources: []string{},
-		services:        map[string]*ServiceConfig{},
-	}
+	doorman := NewDefaultLadon(Config{
+		Sources: []string{},
+	})
 	handler := VerifyJWTMiddleware(doorman)
 
 	audience := "https://some.api.com"

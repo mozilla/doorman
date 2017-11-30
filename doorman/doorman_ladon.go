@@ -15,9 +15,9 @@ type Tags map[string]Principals
 
 // LadonDoorman is the backend in charge of checking requests against policies.
 type LadonDoorman struct {
-	policiesSources []string
-	services        map[string]*ServiceConfig
-	_auditLogger    *auditLogger
+	config       Config
+	services     map[string]*ServiceConfig
+	_auditLogger *auditLogger
 }
 
 // ServiceConfig represents the policies file content.
@@ -48,10 +48,10 @@ func (c *ServiceConfig) GetTags(principals Principals) Principals {
 }
 
 // NewDefaultLadon instantiates a new doorman.
-func NewDefaultLadon() *LadonDoorman {
+func NewDefaultLadon(config Config) *LadonDoorman {
 	w := &LadonDoorman{
-		policiesSources: Config.Sources,
-		services:        map[string]*ServiceConfig{},
+		config:   config,
+		services: map[string]*ServiceConfig{},
 	}
 	return w
 }
@@ -67,7 +67,7 @@ func (doorman *LadonDoorman) auditLogger() *auditLogger {
 func (doorman *LadonDoorman) LoadPolicies() error {
 	// First, load each configuration file.
 	newConfigs := map[string]*ServiceConfig{}
-	for _, source := range doorman.policiesSources {
+	for _, source := range doorman.config.Sources {
 		services, err := loadSource(source)
 		if err != nil {
 			return err

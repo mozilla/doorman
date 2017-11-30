@@ -4,6 +4,11 @@ import (
 	"fmt"
 )
 
+// Config contains the necessary settings for Doorman
+type Config struct {
+	Sources []string
+}
+
 // Context is used as request's context.
 type Context map[string]interface{}
 

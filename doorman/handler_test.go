@@ -67,7 +67,7 @@ policies:
     action: update
 `))
 
-	doorman := &LadonDoorman{policiesSources: []string{tmpfile.Name()}}
+	doorman := NewDefaultLadon(Config{Sources: []string{tmpfile.Name()}})
 	// Will initialize JWT validator (ie. download public keys)
 	doorman.LoadPolicies()
 
@@ -211,7 +211,7 @@ policies:
 
 	var resp ReloadResponse
 
-	doorman := &LadonDoorman{policiesSources: []string{tmpfile.Name()}}
+	doorman := NewDefaultLadon(Config{Sources: []string{tmpfile.Name()}})
 
 	// Reload same file.
 	w := httptest.NewRecorder()

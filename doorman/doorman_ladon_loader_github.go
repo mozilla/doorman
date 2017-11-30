@@ -79,7 +79,7 @@ func download(url string, headers headers) (*os.File, error) {
 func init() {
 	loaders = append(loaders, &githubLoader{
 		headers: headers{
-			"Authorization": fmt.Sprintf("token %s", Config.GithubToken),
+			"Authorization": fmt.Sprintf("token %s", ""), // Config.GithubToken),
 		},
 	})
 }

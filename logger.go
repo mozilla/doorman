@@ -5,8 +5,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/mozilla/doorman/doorman"
-
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"go.mozilla.org/mozlogrus"
@@ -22,7 +20,7 @@ var errorNumber = map[int]int{
 }
 
 func init() {
-	logrus.StandardLogger().SetLevel(doorman.Config.LogLevel)
+	logrus.StandardLogger().SetLevel(config.LogLevel)
 
 	summaryLog = logrus.Logger{
 		Out:       os.Stdout,
