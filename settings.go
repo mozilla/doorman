@@ -11,8 +11,7 @@ import (
 // DefaultPoliciesFilename is the default policies filename.
 const DefaultPoliciesFilename string = "policies.yaml"
 
-// Config contains the main Doorman settings.
-var config struct {
+var settings struct {
 	GithubToken string
 	Sources     []string
 	LogLevel    logrus.Level
@@ -56,7 +55,7 @@ func levelFromEnv() logrus.Level {
 }
 
 func init() {
-	config.GithubToken = os.Getenv("GITHUB_TOKEN")
-	config.Sources = sources()
-	config.LogLevel = levelFromEnv()
+	settings.GithubToken = os.Getenv("GITHUB_TOKEN")
+	settings.Sources = sources()
+	settings.LogLevel = levelFromEnv()
 }

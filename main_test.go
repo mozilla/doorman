@@ -17,13 +17,17 @@ func TestMain(m *testing.M) {
 }
 
 func TestSetupRouter(t *testing.T) {
+	// Empty file.
 	_, err := setupRouter()
 	require.NotNil(t, err)
 	assert.Equal(t, "empty file \"policies.yaml\"", err.Error())
 
-	config.Sources = []string{"sample.yaml"}
+	// XXX Bad content (e.g. unknown condition type)
+
+	// Sample file.
+	settings.Sources = []string{"sample.yaml"}
 	defer func() {
-		config.Sources = []string{DefaultPoliciesFilename}
+		settings.Sources = []string{DefaultPoliciesFilename}
 	}()
 
 	r, err := setupRouter()

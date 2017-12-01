@@ -20,8 +20,6 @@ var errorNumber = map[int]int{
 }
 
 func init() {
-	logrus.StandardLogger().SetLevel(config.LogLevel)
-
 	summaryLog = logrus.Logger{
 		Out:       os.Stdout,
 		Formatter: &mozlogrus.MozLogFormatter{LoggerName: "doorman", Type: "request.summary"},
@@ -32,6 +30,8 @@ func init() {
 
 // HTTPLoggerMiddleware will log HTTP requests.
 func HTTPLoggerMiddleware() gin.HandlerFunc {
+	logrus.StandardLogger().SetLevel(settings.LogLevel)
+
 	// For release mode, we log requests in JSON with Moz format.
 	if gin.Mode() != gin.ReleaseMode {
 		// Default Gin debug log.

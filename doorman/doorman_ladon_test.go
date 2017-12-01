@@ -2,16 +2,99 @@ package doorman
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
 
+var sampleConfigs ServicesConfig
+
 func TestMain(m *testing.M) {
+	// Load sample policies once
+	sampleConfigs = ServicesConfig{
+		ServiceConfig{
+			Service:   "https://sample.yaml",
+			JWTIssuer: "",
+			Tags: Tags{
+				"admins": Principals{"userid:maria"},
+			},
+			Policies: Policies{
+				Policy{
+					ID:         "1",
+					Principals: Principals{"userid:foo", "tag:admins"},
+					Actions:    []string{"update"},
+					Resources:  []string{"<.*>"},
+					Effect:     "allow",
+				},
+				Policy{
+					ID:         "2",
+					Principals: Principals{"<.*>"},
+					Actions:    []string{"<.*>"},
+					Resources:  []string{"<.*>"},
+					Conditions: Conditions{
+						"planet": Condition{
+							Type: "StringEqualCondition",
+							Options: map[string]interface{}{
+								"equals": "mars",
+							},
+						},
+					},
+					Effect: "deny",
+				},
+				Policy{
+					ID:         "3",
+					Principals: Principals{"<.*>"},
+					Actions:    []string{"read"},
+					Resources:  []string{"<.*>"},
+					Conditions: Conditions{
+						"ip": Condition{
+							Type: "CIDRCondition",
+							Options: map[string]interface{}{
+								"cidr": "127.0.0.0/8",
+							},
+						},
+					},
+					Effect: "allow",
+				},
+				Policy{
+					ID:         "4",
+					Principals: Principals{"<.*>"},
+					Actions:    []string{"<.*>"},
+					Resources:  []string{"<.*>"},
+					Conditions: Conditions{
+						"owner": Condition{
+							Type: "MatchPrincipalsCondition",
+						},
+					},
+					Effect: "allow",
+				},
+				Policy{
+					ID:         "5",
+					Principals: Principals{"group:admins"},
+					Actions:    []string{"create"},
+					Resources:  []string{"<.*>"},
+					Conditions: Conditions{
+						"domain": Condition{
+							Type: "StringMatchCondition",
+							Options: map[string]interface{}{
+								"matches": ".*\\.mozilla\\.org",
+							},
+						},
+					},
+					Effect: "allow",
+				},
+				Policy{
+					ID:         "6",
+					Principals: Principals{"role:editor"},
+					Actions:    []string{"update"},
+					Resources:  []string{"pto"},
+					Effect:     "allow",
+				},
+			},
+		},
+	}
 	//Set Gin to Test Mode
 	gin.SetMode(gin.TestMode)
 	// Run the other tests
@@ -19,210 +102,81 @@ func TestMain(m *testing.M) {
 }
 
 func sampleDoorman() *LadonDoorman {
-	doorman := NewDefaultLadon(Config{
-		Sources: []string{"../sample.yaml"},
-	})
-	doorman.LoadPolicies()
+	doorman := NewDefaultLadon()
+	doorman.LoadPolicies(sampleConfigs)
 	return doorman
 }
 
-func loadTempFiles(contents ...string) (*LadonDoorman, error) {
-	var filenames []string
-	for _, content := range contents {
-		tmpfile, _ := ioutil.TempFile("", "")
-		defer os.Remove(tmpfile.Name()) // clean up
-		tmpfile.Write([]byte(content))
-		tmpfile.Close()
-		filenames = append(filenames, tmpfile.Name())
-	}
-	w := NewDefaultLadon(Config{Sources: filenames})
-	err := w.LoadPolicies()
-	return w, err
-}
-
-func TestNewDefaultLadon(t *testing.T) {
-	w := NewDefaultLadon(Config{
-		Sources: []string{"some-file.yaml"},
-	})
-	assert.Equal(t, w.config.Sources[0], "some-file.yaml")
-}
-
-func TestLoadBadPolicies(t *testing.T) {
-	// Missing file
-	w := NewDefaultLadon(Config{Sources: []string{"/tmp/unknown.yaml"}})
-	err := w.LoadPolicies()
-	assert.NotNil(t, err)
-
-	// Empty file
-	_, err = loadTempFiles("")
-	assert.NotNil(t, err)
-
-	// Bad YAML
-	_, err = loadTempFiles("$\\--xx")
-	assert.NotNil(t, err)
-
-	// Empty service
-	_, err = loadTempFiles(`
-service:
-policies:
-  -
-    id: "1"
-    effect: allow
-`)
-	assert.NotNil(t, err)
-
-	// Empty policies
-	_, err = loadTempFiles(`
-service: a
-policies:
-`)
-	assert.Nil(t, err)
-
-	// Bad policies conditions
-	_, err = loadTempFiles(`
-service: a
-policies:
-  -
-    id: "1"
-    conditions:
-      - a
-      - b
-`)
-	assert.NotNil(t, err)
+func TestBadServicesConfig(t *testing.T) {
+	d := NewDefaultLadon()
 
 	// Duplicated policy ID
-	_, err = loadTempFiles(`
-service: a
-policies:
-  -
-    id: "1"
-    effect: allow
-  -
-    id: "1"
-    effect: deny
-`)
+	err := d.LoadPolicies(ServicesConfig{
+		ServiceConfig{
+			Service: "a",
+			Policies: Policies{
+				Policy{
+					ID:     "1",
+					Effect: "allow",
+				},
+				Policy{
+					ID:     "1",
+					Effect: "deny",
+				},
+			},
+		},
+	})
 	assert.NotNil(t, err)
 
 	// Duplicated service
-	_, err = loadTempFiles(`
-service: a
-policies:
-  -
-    id: "1"
-    effect: allow
-`, `
-service: a
-policies:
-  -
-    id: "1"
-    effect: allow
-`)
+	err = d.LoadPolicies(ServicesConfig{
+		ServiceConfig{
+			Service: "a",
+			Policies: Policies{
+				Policy{
+					ID:     "1",
+					Effect: "allow",
+				},
+			},
+		},
+		ServiceConfig{
+			Service: "a",
+			Policies: Policies{
+				Policy{
+					ID:     "1",
+					Effect: "allow",
+				},
+			},
+		},
+	})
 	assert.NotNil(t, err)
 
 	// Bad JWT issuer
-	_, err = loadTempFiles(`
-service: a
-jwtIssuer: https://perlin-pinpin
-policies:
-  -
-    id: "1"
-    effect: allow
-`)
+	err = d.LoadPolicies(ServicesConfig{
+		ServiceConfig{
+			JWTIssuer: "https://perlin-pinpin",
+		},
+	})
 	assert.NotNil(t, err)
 }
 
-func TestLoadFolder(t *testing.T) {
-	// Create temp dir
-	dir, err := ioutil.TempDir("", "example")
-	assert.Nil(t, err)
-	defer os.RemoveAll(dir)
-	// Create subdir (to be skipped)
-	subdir, err := ioutil.TempDir(dir, "ignored")
-	assert.Nil(t, err)
-	defer os.RemoveAll(subdir)
-
-	// Create sample file
-	testfile := filepath.Join(dir, "test.yaml")
-	defer os.Remove(testfile)
-	err = ioutil.WriteFile(testfile, []byte(`
-service: a
-policies:
-  -
-    id: "1"
-    action: read
-    effect: allow
-`), 0666)
-
-	w := NewDefaultLadon(Config{Sources: []string{dir}})
-	err = w.LoadPolicies()
-	assert.Nil(t, err)
-	assert.Equal(t, len(w.services["a"].Policies), 1)
-}
-
-func TestLoadGithub(t *testing.T) {
-	// Unsupported URL
-	w := NewDefaultLadon(Config{Sources: []string{"https://bitbucket.org/test.yaml"}})
-	err := w.LoadPolicies()
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "no appropriate loader found")
-
-	// Unsupported folder.
-	w = NewDefaultLadon(Config{Sources: []string{"https://github.com/moz/ops/configs/"}})
-	err = w.LoadPolicies()
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "not supported")
-
-	// Bad URL
-	w = NewDefaultLadon(Config{Sources: []string{"ftp://github.com/moz/ops/config.yaml"}})
-	err = w.LoadPolicies()
-	assert.NotNil(t, err)
-
-	// Bad file
-	w = NewDefaultLadon(Config{Sources: []string{"https://github.com/mozilla/doorman/raw/06a2531/main.go"}})
-	err = w.LoadPolicies()
-	assert.NotNil(t, err)
-
-	// Good URL
-	w = NewDefaultLadon(Config{Sources: []string{"https://github.com/mozilla/doorman/raw/452ef7a/sample.yaml"}})
-	err = w.LoadPolicies()
-	assert.Nil(t, err)
-	assert.Equal(t, len(w.services["https://sample.yaml"].Tags), 1)
-	assert.Equal(t, len(w.services["https://sample.yaml"].Policies), 6)
-}
-
-func TestLoadTags(t *testing.T) {
-	d, err := loadTempFiles(`
-service: a
-tags:
-  admins:
-    - alice@mit.edu
-    - ldap|bob
-  editors:
-    - mathieu@mozilla.com
-policies:
-  -
-    id: "1"
-    effect: allow
-`)
-	assert.Nil(t, err)
-	assert.Equal(t, len(d.services["a"].Tags), 2)
-	assert.Equal(t, len(d.services["a"].Tags["admins"]), 2)
-	assert.Equal(t, len(d.services["a"].Tags["editors"]), 1)
-}
-
-func TestReloadPolicies(t *testing.T) {
+func TestLoadPoliciesTwice(t *testing.T) {
 	doorman := sampleDoorman()
 	loaded, _ := doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
 	assert.Equal(t, 6, len(loaded))
 
 	// Second load.
-	doorman.LoadPolicies()
+	doorman.LoadPolicies(sampleConfigs)
 	loaded, _ = doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
 	assert.Equal(t, 6, len(loaded))
 
 	// Load bad policies, does not affect existing.
-	doorman.config.Sources = []string{"/tmp/unknown.yaml"}
-	doorman.LoadPolicies()
+	err := doorman.LoadPolicies(ServicesConfig{
+		ServiceConfig{
+			JWTIssuer: "https://perlin-pinpin",
+		},
+	})
+	assert.Contains(t, err.Error(), "issuer \"https://perlin-pinpin\" not supported or has bad format")
 	_, ok := doorman.ladons["https://sample.yaml"]
 	assert.True(t, ok)
 }

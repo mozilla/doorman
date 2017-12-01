@@ -4,11 +4,6 @@ import (
 	"fmt"
 )
 
-// Config contains the necessary settings for Doorman
-type Config struct {
-	Sources []string
-}
-
 // Tags map tag names to principals.
 type Tags map[string]Principals
 
@@ -37,6 +32,7 @@ type Policies []Policy
 
 // ServiceConfig represents the policies file content.
 type ServiceConfig struct {
+	Source    string
 	Service   string
 	JWTIssuer string `yaml:"jwtIssuer"`
 	Tags      Tags
@@ -58,6 +54,9 @@ func (c *ServiceConfig) GetTags(principals Principals) Principals {
 	}
 	return result
 }
+
+// ServicesConfig is the whole set of policies files.
+type ServicesConfig []ServiceConfig
 
 // Context is used as request's context.
 type Context map[string]interface{}
@@ -95,8 +94,8 @@ func (r *Request) Roles() Principals {
 
 // Doorman is the backend in charge of checking requests against policies.
 type Doorman interface {
-	// LoadPolicies is responsible for reading and loading the policies files.
-	LoadPolicies() error
+	// LoadPolicies is responsible for loading the services configuration into memory.
+	LoadPolicies(configs ServicesConfig) error
 	// JWTValidator
 	JWTValidator(service string) (JWTValidator, error)
 	// ExpandPrincipals looks up and add extra principals to the ones specified.
