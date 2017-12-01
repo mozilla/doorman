@@ -28,21 +28,25 @@ func init() {
 	}
 }
 
+func setupLogging() {
+	logrus.StandardLogger().SetLevel(settings.LogLevel)
+	if gin.Mode() == gin.ReleaseMode {
+		mozlogrus.EnableFormatter(&mozlogrus.MozLogFormatter{LoggerName: "doorman", Type: "app.log"})
+	}
+}
+
 // HTTPLoggerMiddleware will log HTTP requests.
 func HTTPLoggerMiddleware() gin.HandlerFunc {
-	logrus.StandardLogger().SetLevel(settings.LogLevel)
-
 	// For release mode, we log requests in JSON with Moz format.
 	if gin.Mode() != gin.ReleaseMode {
 		// Default Gin debug log.
 		return gin.Logger()
 	}
-	mozlogrus.EnableFormatter(&mozlogrus.MozLogFormatter{LoggerName: "doorman", Type: "app.log"})
-	return MozLogger()
+	return RequestSummaryLogger()
 }
 
-// MozLogger is a Gin middleware to log request summary following Mozilla Log format.
-func MozLogger() gin.HandlerFunc {
+// RequestSummaryLogger is a Gin middleware to log request summary following Mozilla Log format.
+func RequestSummaryLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Start timer
 		start := time.Now()

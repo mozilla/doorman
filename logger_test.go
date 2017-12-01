@@ -17,7 +17,7 @@ import (
 func TestLoggerMiddleware(t *testing.T) {
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request, _ = http.NewRequest("GET", "/get", nil)
-	handler := MozLogger()
+	handler := RequestSummaryLogger()
 
 	var buf bytes.Buffer
 	summaryLog.Out = &buf
@@ -50,7 +50,7 @@ func TestRequestLogFields(t *testing.T) {
 }
 
 func TestSetupRouterRelease(t *testing.T) {
-	// In release mode, we enable MozLogger middleware.
+	// In release mode, we enable RequestSummaryLogger middleware.
 	gin.SetMode(gin.ReleaseMode)
 	defer gin.SetMode(gin.TestMode)
 	setupRouter()

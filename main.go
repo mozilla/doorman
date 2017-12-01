@@ -22,6 +22,8 @@ func setupRouter() (*gin.Engine, error) {
 	r.Use(gin.Recovery())
 
 	// Setup logging.
+	setupLogging()
+
 	r.Use(HTTPLoggerMiddleware())
 
 	// Setup doorman and load configuration files.
