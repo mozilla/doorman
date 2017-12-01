@@ -78,16 +78,6 @@ policies:
 `)
 	assert.Nil(t, err)
 
-	// Bad service
-	_, err = loadTempFiles(`
-service: 1
-policies:
-  -
-    id: "1"
-    effect: allow
-`)
-	assert.NotNil(t, err)
-
 	// Bad policies conditions
 	_, err = loadTempFiles(`
 service: a
@@ -222,18 +212,18 @@ policies:
 
 func TestReloadPolicies(t *testing.T) {
 	doorman := sampleDoorman()
-	loaded, _ := doorman.services["https://sample.yaml"].ladon.Manager.GetAll(0, maxInt)
+	loaded, _ := doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
 	assert.Equal(t, 6, len(loaded))
 
 	// Second load.
 	doorman.LoadPolicies()
-	loaded, _ = doorman.services["https://sample.yaml"].ladon.Manager.GetAll(0, maxInt)
+	loaded, _ = doorman.ladons["https://sample.yaml"].Manager.GetAll(0, maxInt)
 	assert.Equal(t, 6, len(loaded))
 
 	// Load bad policies, does not affect existing.
 	doorman.config.Sources = []string{"/tmp/unknown.yaml"}
 	doorman.LoadPolicies()
-	_, ok := doorman.services["https://sample.yaml"]
+	_, ok := doorman.ladons["https://sample.yaml"]
 	assert.True(t, ok)
 }
 

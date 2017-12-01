@@ -9,6 +9,56 @@ type Config struct {
 	Sources []string
 }
 
+// Tags map tag names to principals.
+type Tags map[string]Principals
+
+// Condition either do or do not fulfill an access request.
+type Condition struct {
+	Type    string
+	Options map[string]interface{}
+}
+
+// Conditions is a collection of conditions.
+type Conditions map[string]Condition
+
+// Policy represents an access control.
+type Policy struct {
+	ID          string
+	Description string
+	Principals  []string
+	Effect      string
+	Resources   []string
+	Actions     []string
+	Conditions  Conditions
+}
+
+// Policies is a collection of policies.
+type Policies []Policy
+
+// ServiceConfig represents the policies file content.
+type ServiceConfig struct {
+	Service   string
+	JWTIssuer string `yaml:"jwtIssuer"`
+	Tags      Tags
+	Policies  Policies
+}
+
+// GetTags returns the tags principals for the ones specified.
+func (c *ServiceConfig) GetTags(principals Principals) Principals {
+	result := Principals{}
+	for tag, members := range c.Tags {
+		for _, member := range members {
+			for _, principal := range principals {
+				if principal == member {
+					prefixed := fmt.Sprintf("tag:%s", tag)
+					result = append(result, prefixed)
+				}
+			}
+		}
+	}
+	return result
+}
+
 // Context is used as request's context.
 type Context map[string]interface{}
 

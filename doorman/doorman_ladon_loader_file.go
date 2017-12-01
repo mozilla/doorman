@@ -1,8 +1,6 @@
 package doorman
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,8 +8,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
-
-	"github.com/mozilla/doorman/utilities"
 )
 
 type fileLoader struct{}
@@ -67,23 +63,9 @@ func loadFile(filename string) (*ServiceConfig, error) {
 	if len(fileContent) == 0 {
 		return nil, fmt.Errorf("empty file %q", filename)
 	}
-	// Replace "principals" in config by "subjects" (ladon vocabulary)
-	adjusted := bytes.Replace(fileContent, []byte("principals:"), []byte("subjects:"), -1)
-
-	// Ladon does not support un/marshaling YAML.
-	// https://github.com/ory/ladon/issues/83
-	var generic interface{}
-	if err := yaml.Unmarshal(adjusted, &generic); err != nil {
-		return nil, err
-	}
-	asJSON := utilities.Yaml2JSON(generic)
-	jsonData, err := json.Marshal(asJSON)
-	if err != nil {
-		return nil, err
-	}
 
 	var config ServiceConfig
-	if err := json.Unmarshal(jsonData, &config); err != nil {
+	if err := yaml.Unmarshal(fileContent, &config); err != nil {
 		return nil, err
 	}
 
