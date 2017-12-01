@@ -2,6 +2,7 @@ package utilities
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -56,25 +57,23 @@ func TestHeartbeat(t *testing.T) {
 }
 
 func TestVersion(t *testing.T) {
-	os.Setenv("VERSION_FILE", "../version.json")
+	// HTTP 404 if not found in current dir
+	r := gin.New()
+	SetupRoutes(r)
+	w := performRequest(r, "GET", "/__version__")
+	assert.Equal(t, w.Code, http.StatusNotFound)
+
+	// Copy to ./utilities/
+	data, _ := ioutil.ReadFile("../version.json")
+	ioutil.WriteFile("version.json", data, 0644)
+	defer os.Remove("version.json")
 
 	type Response struct {
 		Commit string
 	}
 	var response Response
 	testJSONResponse(t, "/__version__", &response)
-
 	assert.Equal(t, response.Commit, "stub")
-}
-
-func TestVersionMissing(t *testing.T) {
-	os.Setenv("VERSION_FILE", "")
-
-	r := gin.New()
-	SetupRoutes(r)
-	w := performRequest(r, "GET", "/__version__")
-
-	assert.Equal(t, w.Code, http.StatusNotFound)
 }
 
 func TestOpenAPI(t *testing.T) {

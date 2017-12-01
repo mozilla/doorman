@@ -21,7 +21,7 @@ func (f *fileLoader) CanLoad(path string) bool {
 	return !os.IsNotExist(err)
 }
 
-func (f *fileLoader) Load(path string) ([]*Configuration, error) {
+func (f *fileLoader) Load(path string) ([]*ServiceConfig, error) {
 	log.Infof("Load %q locally", path)
 
 	// File always exists because CanLoad() returned true.
@@ -47,7 +47,7 @@ func (f *fileLoader) Load(path string) ([]*Configuration, error) {
 	}
 
 	// Load configurations.
-	configs := []*Configuration{}
+	configs := []*ServiceConfig{}
 	for _, f := range filenames {
 		config, err := loadFile(f)
 		if err != nil {
@@ -58,7 +58,7 @@ func (f *fileLoader) Load(path string) ([]*Configuration, error) {
 	return configs, nil
 }
 
-func loadFile(filename string) (*Configuration, error) {
+func loadFile(filename string) (*ServiceConfig, error) {
 	log.Debugf("Parse file %q", filename)
 	fileContent, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -82,7 +82,7 @@ func loadFile(filename string) (*Configuration, error) {
 		return nil, err
 	}
 
-	var config Configuration
+	var config ServiceConfig
 	if err := json.Unmarshal(jsonData, &config); err != nil {
 		return nil, err
 	}

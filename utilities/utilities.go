@@ -68,11 +68,8 @@ func heartbeatHandler(c *gin.Context) {
 }
 
 func versionHandler(c *gin.Context) {
-	versionFile := os.Getenv("VERSION_FILE")
-	if versionFile == "" {
-		// Look in current working directory.
-		here, _ := os.Getwd()
-		versionFile = filepath.Join(here, "version.json")
-	}
+	// Look in current working directory.
+	here, _ := os.Getwd()
+	versionFile := filepath.Join(here, "version.json")
 	c.File(versionFile)
 }
