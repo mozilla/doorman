@@ -77,6 +77,19 @@ policies:
 	assert.NotNil(t, err)
 }
 
+func TestLoadPolicies(t *testing.T) {
+	// Service as integer
+	configs, err := loadTempFiles(`
+service: 1
+policies:
+  -
+    id: "1"
+    effect: allow
+`)
+	assert.Nil(t, err)
+	assert.Equal(t, configs[0].Service, "1")
+}
+
 func TestLoadFolder(t *testing.T) {
 	// Create temp dir
 	dir, err := ioutil.TempDir("", "example")

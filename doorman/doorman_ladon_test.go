@@ -158,6 +158,25 @@ func TestBadServicesConfig(t *testing.T) {
 		},
 	})
 	assert.NotNil(t, err)
+
+	// Unknown condition type
+	err = d.LoadPolicies(ServicesConfig{
+		ServiceConfig{
+			Service: "a",
+			Policies: Policies{
+				Policy{
+					ID: "1",
+					Conditions: Conditions{
+						"owner": Condition{
+							Type: "healthy",
+						},
+					},
+					Effect: "allow",
+				},
+			},
+		},
+	})
+	assert.NotNil(t, err)
 }
 
 func TestLoadPoliciesTwice(t *testing.T) {
