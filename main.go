@@ -23,11 +23,7 @@ func setupRouter() (*gin.Engine, error) {
 
 	// Setup logging.
 	setupLogging()
-
 	r.Use(HTTPLoggerMiddleware())
-
-	// Setup doorman and load configuration files.
-	d := doorman.NewDefaultLadon()
 
 	// Load files (from folders, files, Github, etc.)
 	configs, err := config.Load(settings.Sources)
@@ -36,15 +32,15 @@ func setupRouter() (*gin.Engine, error) {
 	}
 
 	// Load into Doorman.
+	d := doorman.NewDefaultLadon()
 	if err := d.LoadPolicies(configs); err != nil {
 		return nil, err
 	}
 
+	// Endpoints
 	doorman.SetupRoutes(r, d)
-
-	config.SetupRoutes(r, settings.Sources)
-
 	utilities.SetupRoutes(r)
+	config.SetupRoutes(r, settings.Sources)
 
 	return r, nil
 }
