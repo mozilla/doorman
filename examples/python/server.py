@@ -60,8 +60,8 @@ def hello():
 @authorized(resource="record", action="list")
 def records():
     authz = _app_ctx_stack.top.authz
-    email_principal = authz["principals"][1]
-    records = Records.list(author=email_principal)
+    main_principal = authz["principals"][0]
+    records = Records.list(author=main_principal)
     return jsonify(records)
 
 
@@ -88,8 +88,8 @@ def record(name):
     # Save content on PUT
     if request.method == "PUT":
         body = request.data.decode("utf-8")
-        email_principal = authz["principals"][1]
-        record = Records.save(name, body, email_principal)
+        main_principal = authz["principals"][0]
+        record = Records.save(name, body, main_principal)
 
     return jsonify(record)
 
