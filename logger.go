@@ -20,13 +20,18 @@ var errorNumber = map[int]int{
 }
 
 func init() {
-	logrus.StandardLogger().SetLevel(config.LogLevel)
-
 	summaryLog = logrus.Logger{
 		Out:       os.Stdout,
 		Formatter: &mozlogrus.MozLogFormatter{LoggerName: "doorman", Type: "request.summary"},
 		Hooks:     make(logrus.LevelHooks),
 		Level:     logrus.InfoLevel,
+	}
+}
+
+func setupLogging() {
+	logrus.StandardLogger().SetLevel(settings.LogLevel)
+	if gin.Mode() == gin.ReleaseMode {
+		mozlogrus.EnableFormatter(&mozlogrus.MozLogFormatter{LoggerName: "doorman", Type: "app.log"})
 	}
 }
 
@@ -37,12 +42,11 @@ func HTTPLoggerMiddleware() gin.HandlerFunc {
 		// Default Gin debug log.
 		return gin.Logger()
 	}
-	mozlogrus.EnableFormatter(&mozlogrus.MozLogFormatter{LoggerName: "doorman", Type: "app.log"})
-	return MozLogger()
+	return RequestSummaryLogger()
 }
 
-// MozLogger is a Gin middleware to log request summary following Mozilla Log format.
-func MozLogger() gin.HandlerFunc {
+// RequestSummaryLogger is a Gin middleware to log request summary following Mozilla Log format.
+func RequestSummaryLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Start timer
 		start := time.Now()

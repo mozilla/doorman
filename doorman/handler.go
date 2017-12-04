@@ -13,8 +13,6 @@ func SetupRoutes(r *gin.Engine, doorman Doorman) {
 	a := r.Group("")
 	a.Use(VerifyJWTMiddleware(doorman))
 	a.POST("/allowed", allowedHandler)
-
-	r.POST("/__reload__", reloadHandler)
 }
 
 func allowedHandler(c *gin.Context) {
@@ -76,22 +74,5 @@ func allowedHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"allowed":    allowed,
 		"principals": r.Principals,
-	})
-}
-
-func reloadHandler(c *gin.Context) {
-	doorman := c.MustGet(DoormanContextKey).(Doorman)
-
-	err := doorman.LoadPolicies()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
 	})
 }

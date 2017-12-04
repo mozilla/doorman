@@ -4,9 +4,17 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/mozilla/doorman/config"
 	"github.com/mozilla/doorman/doorman"
 	"github.com/mozilla/doorman/utilities"
 )
+
+func init() {
+	config.AddLoader(&config.FileLoader{})
+	config.AddLoader(&config.GithubLoader{
+		Token: settings.GithubToken,
+	})
+}
 
 func setupRouter() (*gin.Engine, error) {
 	r := gin.New()
@@ -14,19 +22,25 @@ func setupRouter() (*gin.Engine, error) {
 	r.Use(gin.Recovery())
 
 	// Setup logging.
+	setupLogging()
 	r.Use(HTTPLoggerMiddleware())
 
-	// Setup doorman and load configuration files.
-	w := doorman.NewDefaultLadon(doorman.Config{
-		Sources: config.Sources,
-	})
-	if err := w.LoadPolicies(); err != nil {
+	// Load files (from folders, files, Github, etc.)
+	configs, err := config.Load(settings.Sources)
+	if err != nil {
 		return nil, err
 	}
 
-	doorman.SetupRoutes(r, w)
+	// Load into Doorman.
+	d := doorman.NewDefaultLadon()
+	if err := d.LoadPolicies(configs); err != nil {
+		return nil, err
+	}
 
+	// Endpoints
+	doorman.SetupRoutes(r, d)
 	utilities.SetupRoutes(r)
+	config.SetupRoutes(r, settings.Sources)
 
 	return r, nil
 }

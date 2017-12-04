@@ -4,10 +4,59 @@ import (
 	"fmt"
 )
 
-// Config contains the necessary settings for Doorman
-type Config struct {
-	Sources []string
+// Tags map tag names to principals.
+type Tags map[string]Principals
+
+// Condition either do or do not fulfill an access request.
+type Condition struct {
+	Type    string
+	Options map[string]interface{}
 }
+
+// Conditions is a collection of conditions.
+type Conditions map[string]Condition
+
+// Policy represents an access control.
+type Policy struct {
+	ID          string
+	Description string
+	Principals  []string
+	Effect      string
+	Resources   []string
+	Actions     []string
+	Conditions  Conditions
+}
+
+// Policies is a collection of policies.
+type Policies []Policy
+
+// ServiceConfig represents the policies file content.
+type ServiceConfig struct {
+	Source    string
+	Service   string
+	JWTIssuer string `yaml:"jwtIssuer"`
+	Tags      Tags
+	Policies  Policies
+}
+
+// GetTags returns the tags principals for the ones specified.
+func (c *ServiceConfig) GetTags(principals Principals) Principals {
+	result := Principals{}
+	for tag, members := range c.Tags {
+		for _, member := range members {
+			for _, principal := range principals {
+				if principal == member {
+					prefixed := fmt.Sprintf("tag:%s", tag)
+					result = append(result, prefixed)
+				}
+			}
+		}
+	}
+	return result
+}
+
+// ServicesConfig is the whole set of policies files.
+type ServicesConfig []ServiceConfig
 
 // Context is used as request's context.
 type Context map[string]interface{}
@@ -45,8 +94,8 @@ func (r *Request) Roles() Principals {
 
 // Doorman is the backend in charge of checking requests against policies.
 type Doorman interface {
-	// LoadPolicies is responsible for reading and loading the policies files.
-	LoadPolicies() error
+	// LoadPolicies is responsible for loading the services configuration into memory.
+	LoadPolicies(configs ServicesConfig) error
 	// JWTValidator
 	JWTValidator(service string) (JWTValidator, error)
 	// ExpandPrincipals looks up and add extra principals to the ones specified.

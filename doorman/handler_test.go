@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -18,11 +16,6 @@ import (
 type AllowedResponse struct {
 	Allowed    bool
 	Principals Principals
-}
-
-type ReloadResponse struct {
-	Success bool
-	Message string
 }
 
 type ErrorResponse struct {
@@ -47,32 +40,30 @@ func performAllowed(t *testing.T, r *gin.Engine, body io.Reader, expected int, r
 
 func TestAllowedGet(t *testing.T) {
 	r := gin.New()
-	doorman := sampleDoorman()
-	SetupRoutes(r, doorman)
+	d := sampleDoorman()
+	SetupRoutes(r, d)
 
 	w := performRequest(r, "GET", "/allowed", nil)
 	assert.Equal(t, w.Code, http.StatusNotFound)
 }
 
 func TestAllowedVerifiesJWT(t *testing.T) {
-	// Create config with jwtIssuer
-	tmpfile, _ := ioutil.TempFile("", "")
-	defer os.Remove(tmpfile.Name()) // clean up
-	tmpfile.Write([]byte(`
-service: https://sample.yaml
-jwtIssuer: https://auth.mozilla.auth0.com/
-policies:
-  -
-    id: "1"
-    action: update
-`))
-
-	doorman := NewDefaultLadon(Config{Sources: []string{tmpfile.Name()}})
+	d := NewDefaultLadon()
 	// Will initialize JWT validator (ie. download public keys)
-	doorman.LoadPolicies()
+	d.LoadPolicies(ServicesConfig{
+		ServiceConfig{
+			Service:   "https://sample.yaml",
+			JWTIssuer: "https://auth.mozilla.auth0.com/",
+			Policies: Policies{
+				Policy{
+					Actions: []string{"update"},
+				},
+			},
+		},
+	})
 
 	r := gin.New()
-	SetupRoutes(r, doorman)
+	SetupRoutes(r, d)
 
 	authzRequest := Request{}
 	token, _ := json.Marshal(authzRequest)
@@ -81,10 +72,6 @@ policies:
 	// Missing Authorization header.
 	performAllowed(t, r, body, http.StatusUnauthorized, &response)
 	assert.Equal(t, "Token not found", response.Message)
-
-	// Other routes do not require JWT.
-	w := performRequest(r, "POST", "/__reload__", nil)
-	require.Equal(t, http.StatusOK, w.Code)
 }
 
 func TestAllowedHandlerBadRequest(t *testing.T) {
@@ -195,47 +182,4 @@ func TestAllowedHandlerRoles(t *testing.T) {
 
 	json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.Equal(t, Principals{"userid:bob", "role:editor"}, resp.Principals)
-}
-
-func TestReloadHandler(t *testing.T) {
-	tmpfile, _ := ioutil.TempFile("", "")
-	defer os.Remove(tmpfile.Name()) // clean up
-
-	tmpfile.Write([]byte(`
-service: a
-policies:
-  -
-    id: "1"
-    action: update
-`))
-
-	var resp ReloadResponse
-
-	doorman := NewDefaultLadon(Config{Sources: []string{tmpfile.Name()}})
-
-	// Reload same file.
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Set(DoormanContextKey, doorman)
-	c.Request, _ = http.NewRequest("POST", "/__reload__", nil)
-
-	reloadHandler(c)
-
-	json.Unmarshal(w.Body.Bytes(), &resp)
-	assert.True(t, resp.Success)
-
-	// Reload bad file.
-	tmpfile.Write([]byte("*some$bad@cont\tent"))
-	w.Flush()
-
-	w = httptest.NewRecorder()
-	c, _ = gin.CreateTestContext(w)
-	c.Set(DoormanContextKey, doorman)
-	c.Request, _ = http.NewRequest("POST", "/__reload__", nil)
-
-	reloadHandler(c)
-
-	json.Unmarshal(w.Body.Bytes(), &resp)
-	assert.False(t, resp.Success)
-	assert.Contains(t, resp.Message, "did not find expected alphabetic or numeric character")
 }

@@ -1,4 +1,4 @@
-package doorman
+package config
 
 import (
 	"fmt"
@@ -9,36 +9,46 @@ import (
 	"regexp"
 
 	log "github.com/sirupsen/logrus"
+
+	"github.com/mozilla/doorman/doorman"
 )
 
 type headers map[string]string
 
-type githubLoader struct {
-	headers headers
+// GithubLoader reads configuration from Github URLs.
+type GithubLoader struct {
+	Token string
 }
 
-func (ghl *githubLoader) CanLoad(url string) bool {
+// CanLoad will return true if the URL contains github
+func (ghl *GithubLoader) CanLoad(url string) bool {
 	regexpRepo, _ := regexp.Compile("^https://.*github.*/.*$")
 	return regexpRepo.MatchString(url)
 }
 
-func (ghl *githubLoader) Load(url string) ([]*ServiceConfig, error) {
-	log.Infof("Load %q from Github", url)
+// Load downloads the URL into a temporary folder and loads it from disk
+func (ghl *GithubLoader) Load(source string) (doorman.ServicesConfig, error) {
+	log.Infof("Load %q from Github", source)
 
 	regexpFile, _ := regexp.Compile("^.*\\.ya?ml$")
 
 	urls := []string{}
 	// Single file URL.
-	if regexpFile.MatchString(url) {
-		urls = []string{url}
+	if regexpFile.MatchString(source) {
+		urls = []string{source}
 	} else {
 		// Folder on remote repo.
 		return nil, fmt.Errorf("loading from Github folder is not supported yet")
 	}
+
+	headers := headers{
+		"Authorization": fmt.Sprintf("token %s", ghl.Token),
+	}
+
 	// Load configurations.
-	configs := []*ServiceConfig{}
+	configs := doorman.ServicesConfig{}
 	for _, url := range urls {
-		tmpFile, err := download(url, ghl.headers)
+		tmpFile, err := download(url, headers)
 		if err != nil {
 			return nil, err
 		}
@@ -46,10 +56,11 @@ func (ghl *githubLoader) Load(url string) ([]*ServiceConfig, error) {
 		if err != nil {
 			return nil, err
 		}
+		config.Source = url
 
 		// Only delete temp file if successful
 		os.Remove(tmpFile.Name())
-		configs = append(configs, config)
+		configs = append(configs, *config)
 	}
 	return configs, nil
 }
@@ -74,17 +85,4 @@ func download(url string, headers headers) (*os.File, error) {
 	}
 	log.Debugf("Downloaded %dkB", size/1000)
 	return f, nil
-}
-
-func init() {
-	// XXX: Because we don't have access to doorman Config here,
-	// we still use the env variable (even with the refactor of #67)
-	// Will be sorted out in #68
-	githubToken := os.Getenv("GITHUB_TOKEN")
-
-	loaders = append(loaders, &githubLoader{
-		headers: headers{
-			"Authorization": fmt.Sprintf("token %s", githubToken),
-		},
-	})
 }

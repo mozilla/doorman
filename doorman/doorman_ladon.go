@@ -1,6 +1,7 @@
 package doorman
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/ory/ladon"
@@ -10,48 +11,21 @@ import (
 
 const maxInt int64 = 1<<63 - 1
 
-// Tags map tag names to principals.
-type Tags map[string]Principals
-
 // LadonDoorman is the backend in charge of checking requests against policies.
 type LadonDoorman struct {
-	config       Config
-	services     map[string]*ServiceConfig
 	_auditLogger *auditLogger
-}
 
-// ServiceConfig represents the policies file content.
-type ServiceConfig struct {
-	Service   string
-	JWTIssuer string `json:"jwtIssuer"`
-	Tags      Tags
-	Policies  []*ladon.DefaultPolicy
-
-	ladon        *ladon.Ladon
-	jwtValidator JWTValidator
-}
-
-// GetTags returns the tags principals for the ones specified.
-func (c *ServiceConfig) GetTags(principals Principals) Principals {
-	result := Principals{}
-	for tag, members := range c.Tags {
-		for _, member := range members {
-			for _, principal := range principals {
-				if principal == member {
-					prefixed := fmt.Sprintf("tag:%s", tag)
-					result = append(result, prefixed)
-				}
-			}
-		}
-	}
-	return result
+	services      map[string]ServiceConfig
+	ladons        map[string]*ladon.Ladon
+	jwtValidators map[string]JWTValidator
 }
 
 // NewDefaultLadon instantiates a new doorman.
-func NewDefaultLadon(config Config) *LadonDoorman {
+func NewDefaultLadon() *LadonDoorman {
 	w := &LadonDoorman{
-		config:   config,
-		services: map[string]*ServiceConfig{},
+		services:      map[string]ServiceConfig{},
+		ladons:        map[string]*ladon.Ladon{},
+		jwtValidators: map[string]JWTValidator{},
 	}
 	return w
 }
@@ -63,58 +37,84 @@ func (doorman *LadonDoorman) auditLogger() *auditLogger {
 	return doorman._auditLogger
 }
 
-// LoadPolicies (re)loads configuration and policies from the YAML files.
-func (doorman *LadonDoorman) LoadPolicies() error {
+// LoadPolicies instantiates Ladon objects from doorman's.
+func (doorman *LadonDoorman) LoadPolicies(configs ServicesConfig) error {
 	// First, load each configuration file.
-	newConfigs := map[string]*ServiceConfig{}
-	for _, source := range doorman.config.Sources {
-		services, err := loadSource(source)
-		if err != nil {
-			return err
+	newLadons := map[string]*ladon.Ladon{}
+	newJWTValidators := map[string]JWTValidator{}
+	newConfigs := map[string]ServiceConfig{}
+
+	for _, config := range configs {
+		_, exists := newConfigs[config.Service]
+		if exists {
+			return fmt.Errorf("duplicated service %q (source %q)", config.Service, config.Source)
 		}
-		for _, config := range services {
-			_, exists := newConfigs[config.Service]
-			if exists {
-				return fmt.Errorf("duplicated service %q (source %q)", config.Service, source)
+
+		if config.JWTIssuer != "" {
+			log.Infof("Enable JWT validation from %q", config.JWTIssuer)
+			v, err := NewJWTValidator(config.JWTIssuer)
+			if err != nil {
+				return err
+			}
+			newJWTValidators[config.Service] = v
+		} else {
+			log.Warningf("No JWT verification for %q.", config.Service)
+		}
+
+		newLadons[config.Service] = &ladon.Ladon{
+			Manager:     manager.NewMemoryManager(),
+			AuditLogger: doorman.auditLogger(),
+		}
+		for _, pol := range config.Policies {
+			log.Debugf("Load policy %q: %s", pol.ID, pol.Description)
+
+			var conditions = ladon.Conditions{}
+			for field, cond := range pol.Conditions {
+				factory, found := ladon.ConditionFactories[cond.Type]
+				if !found {
+					return fmt.Errorf("unknown condition type %s", cond.Type)
+				}
+				c := factory()
+				if len(cond.Options) > 0 {
+					// Leverage Ladon JSON unmarshall code to instantiate conditions.
+					str, _ := json.Marshal(cond.Options)
+					if err := json.Unmarshal(str, c); err != nil {
+						return err
+					}
+				}
+				conditions.AddCondition(field, c)
 			}
 
-			if config.JWTIssuer != "" {
-				log.Infof("Enable JWT validation from %q", config.JWTIssuer)
-				v, err := NewJWTValidator(config.JWTIssuer)
-				if err != nil {
-					return err
-				}
-				config.jwtValidator = v
-			} else {
-				log.Warningf("No JWT verification for %q.", config.Service)
+			policy := &ladon.DefaultPolicy{
+				ID:          pol.ID,
+				Description: pol.Description,
+				Subjects:    pol.Principals,
+				Effect:      pol.Effect,
+				Resources:   pol.Resources,
+				Actions:     pol.Actions,
+				Conditions:  conditions,
 			}
-
-			config.ladon = &ladon.Ladon{
-				Manager:     manager.NewMemoryManager(),
-				AuditLogger: doorman.auditLogger(),
+			err := newLadons[config.Service].Manager.Create(policy)
+			if err != nil {
+				return err
 			}
-			for _, pol := range config.Policies {
-				log.Debugf("Load policy %q: %s", pol.GetID(), pol.GetDescription())
-				err := config.ladon.Manager.Create(pol)
-				if err != nil {
-					return err
-				}
-			}
-			newConfigs[config.Service] = config
 		}
+		newConfigs[config.Service] = config
 	}
 	// Only if everything went well, replace existing services with new ones.
 	doorman.services = newConfigs
+	doorman.ladons = newLadons
+	doorman.jwtValidators = newJWTValidators
 	return nil
 }
 
 // JWTValidator returns the JWT validator for the specified service.
 func (doorman *LadonDoorman) JWTValidator(service string) (JWTValidator, error) {
-	c, ok := doorman.services[service]
+	v, ok := doorman.jwtValidators[service]
 	if !ok {
 		return nil, fmt.Errorf("unknown service %q", service)
 	}
-	return c.jwtValidator, nil
+	return v, nil
 }
 
 // IsAllowed is responsible for deciding if subject can perform action on a resource with a context.
@@ -131,7 +131,7 @@ func (doorman *LadonDoorman) IsAllowed(service string, request *Request) bool {
 		Context:  context,
 	}
 
-	c, ok := doorman.services[service]
+	l, ok := doorman.ladons[service]
 	if !ok {
 		// Explicitly log denied request using audit logger.
 		doorman.auditLogger().logRequest(false, r, ladon.Policies{})
@@ -141,7 +141,7 @@ func (doorman *LadonDoorman) IsAllowed(service string, request *Request) bool {
 	// For each principal, use it as the subject and query ladon backend.
 	for _, principal := range request.Principals {
 		r.Subject = principal
-		if err := c.ladon.IsAllowed(r); err == nil {
+		if err := l.IsAllowed(r); err == nil {
 			return true
 		}
 	}

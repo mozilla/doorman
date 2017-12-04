@@ -29,18 +29,14 @@ func (v *TestValidator) ExtractClaims(request *http.Request) (*Claims, error) {
 }
 
 func TestJWTMiddleware(t *testing.T) {
-	doorman := NewDefaultLadon(Config{
-		Sources: []string{},
-	})
+	doorman := NewDefaultLadon()
 	handler := VerifyJWTMiddleware(doorman)
 
 	audience := "https://some.api.com"
 
 	// Associate a fake JWT validator to this issuer.
 	v := &TestValidator{}
-	doorman.services[audience] = &ServiceConfig{
-		jwtValidator: v,
-	}
+	doorman.jwtValidators[audience] = v
 
 	// Extract claims is ran on every request.
 	claims := &Claims{
@@ -84,9 +80,8 @@ func TestJWTMiddleware(t *testing.T) {
 	assert.False(t, ok)
 
 	// JWT not configured for this origin.
-	doorman.services["https://open"] = &ServiceConfig{
-		jwtValidator: nil,
-	}
+	doorman.jwtValidators["https://open"] = nil
+
 	c.Request, _ = http.NewRequest("GET", "/get", nil)
 	c.Request.Header.Set("Origin", "https://open")
 	handler(c)
@@ -100,7 +95,7 @@ func TestJWTMiddleware(t *testing.T) {
 	}
 	v = &TestValidator{}
 	v.On("ExtractClaims", mock.Anything).Return(claims, nil)
-	doorman.services[audience].jwtValidator = v
+	doorman.jwtValidators[audience] = v
 	c, _ = gin.CreateTestContext(httptest.NewRecorder())
 	c.Request, _ = http.NewRequest("GET", "/get", nil)
 	c.Request.Header.Set("Origin", audience)
@@ -115,7 +110,7 @@ func TestJWTMiddleware(t *testing.T) {
 	}
 	v = &TestValidator{}
 	v.On("ExtractClaims", mock.Anything).Return(claims, nil)
-	doorman.services[audience].jwtValidator = v
+	doorman.jwtValidators[audience] = v
 	c, _ = gin.CreateTestContext(httptest.NewRecorder())
 	c.Request, _ = http.NewRequest("GET", "/get", nil)
 	c.Request.Header.Set("Origin", audience)

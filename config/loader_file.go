@@ -1,8 +1,6 @@
-package doorman
+package config
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,17 +9,20 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 
-	"github.com/mozilla/doorman/utilities"
+	"github.com/mozilla/doorman/doorman"
 )
 
-type fileLoader struct{}
+// FileLoader loads from local disk (file, folder)
+type FileLoader struct{}
 
-func (f *fileLoader) CanLoad(path string) bool {
+// CanLoad will return true if the path exists.
+func (f *FileLoader) CanLoad(path string) bool {
 	_, err := os.Stat(path)
 	return !os.IsNotExist(err)
 }
 
-func (f *fileLoader) Load(path string) ([]*ServiceConfig, error) {
+// Load reads the local file or scans the folder.
+func (f *FileLoader) Load(path string) (doorman.ServicesConfig, error) {
 	log.Infof("Load %q locally", path)
 
 	// File always exists because CanLoad() returned true.
@@ -47,18 +48,18 @@ func (f *fileLoader) Load(path string) ([]*ServiceConfig, error) {
 	}
 
 	// Load configurations.
-	configs := []*ServiceConfig{}
+	configs := doorman.ServicesConfig{}
 	for _, f := range filenames {
 		config, err := loadFile(f)
 		if err != nil {
 			return nil, err
 		}
-		configs = append(configs, config)
+		configs = append(configs, *config)
 	}
 	return configs, nil
 }
 
-func loadFile(filename string) (*ServiceConfig, error) {
+func loadFile(filename string) (*doorman.ServiceConfig, error) {
 	log.Debugf("Parse file %q", filename)
 	fileContent, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -67,25 +68,12 @@ func loadFile(filename string) (*ServiceConfig, error) {
 	if len(fileContent) == 0 {
 		return nil, fmt.Errorf("empty file %q", filename)
 	}
-	// Replace "principals" in config by "subjects" (ladon vocabulary)
-	adjusted := bytes.Replace(fileContent, []byte("principals:"), []byte("subjects:"), -1)
 
-	// Ladon does not support un/marshaling YAML.
-	// https://github.com/ory/ladon/issues/83
-	var generic interface{}
-	if err := yaml.Unmarshal(adjusted, &generic); err != nil {
+	var config doorman.ServiceConfig
+	if err := yaml.Unmarshal(fileContent, &config); err != nil {
 		return nil, err
 	}
-	asJSON := utilities.Yaml2JSON(generic)
-	jsonData, err := json.Marshal(asJSON)
-	if err != nil {
-		return nil, err
-	}
-
-	var config ServiceConfig
-	if err := json.Unmarshal(jsonData, &config); err != nil {
-		return nil, err
-	}
+	config.Source = filename
 
 	if config.Service == "" {
 		return nil, fmt.Errorf("empty service in %q", filename)
@@ -100,8 +88,4 @@ func loadFile(filename string) (*ServiceConfig, error) {
 	log.Infof("Found %d policies", len(config.Policies))
 
 	return &config, nil
-}
-
-func init() {
-	loaders = append(loaders, &fileLoader{})
 }
