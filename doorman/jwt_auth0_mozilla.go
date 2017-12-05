@@ -40,10 +40,10 @@ func (v *MozillaAuth0Validator) ExtractClaims(request *http.Request) (*Claims, e
 		return nil, err
 	}
 	claims := Claims{
-		Subject: mozclaims.Subject,
+		Subject:  mozclaims.Subject,
 		Audience: mozclaims.Audience,
-		Email: mozclaims.Emails[0],
-		Groups: mozclaims.Groups,
+		Email:    mozclaims.Emails[0],
+		Groups:   mozclaims.Groups,
 	}
 	return &claims, nil
 }
