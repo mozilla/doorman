@@ -4,9 +4,11 @@
 
 # Configuration Examples
 
-## Superusers with Doorman tags
+## Doorman tags
 
-We define a tag ``superuser`` and use it in principals in policies rules.
+For example, you can use Doorman to maintain a carefully curated list of people who should become "superusers" when they log in to a certain service. This means the service doesn't have to build the functionality to promote and demote superusers.
+
+To do that, we define a tag ``superuser`` along with the principals it applies to in the service configuration. And then in the policies rules, we refer to this tag as the ``tag:superuser`` principal.
 
 ```yaml
 
@@ -25,7 +27,11 @@ We define a tag ``superuser`` and use it in principals in policies rules.
           - <.*>
         resources:
           - <.*>
+        effect: allow
 ```
+
+In the example above, the userid ``maria`` and the members of the ``admins`` group (from Identity Provider) are allowed to perform any action on any resource on the ``https://api.service.org`` service.
+
 
 ## Superusers from service
 
