@@ -18,18 +18,11 @@ type Auth0Validator struct {
 
 // Initialize will fetch Auth0 public keys and instantiate a validator.
 func (v *Auth0Validator) Initialize() error {
-	if !strings.HasPrefix(v.Issuer, "https://") || !strings.HasSuffix(v.Issuer, "auth0.com/") {
-		return fmt.Errorf("issuer %q not supported or has bad format", v.Issuer)
+	validator, err := auth0Validator(v.Issuer)
+	if err != nil {
+		return err
 	}
-	jwksURI := fmt.Sprintf("%s.well-known/jwks.json", v.Issuer)
-	log.Infof("JWT keys: %s", jwksURI)
-
-	// Will check audience only when request comes in, leave empty for now.
-	audience := []string{}
-
-	client := auth0.NewJWKClient(auth0.JWKClientOptions{URI: jwksURI})
-	config := auth0.NewConfiguration(client, audience, v.Issuer, jose.RS256)
-	v.validator = auth0.NewValidator(config)
+	v.validator = validator
 	return nil
 }
 
@@ -42,4 +35,17 @@ func (v *Auth0Validator) ExtractClaims(request *http.Request) (*Claims, error) {
 		return nil, err
 	}
 	return &claims, nil
+}
+
+func auth0Validator(issuer string) (*auth0.JWTValidator, error) {
+	if !strings.HasPrefix(issuer, "https://") || !strings.HasSuffix(issuer, "auth0.com/") {
+		return nil, fmt.Errorf("issuer %q not supported or has bad format", issuer)
+	}
+	jwksURI := fmt.Sprintf("%s.well-known/jwks.json", issuer)
+	log.Infof("JWT keys: %s", jwksURI)
+	// Will check audience only when request comes in, leave empty for now.
+	audience := []string{}
+	client := auth0.NewJWKClient(auth0.JWKClientOptions{URI: jwksURI})
+	config := auth0.NewConfiguration(client, audience, issuer, jose.RS256)
+	return auth0.NewValidator(config), nil
 }

@@ -2,6 +2,7 @@ package doorman
 
 import (
 	"net/http"
+	"strings"
 
 	jwt "gopkg.in/square/go-jose.v2/jwt"
 )
@@ -31,14 +32,22 @@ func NewJWTValidator(issuer string) (JWTValidator, error) {
 	// Reuse JWT validators instances among configs if they are for the same issuer.
 	v, ok := jwtValidators[issuer]
 	if !ok {
-		// XXX: currently only Auth0 is supported.
-		v = &Auth0Validator{
-			Issuer: issuer,
+		if strings.Contains(issuer, "mozilla.auth0.com") {
+			v = &MozillaAuth0Validator{
+				Issuer: issuer,
+			}
+		} else {
+			// Fallback on basic Auth0.
+			// XXX: Here is where we can add other Identity providers.
+			v = &Auth0Validator{
+				Issuer: issuer,
+			}
 		}
 		err := v.Initialize()
 		if err != nil {
 			return nil, err
 		}
+		jwtValidators[issuer] = v
 	}
 	return v, nil
 }
