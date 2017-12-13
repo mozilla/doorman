@@ -4,6 +4,29 @@
 
 # Configuration Examples
 
+
+## Mozilla employees only
+
+When authenticated via Mozilla Auth0, staff members will be assigned the `hris_staff` group. So, allowing employees is trivial: just write a policy rule that matches the `group:hris_staff` principal.
+
+
+```yaml
+service: jwgnjure983r7jduwnf
+jwtIssuer: https://auth.mozilla.auth0.com/
+policies:
+  -
+    id: employees
+    description: Employees can do anything
+    principals:
+      - group:hris_staff
+    actions:
+      - <.*>
+    resources:
+      - <.*>
+    effect: allow
+```
+
+
 ## Roles from service
 
 A role is a *principal* that usually depends on the relation between a user and a resource. For example, `alice` is the `author` of `articles/42`.
