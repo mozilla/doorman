@@ -9,10 +9,11 @@ import (
 
 // MozillaClaims uses specific attributes for emails and groups
 type MozillaClaims struct {
-	Subject  string       `json:"sub,omitempty"`
-	Audience jwt.Audience `json:"aud,omitempty"`
-	Emails   []string     `json:"https://sso.mozilla.com/claim/emails,omitempty"`
-	Groups   []string     `json:"https://sso.mozilla.com/claim/groups,omitempty"`
+	Subject  string       `json:"sub"`
+	Audience jwt.Audience `json:"aud"`
+	Email    string       `json:"email"`
+	Emails   []string     `json:"https://sso.mozilla.com/claim/emails"`
+	Groups   []string     `json:"https://sso.mozilla.com/claim/groups"`
 }
 
 // MozillaAuth0Validator is the implementation of JWTValidator for Auth0.
@@ -39,10 +40,17 @@ func (v *MozillaAuth0Validator) ExtractClaims(request *http.Request) (*Claims, e
 	if err != nil {
 		return nil, err
 	}
+
+	// In case the JWT was not requested with the profile or email scope.
+	email := mozclaims.Email
+	if email == "" && len(mozclaims.Emails) > 0 {
+		email = mozclaims.Emails[0]
+	}
+
 	claims := Claims{
 		Subject:  mozclaims.Subject,
 		Audience: mozclaims.Audience,
-		Email:    mozclaims.Emails[0],
+		Email:    email,
 		Groups:   mozclaims.Groups,
 	}
 	return &claims, nil
