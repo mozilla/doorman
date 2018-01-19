@@ -1,4 +1,9 @@
-package doorman
+// Package authn is in charge authenticating requests.
+
+// JWT validators will be instantiated per issuer, and OpenID configuration
+// and keys will be cached between requests.
+
+package authn
 
 import (
 	"fmt"
@@ -17,7 +22,7 @@ func init() {
 	jwtValidators = map[string]JWTValidator{}
 }
 
-// NewJWTValidator instantiates a JWT validator for the specified issuer.
+// NewJWTValidator instantiates or reuses an existing JWT validator for the specified issuer.
 func NewJWTValidator(issuer string) (JWTValidator, error) {
 	if !strings.HasPrefix(issuer, "https://") {
 		return nil, fmt.Errorf("issuer %q not supported or has bad format", issuer)
