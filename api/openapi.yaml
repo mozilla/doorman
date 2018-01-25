@@ -8,7 +8,7 @@ info:
 
     ```YAML
     service: https://api.service.org
-    jwtIssuer: https://auth.mozilla.auth0.com/
+    identityProvider: https://auth.mozilla.auth0.com/
     policies:
       -
         id: crud-articles

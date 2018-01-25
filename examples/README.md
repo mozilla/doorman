@@ -23,7 +23,7 @@ In the example below, we rely on the groups of given by the *Identity Provider* 
 
 ```yaml
 service: gurghruin435u85O539g7cKvWBOI
-jwtIssuer: https://auth.mozilla.auth0.com/
+identityProvider: https://auth.mozilla.auth0.com/
 policies:
   -
     id: create-articles
@@ -105,7 +105,7 @@ To do that, we define a tag `superuser` along with the intended principals in th
 
 ```yaml
 service: https://api.service.org
-jwtIssuer:  # disabled
+identityProvider:  # disabled
 tags:
   superuser:
     - userid:maria

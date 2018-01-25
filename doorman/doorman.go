@@ -40,7 +40,7 @@ type Policies []Policy
 type ServiceConfig struct {
 	Source    string
 	Service   string
-	JWTIssuer string `yaml:"jwtIssuer"`
+	IdentifyProvider string `yaml:"identifyProvider"`
 	Tags      Tags
 	Policies  Policies
 }

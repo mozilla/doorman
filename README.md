@@ -40,7 +40,7 @@ Policies are defined in YAML files for each consuming service, locally or in rem
 
 ```yaml
 service: https://service.stage.net
-jwtIssuer: https://auth.mozilla.auth0.com/
+identityProvider: https://auth.mozilla.auth0.com/
 tags:
   superusers:
     - userid:maria
@@ -60,7 +60,7 @@ policies:
 ```
 
 * **service**: the unique identifier of the service
-* **jwtIssuer** (*optional*): when the issuer is set, *Doorman* will verify the JSON Web Token provided in the authorization request and extract the Identity Provider information from its payload
+* **identityProvider** (*optional*): when the identify provider is not empty, *Doorman* will verify the Access Token or the ID Token provided in the authorization request to authenticate the request and obtain the subject profile information (*principals*)
 * **tags**: Local «groups» of principals in addition to the ones provided by the Identity Provider
 * **actions**: a domain-specific string representing an action that will be defined as allowed by a principal (eg. `publish`, `signoff`, …)
 * **resources**: a domain-specific string representing a resource. Preferably not a full URL to decouple from service API design (eg. `print:blackwhite:A4`, `category:homepage`, …).

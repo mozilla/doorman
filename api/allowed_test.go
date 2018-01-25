@@ -46,7 +46,7 @@ func TestAllowedVerifiesAuthentication(t *testing.T) {
 	d.LoadPolicies(doorman.ServicesConfig{
 		doorman.ServiceConfig{
 			Service:   "https://sample.yaml",
-			JWTIssuer: "https://auth.mozilla.auth0.com/",
+			IdentityProvider: "https://auth.mozilla.auth0.com/",
 			Policies: doorman.Policies{
 				doorman.Policy{
 					Actions: []string{"update"},
