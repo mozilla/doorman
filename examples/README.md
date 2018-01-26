@@ -154,3 +154,25 @@ Which in this case returns:
   ]
 }
 ```
+
+## Mozilla employees only
+
+Mozilla integrated Auth0 and its HR system so that when users are members of staff, they are given the special group `hris_staff`.
+
+Restricting access on a service to the members of staff at Mozilla is thus as simple as:
+
+```yaml
+service: SLocf7Sa1ibd5GN
+ìdentityProvider: https://auth.mozilla.auth0.com
+policies:
+  -
+    id: staff-only
+    description: Staff only
+    principals:
+      - group:hris_staff
+    actions:
+      - <.*>
+    resources:
+      - <.*>
+    effect: allow
+```
