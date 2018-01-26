@@ -1,7 +1,9 @@
 // Package authn is in charge authenticating requests.
 
-// JWT validators will be instantiated per issuer, and OpenID configuration
-// and keys will be cached between requests.
+// Authenticators will be instantiated per identity provider URI.
+// Currently only OpenID is supported.
+//
+// OpenID configuration and keys will be cached.
 
 package authn
 
@@ -11,28 +13,36 @@ import (
 	"strings"
 )
 
-// JWTValidator is the interface in charge of extracting JWT claims from request.
-type JWTValidator interface {
-	ValidateRequest(*http.Request) (*Claims, error)
+// UserInfo contains the necessary attributes used in Doorman policies.
+type UserInfo struct {
+	ID     string
+	Email  string
+	Groups []string
 }
 
-var jwtValidators map[string]JWTValidator
+// Authenticator is in charge of authenticating requests.
+type Authenticator interface {
+	ValidateRequest(*http.Request) (*UserInfo, error)
+}
+
+var authenticators map[string]Authenticator
 
 func init() {
-	jwtValidators = map[string]JWTValidator{}
+	authenticators = map[string]Authenticator{}
 }
 
-// NewJWTValidator instantiates or reuses an existing JWT validator for the specified issuer.
-func NewJWTValidator(issuer string) (JWTValidator, error) {
-	if !strings.HasPrefix(issuer, "https://") {
-		return nil, fmt.Errorf("issuer %q not supported or has bad format", issuer)
+// NewAuthenticator instantiates or reuses an existing one for the specified
+// identity provider.
+func NewAuthenticator(idP string) (Authenticator, error) {
+	if !strings.HasPrefix(idP, "https://") {
+		return nil, fmt.Errorf("identify provider %q does not use the https:// scheme", idP)
 	}
-
-	// Reuse JWT validators instances among configs if they are for the same issuer.
-	v, ok := jwtValidators[issuer]
+	// Reuse authenticator instances.
+	v, ok := authenticators[idP]
 	if !ok {
-		v = newJWTGenericValidator(issuer)
-		jwtValidators[issuer] = v
+		// Only OpenID is currently supported.
+		v = newOpenIDAuthenticator(idP)
+		authenticators[idP] = v
 	}
 	return v, nil
 }
