@@ -1,3 +1,7 @@
+// Package doorman is in charge of answering authorization requests by matching
+// a set of policies loaded in memory.
+//
+// The default implementation relies on Ladon (https://github.com/ory/ladon).
 package doorman
 
 import (

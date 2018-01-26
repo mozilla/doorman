@@ -1,3 +1,5 @@
+// Package main instantiantes configuration loaders, load files into a Doorman
+// and adds HTTP endpoints.
 package main
 
 import (

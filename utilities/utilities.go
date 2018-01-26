@@ -1,3 +1,4 @@
+// Package utilities provides utility endpoints like heartbeat, OpenAPI, contribute, etc.
 package utilities
 
 import (

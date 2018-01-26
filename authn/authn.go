@@ -1,10 +1,9 @@
 // Package authn is in charge authenticating requests.
-
+//
 // Authenticators will be instantiated per identity provider URI.
 // Currently only OpenID is supported.
 //
 // OpenID configuration and keys will be cached.
-
 package authn
 
 import (
