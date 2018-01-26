@@ -40,7 +40,7 @@ type Policies []Policy
 type ServiceConfig struct {
 	Source    string
 	Service   string
-	IdentifyProvider string `yaml:"identifyProvider"`
+	IdentityProvider string `yaml:"identityProvider"`
 	Tags      Tags
 	Policies  Policies
 }

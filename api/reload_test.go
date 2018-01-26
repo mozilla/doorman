@@ -27,6 +27,7 @@ func TestReloadHandler(t *testing.T) {
 	defer os.Remove(tmpfile.Name()) // clean up
 
 	tmpfile.Write([]byte(`
+identityProvider:
 service: a
 policies:
   -

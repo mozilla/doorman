@@ -67,7 +67,7 @@ func (doorman *LadonDoorman) LoadPolicies(configs ServicesConfig) error {
 		}
 
 		if config.IdentityProvider != "" {
-			log.Infof("Enable authentication from %q", config.IdentityProvider)
+			log.Infof("Authentication enabled for %q using %q", config.Service, config.IdentityProvider)
 			v, err := authn.NewAuthenticator(config.IdentityProvider)
 			if err != nil {
 				return err

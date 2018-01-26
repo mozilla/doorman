@@ -26,6 +26,7 @@ func TestSetupRouter(t *testing.T) {
 	// Bad definition (unknown condition type).
 	tmpfile, _ := ioutil.TempFile("", "")
 	tmpfile.Write([]byte(`
+identityProvider:
 service: a
 policies:
   -
