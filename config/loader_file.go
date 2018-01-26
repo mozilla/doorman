@@ -75,17 +75,5 @@ func loadFile(filename string) (*doorman.ServiceConfig, error) {
 	}
 	config.Source = filename
 
-	if config.Service == "" {
-		return nil, fmt.Errorf("empty service in %q", filename)
-	}
-
-	if len(config.Policies) == 0 {
-		log.Warningf("No policies found in %q", filename)
-	}
-
-	log.Infof("Found service %q", config.Service)
-	log.Infof("Found %d tags", len(config.Tags))
-	log.Infof("Found %d policies", len(config.Policies))
-
 	return &config, nil
 }

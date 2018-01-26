@@ -39,6 +39,10 @@ func Load(sources []string) (doorman.ServicesConfig, error) {
 				if err != nil {
 					return nil, err
 				}
+				err = lintConfigs(c...)
+				if err != nil {
+					return nil, err
+				}
 				configs = append(configs, c...)
 				loaded = true
 			}
