@@ -15,7 +15,7 @@ func TestMain(m *testing.M) {
 	// Load sample policies once
 	sampleConfigs = ServicesConfig{
 		ServiceConfig{
-			Service:   "https://sample.yaml",
+			Service:          "https://sample.yaml",
 			IdentityProvider: "",
 			Tags: Tags{
 				"admins": Principals{"userid:maria"},

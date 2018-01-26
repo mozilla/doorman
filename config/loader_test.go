@@ -134,7 +134,7 @@ func TestLoadGithub(t *testing.T) {
 	assert.NotNil(t, err)
 
 	// Good URL
-	configs, err := Load([]string{"https://github.com/mozilla/doorman/raw/452ef7a/sample.yaml"})
+	configs, err := Load([]string{"https://github.com/mozilla/doorman/raw/f830787/sample.yaml"})
 	assert.Nil(t, err)
 	require.Equal(t, len(configs), 1)
 	assert.Equal(t, len(configs[0].Tags), 1)
