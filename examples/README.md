@@ -155,7 +155,11 @@ Which in this case returns:
 }
 ```
 
-## Mozilla employees only
+## Mozilla specific
+
+*Doorman* is not tied to Mozilla in any other way that its maintainers work at Mozilla. The solutions examples presented in this section are Mozilla specific, but only because they're common among early users of *Doorman*.
+
+### Employees only
 
 Mozilla integrated Auth0 and its HR system so that when users are members of staff, they are given the special group `hris_staff`.
 
@@ -176,3 +180,8 @@ policies:
       - <.*>
     effect: allow
 ```
+
+### Contractors
+
+> *TODO*
+> https://github.com/mozilla/doorman/issues/97
