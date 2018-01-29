@@ -8,7 +8,7 @@ import (
 	"github.com/mozilla/doorman/doorman"
 )
 
-// SetupRoutes adds reload config view.
+// SetupRoutes adds the reload config view.
 func SetupRoutes(r *gin.Engine, sources []string) {
 	r.POST("/__reload__", reloadHandler(sources))
 }

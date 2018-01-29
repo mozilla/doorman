@@ -1,3 +1,6 @@
+// Package config is in charge of loading policies files from disk or remote Github URL.
+//
+// It also contains the view for the __reload__ endpoint.
 package config
 
 import (
