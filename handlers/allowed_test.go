@@ -1,4 +1,4 @@
-package doorman
+package handlers
 
 import (
 	"bytes"
@@ -9,26 +9,19 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mozilla/doorman/config"
+	"github.com/mozilla/doorman/doorman"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 type AllowedResponse struct {
 	Allowed    bool
-	Principals Principals
+	Principals doorman.Principals
 }
 
 type ErrorResponse struct {
 	Message string
-}
-
-func performRequest(r http.Handler, method, path string, body io.Reader) *httptest.ResponseRecorder {
-	req, _ := http.NewRequest(method, path, body)
-	req.Header.Set("Origin", "https://sample.yaml")
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	return w
 }
 
 func performAllowed(t *testing.T, r *gin.Engine, body io.Reader, expected int, response interface{}) {
@@ -40,7 +33,7 @@ func performAllowed(t *testing.T, r *gin.Engine, body io.Reader, expected int, r
 
 func TestAllowedGet(t *testing.T) {
 	r := gin.New()
-	d := sampleDoorman()
+	d := doorman.NewDefaultLadon()
 	SetupRoutes(r, d)
 
 	w := performRequest(r, "GET", "/allowed", nil)
@@ -48,14 +41,14 @@ func TestAllowedGet(t *testing.T) {
 }
 
 func TestAllowedVerifiesAuthentication(t *testing.T) {
-	d := NewDefaultLadon()
+	d := doorman.NewDefaultLadon()
 	// Will initialize an authenticator (ie. download public keys)
-	d.LoadPolicies(ServicesConfig{
-		ServiceConfig{
+	d.LoadPolicies(doorman.ServicesConfig{
+		doorman.ServiceConfig{
 			Service:   "https://sample.yaml",
 			JWTIssuer: "https://auth.mozilla.auth0.com/",
-			Policies: Policies{
-				Policy{
+			Policies: doorman.Policies{
+				doorman.Policy{
 					Actions: []string{"update"},
 				},
 			},
@@ -65,7 +58,7 @@ func TestAllowedVerifiesAuthentication(t *testing.T) {
 	r := gin.New()
 	SetupRoutes(r, d)
 
-	authzRequest := Request{}
+	authzRequest := doorman.Request{}
 	token, _ := json.Marshal(authzRequest)
 	body := bytes.NewBuffer(token)
 	var response ErrorResponse
@@ -109,15 +102,15 @@ func TestAllowedHandlerBadRequest(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &errResp)
 	assert.Contains(t, errResp.Message, "missing principals")
 
-	doorman := sampleDoorman()
+	d := doorman.NewDefaultLadon()
 
 	// Posted principals with AuthnMiddleware enabled.
 	w = httptest.NewRecorder()
 	c, _ = gin.CreateTestContext(w)
-	c.Set(DoormanContextKey, doorman)
-	c.Set(PrincipalsContextKey, Principals{"userid:maria"}) // Simulate authn middleware.
-	authzRequest := Request{
-		Principals: Principals{"userid:superuser"},
+	c.Set(DoormanContextKey, d)
+	c.Set(PrincipalsContextKey, doorman.Principals{"userid:maria"}) // Simulate authn middleware.
+	authzRequest := doorman.Request{
+		Principals: doorman.Principals{"userid:superuser"},
 	}
 	post, _ := json.Marshal(authzRequest)
 	body = bytes.NewBuffer(post)
@@ -134,13 +127,18 @@ func TestAllowedHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 
-	doorman := sampleDoorman()
-	c.Set(DoormanContextKey, doorman)
+	configs, err := config.Load([]string{"../sample.yaml"})
+	require.Nil(t, err)
+
+	d := doorman.NewDefaultLadon()
+	err = d.LoadPolicies(configs)
+	require.Nil(t, err)
+	c.Set(DoormanContextKey, d)
 
 	// Using principals from context (AuthnMiddleware)
-	c.Set(PrincipalsContextKey, Principals{"userid:maria"})
+	c.Set(PrincipalsContextKey, doorman.Principals{"userid:maria"})
 
-	authzRequest := Request{
+	authzRequest := doorman.Request{
 		Action: "update",
 	}
 	post, _ := json.Marshal(authzRequest)
@@ -153,7 +151,7 @@ func TestAllowedHandler(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.True(t, resp.Allowed)
-	assert.Equal(t, Principals{"userid:maria", "tag:admins"}, resp.Principals)
+	assert.Equal(t, doorman.Principals{"userid:maria", "tag:admins"}, resp.Principals)
 }
 
 func TestAllowedHandlerRoles(t *testing.T) {
@@ -162,15 +160,21 @@ func TestAllowedHandlerRoles(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 
-	doorman := sampleDoorman()
-	c.Set(DoormanContextKey, doorman)
+	configs, err := config.Load([]string{"../sample.yaml"})
+	require.Nil(t, err)
+
+	println(len(configs))
+	d := doorman.NewDefaultLadon()
+	err = d.LoadPolicies(configs)
+	require.Nil(t, err)
+	c.Set(DoormanContextKey, d)
 
 	// Expand principals from context roles
-	authzRequest := Request{
-		Principals: Principals{"userid:bob"},
+	authzRequest := doorman.Request{
+		Principals: doorman.Principals{"userid:bob"},
 		Action:     "update",
 		Resource:   "pto",
-		Context: Context{
+		Context: doorman.Context{
 			"roles": []string{"editor"},
 		},
 	}
@@ -181,5 +185,5 @@ func TestAllowedHandlerRoles(t *testing.T) {
 	allowedHandler(c)
 
 	json.Unmarshal(w.Body.Bytes(), &resp)
-	assert.Equal(t, Principals{"userid:bob", "role:editor"}, resp.Principals)
+	assert.Equal(t, doorman.Principals{"userid:bob", "role:editor"}, resp.Principals)
 }

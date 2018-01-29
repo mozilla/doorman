@@ -102,6 +102,8 @@ func (r *Request) Roles() Principals {
 type Doorman interface {
 	// LoadPolicies is responsible for loading the services configuration into memory.
 	LoadPolicies(configs ServicesConfig) error
+	// ConfigSources returns the list of configuration sources.
+	ConfigSources() []string
 	// Authenticator by service
 	Authenticator(service string) (authn.Authenticator, error)
 	// ExpandPrincipals looks up and add extra principals to the ones specified.

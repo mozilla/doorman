@@ -1,4 +1,4 @@
-package config
+package handlers
 
 import (
 	"encoding/json"
@@ -41,7 +41,7 @@ policies:
 	for i := 0; i < 2; i++ {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Set(doorman.DoormanContextKey, d)
+		c.Set(DoormanContextKey, d)
 		c.Request = reloadReq
 
 		handler(c)
@@ -55,7 +55,7 @@ policies:
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Set(doorman.DoormanContextKey, d)
+	c.Set(DoormanContextKey, d)
 	c.Request = reloadReq
 
 	handler(c)
@@ -78,7 +78,7 @@ policies:
 `))
 	w = httptest.NewRecorder()
 	c, _ = gin.CreateTestContext(w)
-	c.Set(doorman.DoormanContextKey, d)
+	c.Set(DoormanContextKey, d)
 	c.Request = reloadReq
 
 	handler(c)

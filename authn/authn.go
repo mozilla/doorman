@@ -37,11 +37,11 @@ func NewAuthenticator(idP string) (Authenticator, error) {
 		return nil, fmt.Errorf("identify provider %q does not use the https:// scheme", idP)
 	}
 	// Reuse authenticator instances.
-	v, ok := authenticators[idP]
+	a, ok := authenticators[idP]
 	if !ok {
 		// Only OpenID is currently supported.
-		v = newOpenIDAuthenticator(idP)
-		authenticators[idP] = v
+		a = newOpenIDAuthenticator(idP)
+		authenticators[idP] = a
 	}
-	return v, nil
+	return a, nil
 }

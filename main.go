@@ -8,7 +8,7 @@ import (
 
 	"github.com/mozilla/doorman/config"
 	"github.com/mozilla/doorman/doorman"
-	"github.com/mozilla/doorman/utilities"
+	"github.com/mozilla/doorman/handlers"
 )
 
 func init() {
@@ -40,9 +40,7 @@ func setupRouter() (*gin.Engine, error) {
 	}
 
 	// Endpoints
-	doorman.SetupRoutes(r, d)
-	utilities.SetupRoutes(r)
-	config.SetupRoutes(r, settings.Sources)
+	handlers.SetupRoutes(r, d)
 
 	return r, nil
 }

@@ -1,4 +1,4 @@
-package doorman
+package handlers
 
 import (
 	"net/http"
@@ -12,33 +12,27 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/mozilla/doorman/authn"
+	"github.com/mozilla/doorman/doorman"
 )
 
-// TestMain defined in doorman_test.go
-// func TestMain(m *testing.M) {}
-
-type TestValidator struct {
+type TestAuthenticator struct {
 	mock.Mock
 }
 
-func (v *TestValidator) Initialize() error {
-	args := v.Called()
-	return args.Error(0)
-}
-func (v *TestValidator) ValidateRequest(request *http.Request) (*authn.UserInfo, error) {
+func (v *TestAuthenticator) ValidateRequest(request *http.Request) (*authn.UserInfo, error) {
 	args := v.Called(request)
 	return args.Get(0).(*authn.UserInfo), args.Error(1)
 }
 
 func TestAuthnMiddleware(t *testing.T) {
-	doorman := NewDefaultLadon()
-	handler := AuthnMiddleware(doorman)
+	d := doorman.NewDefaultLadon()
+	handler := AuthnMiddleware(d)
 
 	audience := "https://some.api.com"
 
 	// Associate a fake JWT validator to this issuer.
-	v := &TestValidator{}
-	doorman.authenticators[audience] = v
+	v := &TestAuthenticator{}
+	d.SetAuthenticator(audience, v)
 
 	// Extract claims is ran on every request.
 	claims := &authn.UserInfo{
@@ -58,7 +52,7 @@ func TestAuthnMiddleware(t *testing.T) {
 	// Principals are set in context.
 	principals, ok := c.Get(PrincipalsContextKey)
 	require.True(t, ok)
-	assert.Equal(t, principals, Principals{
+	assert.Equal(t, principals, doorman.Principals{
 		"userid:ldap|user",
 		"email:user@corp.com",
 		"group:Employee",
@@ -81,7 +75,7 @@ func TestAuthnMiddleware(t *testing.T) {
 	assert.False(t, ok)
 
 	// Authentication not configured for this origin.
-	doorman.authenticators["https://open"] = nil
+	d.SetAuthenticator("https://open", nil)
 
 	c.Request, _ = http.NewRequest("GET", "/get", nil)
 	c.Request.Header.Set("Origin", "https://open")
@@ -93,13 +87,13 @@ func TestAuthnMiddleware(t *testing.T) {
 	claims = &authn.UserInfo{
 		ID: "ldap|user",
 	}
-	v = &TestValidator{}
+	v = &TestAuthenticator{}
 	v.On("ValidateRequest", mock.Anything).Return(claims, nil)
-	doorman.authenticators[audience] = v
+	d.SetAuthenticator(audience, v)
 	c, _ = gin.CreateTestContext(httptest.NewRecorder())
 	c.Request, _ = http.NewRequest("GET", "/get", nil)
 	c.Request.Header.Set("Origin", audience)
 	handler(c)
 	principals, _ = c.Get(PrincipalsContextKey)
-	assert.Equal(t, Principals{"userid:ldap|user"}, principals)
+	assert.Equal(t, doorman.Principals{"userid:ldap|user"}, principals)
 }

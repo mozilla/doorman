@@ -1,7 +1,8 @@
-package utilities
+package handlers
 
 import (
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -9,19 +10,15 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mozilla/doorman/doorman"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestMain(m *testing.M) {
-	//Set Gin to Test Mode
-	gin.SetMode(gin.TestMode)
-	// Run the other tests
-	os.Exit(m.Run())
-}
-
-func performRequest(r http.Handler, method, path string) *httptest.ResponseRecorder {
-	req, _ := http.NewRequest(method, path, nil)
+func performRequest(r http.Handler, method, path string, body io.Reader) *httptest.ResponseRecorder {
+	req, _ := http.NewRequest(method, path, body)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", "https://sample.yaml")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 	return w
@@ -29,10 +26,10 @@ func performRequest(r http.Handler, method, path string) *httptest.ResponseRecor
 
 func testJSONResponse(t *testing.T, url string, response interface{}) *httptest.ResponseRecorder {
 	r := gin.New()
-	SetupRoutes(r)
-	w := performRequest(r, "GET", url)
+	SetupRoutes(r, doorman.NewDefaultLadon())
+	w := performRequest(r, "GET", url, nil)
 
-	assert.Equal(t, w.Code, http.StatusOK)
+	assert.Equal(t, http.StatusOK, w.Code)
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	require.Nil(t, err)
 
@@ -59,11 +56,11 @@ func TestHeartbeat(t *testing.T) {
 func TestVersion(t *testing.T) {
 	// HTTP 404 if not found in current dir
 	r := gin.New()
-	SetupRoutes(r)
-	w := performRequest(r, "GET", "/__version__")
+	SetupRoutes(r, doorman.NewDefaultLadon())
+	w := performRequest(r, "GET", "/__version__", nil)
 	assert.Equal(t, w.Code, http.StatusNotFound)
 
-	// Copy to ./utilities/
+	// Copy to ./handlers/
 	data, _ := ioutil.ReadFile("../version.json")
 	ioutil.WriteFile("version.json", data, 0644)
 	defer os.Remove("version.json")

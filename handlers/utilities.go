@@ -1,5 +1,5 @@
 // Package utilities provides utility endpoints like heartbeat, OpenAPI, contribute, etc.
-package utilities
+package handlers
 
 import (
 	"net/http"
@@ -9,15 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"gopkg.in/yaml.v2"
 )
-
-// SetupRoutes adds utilities views.
-func SetupRoutes(r *gin.Engine) {
-	r.GET("/__lbheartbeat__", lbHeartbeatHandler)
-	r.GET("/__heartbeat__", heartbeatHandler)
-	r.GET("/__version__", versionHandler)
-	r.GET("/__api__", YAMLAsJSONHandler("utilities/openapi.yaml"))
-	r.GET("/contribute.json", YAMLAsJSONHandler("utilities/contribute.yaml"))
-}
 
 // Yaml2JSON converts an unmarshalled YAML object to a JSON one.
 func Yaml2JSON(i interface{}) interface{} {
