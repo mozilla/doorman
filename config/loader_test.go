@@ -47,23 +47,6 @@ func TestLoadBadPolicies(t *testing.T) {
 	_, err = loadTempFiles("$\\--xx")
 	assert.NotNil(t, err)
 
-	// Empty service
-	_, err = loadTempFiles(`
-service:
-policies:
-  -
-    id: "1"
-    effect: allow
-`)
-	assert.NotNil(t, err)
-
-	// Empty policies
-	_, err = loadTempFiles(`
-service: a
-policies:
-`)
-	assert.Nil(t, err)
-
 	// Bad policies conditions
 	_, err = loadTempFiles(`
 service: a
