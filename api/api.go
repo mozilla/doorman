@@ -1,4 +1,4 @@
-package handlers
+package api
 
 import (
 	"github.com/gin-gonic/gin"
@@ -19,6 +19,6 @@ func SetupRoutes(r *gin.Engine, d doorman.Doorman) {
 	r.GET("/__lbheartbeat__", lbHeartbeatHandler)
 	r.GET("/__heartbeat__", heartbeatHandler)
 	r.GET("/__version__", versionHandler)
-	r.GET("/__api__", YAMLAsJSONHandler("handlers/openapi.yaml"))
-	r.GET("/contribute.json", YAMLAsJSONHandler("handlers/contribute.yaml"))
+	r.GET("/__api__", YAMLAsJSONHandler("api/openapi.yaml"))
+	r.GET("/contribute.json", YAMLAsJSONHandler("api/contribute.yaml"))
 }

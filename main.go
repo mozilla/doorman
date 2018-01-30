@@ -6,9 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/mozilla/doorman/api"
 	"github.com/mozilla/doorman/config"
 	"github.com/mozilla/doorman/doorman"
-	"github.com/mozilla/doorman/handlers"
 )
 
 func init() {
@@ -40,7 +40,7 @@ func setupRouter() (*gin.Engine, error) {
 	}
 
 	// Endpoints
-	handlers.SetupRoutes(r, d)
+	api.SetupRoutes(r, d)
 
 	return r, nil
 }

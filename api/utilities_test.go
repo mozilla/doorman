@@ -1,4 +1,4 @@
-package handlers
+package api
 
 import (
 	"encoding/json"
@@ -60,7 +60,7 @@ func TestVersion(t *testing.T) {
 	w := performRequest(r, "GET", "/__version__", nil)
 	assert.Equal(t, w.Code, http.StatusNotFound)
 
-	// Copy to ./handlers/
+	// Copy to ./api/
 	data, _ := ioutil.ReadFile("../version.json")
 	ioutil.WriteFile("version.json", data, 0644)
 	defer os.Remove("version.json")

@@ -1,5 +1,5 @@
 main
-handlers/bindata.go
+api/bindata.go
 coverage.txt
 policies.yaml
 vendor/

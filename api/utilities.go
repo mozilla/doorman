@@ -1,5 +1,5 @@
 // Package utilities provides utility endpoints like heartbeat, OpenAPI, contribute, etc.
-package handlers
+package api
 
 import (
 	"net/http"

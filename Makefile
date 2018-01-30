@@ -2,15 +2,15 @@ GO_LINT := $(GOPATH)/bin/golint
 GO_DEP := $(GOPATH)/bin/dep
 GO_BINDATA := $(GOPATH)/bin/go-bindata
 GO_PACKAGE := $(GOPATH)/src/github.com/mozilla/doorman
-DATA_FILES := ./handlers/openapi.yaml ./handlers/contribute.yaml
-SRC := *.go ./config/*.go ./handlers/*.go ./authn/*.go ./doorman/*.go
-PACKAGES := ./ ./config/ ./handlers/ ./authn/ ./doorman/
+DATA_FILES := ./api/openapi.yaml ./api/contribute.yaml
+SRC := *.go ./config/*.go ./api/*.go ./authn/*.go ./doorman/*.go
+PACKAGES := ./ ./config/ ./api/ ./authn/ ./doorman/
 
-main: vendor handlers/bindata.go $(SRC) $(GO_PACKAGE)
+main: vendor api/bindata.go $(SRC) $(GO_PACKAGE)
 	CGO_ENABLED=0 go build -o main *.go
 
 clean:
-	rm -f main coverage.txt handlers/bindata.go vendor
+	rm -f main coverage.txt api/bindata.go vendor
 
 $(GOPATH):
 	mkdir -p $(GOPATH)
@@ -28,8 +28,8 @@ $(GO_BINDATA): $(GOPATH)
 vendor: $(GO_DEP) Gopkg.lock Gopkg.toml
 	$(GO_DEP) ensure
 
-handlers/bindata.go: $(GO_BINDATA) $(DATA_FILES)
-	$(GO_BINDATA) -o handlers/bindata.go -pkg handlers $(DATA_FILES)
+api/bindata.go: $(GO_BINDATA) $(DATA_FILES)
+	$(GO_BINDATA) -o api/bindata.go -pkg api $(DATA_FILES)
 
 policies.yaml:
 	touch policies.yaml
@@ -47,10 +47,10 @@ lint: $(GO_LINT)
 fmt:
 	gofmt -w -s $(SRC)
 
-test: vendor policies.yaml handlers/bindata.go lint
+test: vendor policies.yaml api/bindata.go lint
 	go test -v $(PACKAGES)
 
-test-coverage: vendor policies.yaml handlers/bindata.go
+test-coverage: vendor policies.yaml api/bindata.go
 	# Multiple package coverage script from https://github.com/pierrre/gotestcover
 	echo 'mode: atomic' > coverage.txt && go list ./... | grep -v /vendor/ | xargs -n1 -I{} sh -c 'go test -v -covermode=atomic -coverprofile=coverage.tmp {} && tail -n +2 coverage.tmp >> coverage.txt' && rm coverage.tmp
 	# Exclude bindata.go from coverage.
@@ -62,9 +62,9 @@ docker-build: main
 docker-run:
 	docker run --name doorman --rm mozilla/doorman
 
-api-docs: handlers/openapi.yaml
+api-docs: api/openapi.yaml
 	# https://github.com/sourcey/spectacle
-	spectacle --target-dir api-docs handlers/openapi.yaml
+	spectacle --target-dir api-docs api/openapi.yaml
 
 api-docs-publish: api-docs
 	# https://github.com/tschaub/gh-pages
