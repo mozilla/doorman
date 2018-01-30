@@ -2,8 +2,8 @@ package config
 
 import (
 	"fmt"
-	"strings"
 	log "github.com/sirupsen/logrus"
+	"strings"
 
 	"github.com/mozilla/doorman/doorman"
 )

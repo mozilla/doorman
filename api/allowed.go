@@ -1,19 +1,11 @@
-package doorman
+package api
 
 import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mozilla/doorman/doorman"
 )
-
-// SetupRoutes adds doorman views to query the policies.
-func SetupRoutes(r *gin.Engine, doorman Doorman) {
-	r.Use(ContextMiddleware(doorman))
-
-	a := r.Group("")
-	a.Use(AuthnMiddleware(doorman))
-	a.POST("/allowed", allowedHandler)
-}
 
 func allowedHandler(c *gin.Context) {
 	if c.Request.ContentLength == 0 {
@@ -23,7 +15,7 @@ func allowedHandler(c *gin.Context) {
 		return
 	}
 
-	var r Request
+	var r doorman.Request
 	if err := c.BindJSON(&r); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": err.Error(),
@@ -41,7 +33,7 @@ func allowedHandler(c *gin.Context) {
 			})
 			return
 		}
-		r.Principals = principals.(Principals)
+		r.Principals = principals.(doorman.Principals)
 	} else {
 		if len(r.Principals) == 0 {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -51,11 +43,11 @@ func allowedHandler(c *gin.Context) {
 		}
 	}
 
-	doorman := c.MustGet(DoormanContextKey).(Doorman)
+	d := c.MustGet(DoormanContextKey).(doorman.Doorman)
 	service := c.Request.Header.Get("Origin")
 
 	// Expand principals with local ones.
-	r.Principals = doorman.ExpandPrincipals(service, r.Principals)
+	r.Principals = d.ExpandPrincipals(service, r.Principals)
 	// Expand principals with specified roles.
 	r.Principals = append(r.Principals, r.Roles()...)
 
@@ -63,13 +55,13 @@ func allowedHandler(c *gin.Context) {
 	// XXX: using the context field to pass custom values on *ladon.Request
 	// for audit logging is not very elegant.
 	if r.Context == nil {
-		r.Context = Context{}
+		r.Context = doorman.Context{}
 	}
 	r.Context["remoteIP"] = c.Request.RemoteAddr
 	r.Context["_service"] = service
 	r.Context["_principals"] = r.Principals
 
-	allowed := doorman.IsAllowed(service, &r)
+	allowed := d.IsAllowed(service, &r)
 
 	c.JSON(http.StatusOK, gin.H{
 		"allowed":    allowed,

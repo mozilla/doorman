@@ -32,6 +32,20 @@ func NewDefaultLadon() *LadonDoorman {
 	return w
 }
 
+func (doorman *LadonDoorman) ConfigSources() []string {
+	var l []string
+	for _, c := range doorman.services {
+		l = append(l, c.Source)
+	}
+	return l
+}
+
+// SetAuthenticator allows to manually set an authenticator instance associated to
+// a domain.
+func (doorman *LadonDoorman) SetAuthenticator(service string, a authn.Authenticator) {
+	doorman.authenticators[service] = a
+}
+
 func (doorman *LadonDoorman) auditLogger() *auditLogger {
 	if doorman._auditLogger == nil {
 		doorman._auditLogger = newAuditLogger()

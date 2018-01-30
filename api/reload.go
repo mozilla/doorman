@@ -1,22 +1,18 @@
-package config
+package api
 
 import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/mozilla/doorman/config"
 	"github.com/mozilla/doorman/doorman"
 )
-
-// SetupRoutes adds the reload config view.
-func SetupRoutes(r *gin.Engine, sources []string) {
-	r.POST("/__reload__", reloadHandler(sources))
-}
 
 func reloadHandler(sources []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Load files (from folders, files, Github, etc.)
-		configs, err := Load(sources)
+		configs, err := config.Load(sources)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,
@@ -26,9 +22,9 @@ func reloadHandler(sources []string) gin.HandlerFunc {
 		}
 
 		// Load into Doorman.
-		doorman := c.MustGet(doorman.DoormanContextKey).(doorman.Doorman)
+		d := c.MustGet(DoormanContextKey).(doorman.Doorman)
 
-		if err := doorman.LoadPolicies(configs); err != nil {
+		if err := d.LoadPolicies(configs); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,
 				"message": err.Error(),

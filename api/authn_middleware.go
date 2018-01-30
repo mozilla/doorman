@@ -1,4 +1,4 @@
-package doorman
+package api
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/mozilla/doorman/authn"
+	"github.com/mozilla/doorman/doorman"
 )
 
 // DoormanContextKey is the Gin context key to obtain the *Doorman instance.
@@ -16,16 +17,16 @@ const DoormanContextKey string = "doorman"
 const PrincipalsContextKey string = "principals"
 
 // ContextMiddleware adds the Doorman instance to the Gin context.
-func ContextMiddleware(doorman Doorman) gin.HandlerFunc {
+func ContextMiddleware(d doorman.Doorman) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Set(DoormanContextKey, doorman)
+		c.Set(DoormanContextKey, d)
 		c.Next()
 	}
 }
 
 // AuthnMiddleware relies on the authenticator if authentication was enabled
 // for the origin.
-func AuthnMiddleware(doorman Doorman) gin.HandlerFunc {
+func AuthnMiddleware(d doorman.Doorman) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// The service requesting must send its location. It will be compared
 		// with the services defined in policies files.
@@ -39,7 +40,7 @@ func AuthnMiddleware(doorman Doorman) gin.HandlerFunc {
 		}
 
 		// Check if authentication was configured for this service.
-		authenticator, err := doorman.Authenticator(origin)
+		authenticator, err := d.Authenticator(origin)
 		if err != nil {
 			// Unknown service
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
@@ -71,9 +72,9 @@ func AuthnMiddleware(doorman Doorman) gin.HandlerFunc {
 	}
 }
 
-func buildPrincipals(userInfo *authn.UserInfo) Principals {
+func buildPrincipals(userInfo *authn.UserInfo) doorman.Principals {
 	// Extract principals from JWT
-	var principals Principals
+	var principals doorman.Principals
 	userid := fmt.Sprintf("userid:%s", userInfo.ID)
 	principals = append(principals, userid)
 
