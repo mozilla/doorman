@@ -38,11 +38,11 @@ type Policies []Policy
 
 // ServiceConfig represents the policies file content.
 type ServiceConfig struct {
-	Source    string
-	Service   string
-	JWTIssuer string `yaml:"jwtIssuer"`
-	Tags      Tags
-	Policies  Policies
+	Source           string
+	Service          string
+	IdentityProvider string `yaml:"identityProvider"`
+	Tags             Tags
+	Policies         Policies
 }
 
 // GetTags returns the tags principals for the ones specified.

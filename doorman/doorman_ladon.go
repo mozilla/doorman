@@ -66,9 +66,9 @@ func (doorman *LadonDoorman) LoadPolicies(configs ServicesConfig) error {
 			return fmt.Errorf("duplicated service %q (source %q)", config.Service, config.Source)
 		}
 
-		if config.JWTIssuer != "" {
-			log.Infof("Enable authentication from %q", config.JWTIssuer)
-			v, err := authn.NewAuthenticator(config.JWTIssuer)
+		if config.IdentityProvider != "" {
+			log.Infof("Authentication enabled for %q using %q", config.Service, config.IdentityProvider)
+			v, err := authn.NewAuthenticator(config.IdentityProvider)
 			if err != nil {
 				return err
 			}

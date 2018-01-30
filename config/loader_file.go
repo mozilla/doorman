@@ -12,6 +12,9 @@ import (
 	"github.com/mozilla/doorman/doorman"
 )
 
+// notSpecified is a simple string to detect unspecified values while unmarshalling.
+const notSpecified = "N/A"
+
 // FileLoader loads from local disk (file, folder)
 type FileLoader struct{}
 
@@ -69,9 +72,14 @@ func loadFile(filename string) (*doorman.ServiceConfig, error) {
 		return nil, fmt.Errorf("empty file %q", filename)
 	}
 
-	var config doorman.ServiceConfig
+	config := doorman.ServiceConfig{
+		IdentityProvider: notSpecified,
+	}
 	if err := yaml.Unmarshal(fileContent, &config); err != nil {
 		return nil, err
+	}
+	if config.IdentityProvider == notSpecified {
+		return nil, fmt.Errorf("identityProvider not specified in %q", filename)
 	}
 	config.Source = filename
 

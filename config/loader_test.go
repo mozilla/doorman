@@ -47,8 +47,19 @@ func TestLoadBadPolicies(t *testing.T) {
 	_, err = loadTempFiles("$\\--xx")
 	assert.NotNil(t, err)
 
+	// Missing identity provider
+	_, err = loadTempFiles(`
+service:
+policies:
+  -
+    id: "1"
+    effect: allow
+`)
+	assert.NotNil(t, err)
+
 	// Bad policies conditions
 	_, err = loadTempFiles(`
+identityProvider:
 service: a
 policies:
   -
@@ -63,6 +74,7 @@ policies:
 func TestLoadPolicies(t *testing.T) {
 	// Service as integer
 	configs, err := loadTempFiles(`
+identityProvider:
 service: 1
 policies:
   -
@@ -87,6 +99,7 @@ func TestLoadFolder(t *testing.T) {
 	testfile := filepath.Join(dir, "test.yaml")
 	defer os.Remove(testfile)
 	err = ioutil.WriteFile(testfile, []byte(`
+identityProvider:
 service: a
 policies:
   -
@@ -121,7 +134,7 @@ func TestLoadGithub(t *testing.T) {
 	assert.NotNil(t, err)
 
 	// Good URL
-	configs, err := Load([]string{"https://github.com/mozilla/doorman/raw/452ef7a/sample.yaml"})
+	configs, err := Load([]string{"https://github.com/mozilla/doorman/raw/f830787/sample.yaml"})
 	assert.Nil(t, err)
 	require.Equal(t, len(configs), 1)
 	assert.Equal(t, len(configs[0].Tags), 1)
@@ -130,6 +143,7 @@ func TestLoadGithub(t *testing.T) {
 
 func TestLoadTags(t *testing.T) {
 	configs, err := loadTempFiles(`
+identityProvider:
 service: a
 tags:
   admins:

@@ -15,8 +15,8 @@ func TestMain(m *testing.M) {
 	// Load sample policies once
 	sampleConfigs = ServicesConfig{
 		ServiceConfig{
-			Service:   "https://sample.yaml",
-			JWTIssuer: "",
+			Service:          "https://sample.yaml",
+			IdentityProvider: "",
 			Tags: Tags{
 				"admins": Principals{"userid:maria"},
 			},
@@ -154,7 +154,7 @@ func TestBadServicesConfig(t *testing.T) {
 	// Bad JWT issuer
 	err = d.LoadPolicies(ServicesConfig{
 		ServiceConfig{
-			JWTIssuer: "http://perlin-pinpin",
+			IdentityProvider: "http://perlin-pinpin",
 		},
 	})
 	assert.NotNil(t, err)
@@ -192,7 +192,7 @@ func TestLoadPoliciesTwice(t *testing.T) {
 	// Load bad policies, does not affect existing.
 	err := doorman.LoadPolicies(ServicesConfig{
 		ServiceConfig{
-			JWTIssuer: "http://perlin-pinpin",
+			IdentityProvider: "http://perlin-pinpin",
 		},
 	})
 	assert.Contains(t, err.Error(), "\"http://perlin-pinpin\" does not use the https:// scheme")

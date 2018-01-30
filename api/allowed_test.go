@@ -45,8 +45,8 @@ func TestAllowedVerifiesAuthentication(t *testing.T) {
 	// Will initialize an authenticator (ie. download public keys)
 	d.LoadPolicies(doorman.ServicesConfig{
 		doorman.ServiceConfig{
-			Service:   "https://sample.yaml",
-			JWTIssuer: "https://auth.mozilla.auth0.com/",
+			Service:          "https://sample.yaml",
+			IdentityProvider: "https://auth.mozilla.auth0.com/",
 			Policies: doorman.Policies{
 				doorman.Policy{
 					Actions: []string{"update"},
