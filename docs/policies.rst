@@ -12,8 +12,7 @@ Policies are defined in YAML files for each consuming service as follow:
         - userid:maria
         - group:admins
     policies:
-      -
-        id: authors-superusers-delete
+      - id: authors-superusers-delete
         description: Authors and superusers can delete articles
         principals:
           - role:author
