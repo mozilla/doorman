@@ -6,6 +6,8 @@ DATA_FILES := ./api/openapi.yaml ./api/contribute.yaml
 SRC := *.go ./config/*.go ./api/*.go ./authn/*.go ./doorman/*.go
 PACKAGES := ./ ./config/ ./api/ ./authn/ ./doorman/
 
+.PHONY: docs
+
 main: vendor api/bindata.go $(SRC) $(GO_PACKAGE)
 	CGO_ENABLED=0 go build -o main *.go
 
