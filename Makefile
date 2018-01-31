@@ -62,10 +62,15 @@ docker-build: main
 docker-run:
 	docker run --name doorman --rm mozilla/doorman
 
-api-docs: api/openapi.yaml
-	# https://github.com/sourcey/spectacle
-	spectacle --target-dir api-docs api/openapi.yaml
+.venv/bin/sphinx-build:
+	virtualenv .venv
+	.venv/bin/pip install -r docs/requirements.txt
 
-api-docs-publish: api-docs
+docs: .venv/bin/sphinx-build docs/*.rst
+	.venv/bin/sphinx-build -a -W -n -b html -d docs/_build/doctrees docs docs/_build/html
+	@echo
+	@echo "Build finished. The HTML pages are in $(SPHINX_BUILDDIR)/html/index.html"
+
+docs-publish: docs
 	# https://github.com/tschaub/gh-pages
 	gh-pages -d api-docs

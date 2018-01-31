@@ -4,7 +4,8 @@ coverage.txt
 policies.yaml
 vendor/
 node_modules/
-api-docs/
+docs/_build
+.venv
 __pycache__/
 *.pyc
 examples/python/records/*.json
