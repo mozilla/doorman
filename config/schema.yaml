@@ -1,0 +1,79 @@
+title: Doorman policies file
+description:
+type: object
+additionnalProperties: false
+required:
+  - identityProvider
+  - service
+properties:
+  service:
+    type: string
+    title: Service unique identifier
+    description: eg. prod.myservice.com
+  identityProvider:
+    type: string
+    title: Identity Provider URL
+    description: eg. https://auth.mozilla.auth0.com/
+  tags:
+    type: object
+    additionnalProperties:
+      type: array
+      minLength: 1
+      uniqueItems: true
+      items:
+        type: string
+  policies:
+    type: array
+    items:
+      type: object
+      additionnalProperties: false
+      required:
+        - id
+        - principals
+        - actions
+        - resources
+        - effect
+      properties:
+        id:
+          type: string
+        principals:
+          type: array
+          minLength: 1
+          items:
+            type: string
+        actions:
+          type: array
+          minLength: 1
+          items:
+            type: string
+        resources:
+          type: array
+          minLength: 1
+          items:
+            type: string
+        effect:
+          type: string
+          enum:
+            - allow
+            - deny
+        conditions:
+          type: object
+          additionnalProperties:
+            type: object
+            properties:
+              type:
+                type: string
+                enum:
+                  - StringEqualCondition
+                  - StringMatchCondition
+                  - MatchPrincipalsCondition
+                  - CIDRCondition
+              options:
+                type: object
+                properties:
+                  cidr:
+                    type: string
+                  matches:
+                    type: string
+                  equals:
+                    type: string
