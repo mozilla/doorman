@@ -173,7 +173,7 @@ policies:
     id: staff-only
     description: Staff only
     principals:
-      - group:hris_staff
+      - group:hris_is_staff
     actions:
       - <.*>
     resources:
@@ -183,5 +183,8 @@ policies:
 
 ### Contractors
 
-> *TODO*
-> https://github.com/mozilla/doorman/issues/97
+**Coming soon**
+
+Contractors will be differenciated from staff via a specific HRIS group (eg. ``group:hris_is_contractor``).
+
+Follow [work in progress](https://github.com/mozilla-iam/cis_hris_publisher/issues/12)
