@@ -159,9 +159,9 @@ Which in this case returns:
 
 *Doorman* is not tied to Mozilla in any other way that its maintainers work at Mozilla. The solutions examples presented in this section are Mozilla specific, but only because they're common among early users of *Doorman*.
 
-### Employees only
+### Staff only
 
-Mozilla integrated Auth0 and its HR system so that when users are members of staff, they are given the special group `hris_staff`.
+Mozilla integrated Auth0 and its HR system so that when users are members of staff, they are given the special group `hris_is_staff`.
 
 Restricting access on a service to the members of staff at Mozilla is thus as simple as:
 
@@ -173,7 +173,7 @@ policies:
     id: staff-only
     description: Staff only
     principals:
-      - group:hris_staff
+      - group:hris_is_staff
     actions:
       - <.*>
     resources:
@@ -181,7 +181,6 @@ policies:
     effect: allow
 ```
 
-### Contractors
+### Employees and contractors
 
-> *TODO*
-> https://github.com/mozilla/doorman/issues/97
+Following the same approach as staff, employees and contractors can be differenciated within staff via specific HRIS groups: `hris_workertype_employee` and `hris_workertype_contractor` respectively.
